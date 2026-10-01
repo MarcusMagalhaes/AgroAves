@@ -166,29 +166,29 @@ export default function Venda() {
   return (
     <div className="mx-auto max-w-[1500px] text-sm">
       {/* ===== Cabeçalho compacto: vendedor, semana, filtros, cliente ===== */}
-      <div className="card px-2 py-1 mb-1.5 bg-rose-50/60 text-xs">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <div className="flex items-center gap-1"><span className="font-bold text-slate-500 uppercase text-[10px]">Vendedor</span><span className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold">{rota?.vendedor ?? '—'}</span></div>
-          <div className="flex items-center gap-1"><span className="font-bold text-slate-500 uppercase text-[10px]">Semana</span><span className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold">{fmtData(rota?.data_entrega)}</span></div>
-          <div className="flex items-center gap-1 flex-1 min-w-[180px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Rota</span>
-            <select className="input py-0.5 px-1.5 text-xs bg-yellow-50 font-bold" value={rotaId ?? ''} onChange={(e) => setRotaId(Number(e.target.value))}>
+      <div className="card px-3 py-2 mb-1.5 bg-rose-50/60 text-xs">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+          <div className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Vendedor</span><span className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold">{rota?.vendedor ?? '—'}</span></div>
+          <div className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Semana</span><span className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold">{fmtData(rota?.data_entrega)}</span></div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-[180px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Rota</span>
+            <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={rotaId ?? ''} onChange={(e) => setRotaId(Number(e.target.value))}>
               {rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
             </select></div>
-          <div className="flex items-center gap-1 flex-1 min-w-[180px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Texto</span>
-            <input className="input py-0.5 px-1.5 text-xs bg-yellow-50" placeholder="buscar cliente, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} /></div>
-          <div className="flex items-center gap-1 min-w-[200px]"><span className="font-bold text-slate-500 uppercase text-[10px] whitespace-nowrap">Pedido na semana</span>
-            <select className="input py-0.5 px-1.5 text-xs bg-yellow-50 italic" value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroStatus)}>
+          <div className="flex items-center gap-1.5 flex-1 min-w-[180px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Texto</span>
+            <input className="input py-1 px-2 text-xs bg-yellow-50" placeholder="buscar cliente, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} /></div>
+          <div className="flex items-center gap-1.5 min-w-[200px]"><span className="font-bold text-slate-500 uppercase text-[10px] whitespace-nowrap">Pedido na semana</span>
+            <select className="input py-1 px-2 text-xs bg-yellow-50 italic" value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroStatus)}>
               {Object.entries(FILTROS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select></div>
         </div>
-        <div className="mt-1 flex items-center gap-1.5">
+        <div className="mt-2 flex items-center gap-2">
           <span className="font-bold text-slate-500 uppercase text-[10px] shrink-0 hidden sm:block">Cliente</span>
-          <button className="btn-secondary px-2 py-0.5 text-xs" onClick={() => navegar(-1)} disabled={idx <= 0} title="Cliente anterior">◀</button>
-          <select className="input py-0.5 px-1.5 text-sm bg-yellow-50 font-bold flex-1 min-w-0" value={clienteId ?? ''} onChange={(e) => setClienteId(Number(e.target.value))}>
+          <button className="btn-secondary px-2.5 py-1 text-xs" onClick={() => navegar(-1)} disabled={idx <= 0} title="Cliente anterior">◀</button>
+          <select className="input py-1 px-2 text-sm bg-yellow-50 font-bold flex-1 min-w-0" value={clienteId ?? ''} onChange={(e) => setClienteId(Number(e.target.value))}>
             {filtrados.length === 0 && <option value="">Nenhum cliente com esse filtro</option>}
             {filtrados.map((c) => <option key={c.cliente_id} value={c.cliente_id}>{c.ordem_visita}. {rotulo(c)}{c.pedido_id ? '  ✔' : c.resultado === 'SEM_INTERESSE' ? '  ✖' : ''}</option>)}
           </select>
-          <button className="btn-secondary px-2 py-0.5 text-xs" onClick={() => navegar(1)} disabled={idx < 0 || idx >= filtrados.length - 1} title="Próximo cliente">▶</button>
+          <button className="btn-secondary px-2.5 py-1 text-xs" onClick={() => navegar(1)} disabled={idx < 0 || idx >= filtrados.length - 1} title="Próximo cliente">▶</button>
           <span className="text-[11px] text-slate-500 shrink-0 hidden md:block">{idx + 1}/{filtrados.length}</span>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default function Venda() {
         <>
           {/* ===== Financeiro + últimos pedidos (altura só do conteúdo) ===== */}
           {/* ===== Financeiro + últimos pedidos: ALTURA FIXA (cabeçalho de 2 linhas + 4 pedidos) ===== */}
-          <div className="grid gap-1.5 lg:grid-cols-[170px_1fr] mb-1.5 lg:h-[128px]">
+          <div className="grid gap-1.5 lg:grid-cols-[170px_1fr] mb-1.5 lg:h-[158px]">
             <div className="card bg-emerald-50/50 relative h-full">
               <div className="lg:absolute lg:inset-0 overflow-auto px-2 py-1">
                 <div className="flex items-baseline justify-between"><span className="label mb-0">Financeiro</span><span className="text-[10px] font-bold text-slate-500 uppercase">Pendência</span></div>
@@ -214,7 +214,7 @@ export default function Venda() {
               <div className="overflow-x-auto overflow-y-hidden flex-1">
                 <table className="w-full border-collapse table-fixed">
                   <thead>
-                    <tr className="h-[30px]">
+                    <tr className="h-[32px]">
                       <CabecalhoCel className="text-left whitespace-nowrap w-[72px]">Data</CabecalhoCel>
                       {prodUlt.map((p) => <CabecalhoCel key={p.id} className="leading-[1.1] font-semibold text-[10px] px-0.5 align-middle">{p.nome}</CabecalhoCel>)}
                       {prodUlt.length === 0 && <CabecalhoCel className="font-normal text-slate-400">Sem pedidos anteriores</CabecalhoCel>}
@@ -227,7 +227,7 @@ export default function Venda() {
                       const u = ultimos[i]
                       const m = u ? Object.fromEntries((u.itens as any[]).map((x) => [x.sigla, x.quantidade])) : {}
                       return (
-                        <tr key={u?.pedido_id ?? `v${i}`} className="h-[20px]">
+                        <tr key={u?.pedido_id ?? `v${i}`} className="h-[22px] leading-[20px]">
                           <td className="border border-slate-300 px-1 py-0 text-[11px] font-bold whitespace-nowrap">{u ? fmtData(u.data_entrega) : ''}</td>
                           {prodUlt.map((p) => <td key={p.id} className="border border-slate-300 px-1 py-0 text-center text-[11px] font-semibold">{u ? (m[p.sigla] || '') : ''}</td>)}
                           {prodUlt.length === 0 && <td className="border border-slate-300" />}
