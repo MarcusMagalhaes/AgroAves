@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import Logo, { LogoMark } from './Logo'
 import { useAuth } from '@/lib/auth'
@@ -12,7 +12,12 @@ const menuAdmin: Entrada[] = [
   { to: '/programacao', label: 'Programação', icone: '📋' },
   { to: '/fornecedor', label: 'Pedido à granja', icone: '🏭' },
   { to: '/ajuste', label: 'Ajuste da entrega', icone: '⚖️' },
-  { to: '/documentos', label: 'Mapa, recibos, GTA, NF', icone: '🖨️' },
+  { grupo: 'Impressões', icone: '🖨️', itens: [
+    { to: '/documentos/mapa', label: 'Mapa de entrega', icone: '🗺️' },
+    { to: '/documentos/recibos', label: 'Recibos', icone: '🧾' },
+    { to: '/documentos/gta', label: 'GTA', icone: '📄' },
+    { to: '/documentos/nf', label: 'Nota fiscal', icone: '🧮' },
+  ] },
   { to: '/financeiro', label: 'Financeiro', icone: '💰' },
   { to: '/fechamento', label: 'Fechamento semanal', icone: '📅' },
   { grupo: 'Cadastros', icone: '🗂️', itens: [
@@ -35,8 +40,15 @@ export default function Layout() {
   const [aberto, setAberto] = useState(false)          // drawer no celular
   const [recolhido, setRecolhido] = useState(() => { try { return localStorage.getItem('menuRecolhido') === '1' } catch { return false } })
   const { pathname } = useLocation()
-  const [grupoAberto, setGrupoAberto] = useState<string | null>(null)
-  const [cadAberto, setCadAberto] = useState(false)
+  const [gruposFechados, setGruposFechados] = useState<Record<string, boolean>>({})
+  const [grupoTopo, setGrupoTopo] = useState<string | null>(null)
+  const refTopo = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!grupoTopo) return
+    const h = (e: MouseEvent) => { if (refTopo.current && !refTopo.current.contains(e.target as Node)) setGrupoTopo(null) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [grupoTopo])
   useEffect(() => { try { localStorage.setItem('menuRecolhido', recolhido ? '1' : '0') } catch { /* ignore */ } }, [recolhido])
   const menu = usuario?.papel === 'ADMIN' ? menuAdmin : menuVendedor
 
@@ -51,10 +63,10 @@ export default function Layout() {
       {menu.map((m) => {
         if (!ehGrupo(m)) return link(m)
         const ativo = m.itens.some((i) => pathname.startsWith(i.to))
-        const abertoG = grupoAberto === m.grupo || (grupoAberto === null && ativo)
+        const abertoG = gruposFechados[m.grupo] === undefined ? ativo : !gruposFechados[m.grupo]
         return (
           <div key={m.grupo}>
-            <button onClick={() => setGrupoAberto(abertoG ? '' : m.grupo)}
+            <button onClick={() => setGruposFechados({ ...gruposFechados, [m.grupo]: abertoG })}
               className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${ativo ? 'text-leaf-900 font-bold' : 'text-slate-700'} hover:bg-leaf-50`}>
               <span className="text-base leading-none">{m.icone}</span>{m.grupo}<span className="ml-auto text-xs">{abertoG ? '▾' : '▸'}</span>
             </button>
@@ -96,16 +108,16 @@ export default function Layout() {
           <div className="hidden md:flex items-center gap-3 bg-white border-b border-slate-200 px-3 py-1 no-print">
             <button className="rounded p-1 text-slate-600 hover:bg-slate-100 text-lg leading-none" title="Mostrar menu" onClick={() => setRecolhido(false)}>☰</button>
             <LogoMark size={26} />
-            <nav className="flex gap-1 overflow-visible items-center">
+            <nav ref={refTopo} className="flex gap-1 overflow-visible items-center">
               {menu.map((m) => ehGrupo(m) ? (
-                <div key={m.grupo} className="relative" onMouseLeave={() => setCadAberto(false)}>
-                  <button onClick={() => setCadAberto(!cadAberto)} className={`rounded px-2 py-1 text-xs font-medium whitespace-nowrap ${m.itens.some((i) => pathname.startsWith(i.to)) ? 'bg-leaf-900 text-white' : 'text-slate-600 hover:bg-leaf-50'}`}>
+                <div key={m.grupo} className="relative">
+                  <button onClick={() => setGrupoTopo(grupoTopo === m.grupo ? null : m.grupo)} className={`rounded px-2 py-1 text-xs font-medium whitespace-nowrap ${m.itens.some((i) => pathname.startsWith(i.to)) ? 'bg-leaf-900 text-white' : 'text-slate-600 hover:bg-leaf-50'}`}>
                     {m.icone} <span className="hidden xl:inline">{m.grupo}</span> ▾
                   </button>
-                  {cadAberto && (
-                    <div className="absolute z-40 left-0 mt-1 w-48 rounded-lg border border-slate-200 bg-white shadow-lg py-1">
-                      {m.itens.map((i) => <NavLink key={i.to} to={i.to} onClick={() => setCadAberto(false)} className={({ isActive }) => `block px-3 py-1.5 text-xs ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>{i.icone} {i.label}</NavLink>)}
-                    </div>
+                  {grupoTopo === m.grupo && (
+                    <div className="absolute z-40 left-0 top-full pt-1 w-48"><div className="rounded-lg border border-slate-200 bg-white shadow-lg py-1">
+                      {m.itens.map((i) => <NavLink key={i.to} to={i.to} onClick={() => setGrupoTopo(null)} className={({ isActive }) => `block px-3 py-1.5 text-xs ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>{i.icone} {i.label}</NavLink>)}
+                    </div></div>
                   )}
                 </div>
               ) : (

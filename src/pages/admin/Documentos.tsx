@@ -1,11 +1,12 @@
 // Documentos de entrega: mapa da rota, recibos, GTA e controle de NF (impressão pelo navegador → PDF)
 import { useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { supabase, ok } from '@/lib/supabase'
 import { listarProdutos, listarRotasSemana } from '@/lib/dados'
 import { montarMapa, type Mapa as MapaT } from '@/lib/mapa'
 import { dataExtenso, fmtData, fmtMoeda, fmtNum } from '@/lib/format'
 import { FORMAS, type Produto, type RotaSemana } from '@/lib/types'
-import { Campo, Carregando, Titulo, Vazio, useToast } from '@/components/ui'
+import { Campo, Carregando, Vazio, useToast } from '@/components/ui'
 import { TabelaMapa } from '@/pages/Mapa'
 import Logo from '@/components/Logo'
 
@@ -16,7 +17,8 @@ export default function Documentos() {
   const { toast } = useToast()
   const [rotas, setRotas] = useState<RotaSemana[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [doc, setDoc] = useState<Doc>('mapa')
+  const { doc: docParam } = useParams()
+  const doc: Doc = (['mapa', 'recibos', 'gta', 'nf'].includes(docParam ?? '') ? docParam : 'mapa') as Doc
   const [rotaId, setRotaId] = useState<number | ''>('')
   const [rotasGta, setRotasGta] = useState<number[]>([])
   const [mapa, setMapa] = useState<MapaT | null>(null)
@@ -56,13 +58,8 @@ export default function Documentos() {
   return (
     <div>
       <div className="no-print">
-        <Titulo acoes={<button className="btn-accent" onClick={imprimir}>🖨️ Imprimir / salvar PDF</button>}>Documentos</Titulo>
         <div className="barra">
-          <Campo label="Documento">
-            <select className="input" value={doc} onChange={(e) => setDoc(e.target.value as Doc)}>
-              <option value="mapa">Mapa de entrega da rota</option><option value="recibos">Recibos (2 por página)</option><option value="gta">GTA — Guia de Trânsito Animal</option><option value="nf">Controle de Nota Fiscal</option>
-            </select>
-          </Campo>
+          <h1>{{ mapa: 'Mapa de entrega', recibos: 'Recibos', gta: 'GTA — Guia de Trânsito Animal', nf: 'Controle de Nota Fiscal' }[doc]}</h1>
           {doc === 'mapa' || doc === 'recibos' ? (
             <Campo label="Rota"><select className="input" value={rotaId} onChange={(e) => setRotaId(Number(e.target.value))}>{rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota} — {fmtData(r.data_entrega)}</option>)}</select></Campo>
           ) : (
@@ -75,6 +72,7 @@ export default function Documentos() {
               </div>
             </Campo>
           )}
+          <button className="btn-accent ml-auto" onClick={imprimir}>🖨️ Imprimir / salvar PDF</button>
         </div>
         <p className="text-[10px] text-slate-400 mb-1.5">Na janela de impressão escolha "Salvar como PDF". Mapa e GTA em paisagem; recibos em retrato.</p>
       </div>
