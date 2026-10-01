@@ -1,45 +1,67 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import Logo, { LogoMark } from './Logo'
 import { useAuth } from '@/lib/auth'
 
-const menuAdmin = [
+type Item = { to: string; label: string; icone: string }
+type Grupo = { grupo: string; icone: string; itens: Item[] }
+type Entrada = Item | Grupo
+
+const menuAdmin: Entrada[] = [
   { to: '/venda', label: 'Venda semanal', icone: '🛒' },
-  { to: '/programacao', label: 'Programação (planilha)', icone: '📋' },
+  { to: '/programacao', label: 'Programação', icone: '📋' },
   { to: '/fornecedor', label: 'Pedido à granja', icone: '🏭' },
   { to: '/ajuste', label: 'Ajuste da entrega', icone: '⚖️' },
   { to: '/documentos', label: 'Mapa, recibos, GTA, NF', icone: '🖨️' },
   { to: '/financeiro', label: 'Financeiro', icone: '💰' },
   { to: '/fechamento', label: 'Fechamento semanal', icone: '📅' },
-  { sep: true },
-  { to: '/clientes', label: 'Clientes e preços', icone: '👥' },
-  { to: '/rotas', label: 'Rotas', icone: '🛣️' },
-  { to: '/produtos', label: 'Produtos', icone: '🐣' },
-  { to: '/vendedores', label: 'Vendedores', icone: '🧑‍💼' },
-  { to: '/fornecedores', label: 'Fornecedores', icone: '🏢' },
-  { to: '/usuarios', label: 'Usuários', icone: '🔐' },
+  { grupo: 'Cadastros', icone: '🗂️', itens: [
+    { to: '/clientes', label: 'Clientes e preços', icone: '👥' },
+    { to: '/rotas', label: 'Rotas', icone: '🛣️' },
+    { to: '/produtos', label: 'Produtos', icone: '🐣' },
+    { to: '/vendedores', label: 'Vendedores', icone: '🧑‍💼' },
+    { to: '/fornecedores', label: 'Fornecedores', icone: '🏢' },
+    { to: '/usuarios', label: 'Usuários', icone: '🔐' },
+  ] },
 ]
-const menuVendedor = [
+const menuVendedor: Entrada[] = [
   { to: '/venda', label: 'Venda semanal', icone: '🛒' },
   { to: '/mapa', label: 'Mapa da rota', icone: '🗺️' },
 ]
+const ehGrupo = (e: Entrada): e is Grupo => 'grupo' in e
 
 export default function Layout() {
   const { usuario, sair } = useAuth()
   const [aberto, setAberto] = useState(false)          // drawer no celular
   const [recolhido, setRecolhido] = useState(() => { try { return localStorage.getItem('menuRecolhido') === '1' } catch { return false } })
+  const { pathname } = useLocation()
+  const [grupoAberto, setGrupoAberto] = useState<string | null>(null)
+  const [cadAberto, setCadAberto] = useState(false)
   useEffect(() => { try { localStorage.setItem('menuRecolhido', recolhido ? '1' : '0') } catch { /* ignore */ } }, [recolhido])
   const menu = usuario?.papel === 'ADMIN' ? menuAdmin : menuVendedor
 
+  const link = (m: Item, sub = false) => (
+    <NavLink key={m.to} to={m.to} onClick={() => setAberto(false)}
+      className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 ${sub ? 'py-1.5 ml-4 text-[13px]' : 'py-2 text-sm'} font-medium transition ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>
+      <span className="text-base leading-none">{m.icone}</span>{m.label}
+    </NavLink>
+  )
   const nav = (
     <nav className="flex flex-col gap-0.5 p-3">
-      {menu.map((m, i) =>
-        'sep' in m ? <hr key={i} className="my-2 border-slate-200" /> : (
-          <NavLink key={m.to} to={m.to!} onClick={() => setAberto(false)}
-            className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>
-            <span className="text-lg leading-none">{m.icone}</span>{m.label}
-          </NavLink>
-        ))}
+      {menu.map((m) => {
+        if (!ehGrupo(m)) return link(m)
+        const ativo = m.itens.some((i) => pathname.startsWith(i.to))
+        const abertoG = grupoAberto === m.grupo || (grupoAberto === null && ativo)
+        return (
+          <div key={m.grupo}>
+            <button onClick={() => setGrupoAberto(abertoG ? '' : m.grupo)}
+              className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${ativo ? 'text-leaf-900 font-bold' : 'text-slate-700'} hover:bg-leaf-50`}>
+              <span className="text-base leading-none">{m.icone}</span>{m.grupo}<span className="ml-auto text-xs">{abertoG ? '▾' : '▸'}</span>
+            </button>
+            {abertoG && <div className="flex flex-col gap-0.5 mt-0.5">{m.itens.map((i) => link(i, true))}</div>}
+          </div>
+        )
+      })}
     </nav>
   )
   const rodape = (
@@ -74,9 +96,20 @@ export default function Layout() {
           <div className="hidden md:flex items-center gap-3 bg-white border-b border-slate-200 px-3 py-1 no-print">
             <button className="rounded p-1 text-slate-600 hover:bg-slate-100 text-lg leading-none" title="Mostrar menu" onClick={() => setRecolhido(false)}>☰</button>
             <LogoMark size={26} />
-            <nav className="flex gap-1 overflow-auto">
-              {menu.filter((m) => !('sep' in m)).map((m) => (
-                <NavLink key={m.to} to={m.to!} className={({ isActive }) => `rounded px-2 py-1 text-xs font-medium whitespace-nowrap ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-600 hover:bg-leaf-50'}`} title={m.label}>
+            <nav className="flex gap-1 overflow-visible items-center">
+              {menu.map((m) => ehGrupo(m) ? (
+                <div key={m.grupo} className="relative" onMouseLeave={() => setCadAberto(false)}>
+                  <button onClick={() => setCadAberto(!cadAberto)} className={`rounded px-2 py-1 text-xs font-medium whitespace-nowrap ${m.itens.some((i) => pathname.startsWith(i.to)) ? 'bg-leaf-900 text-white' : 'text-slate-600 hover:bg-leaf-50'}`}>
+                    {m.icone} <span className="hidden xl:inline">{m.grupo}</span> ▾
+                  </button>
+                  {cadAberto && (
+                    <div className="absolute z-40 left-0 mt-1 w-48 rounded-lg border border-slate-200 bg-white shadow-lg py-1">
+                      {m.itens.map((i) => <NavLink key={i.to} to={i.to} onClick={() => setCadAberto(false)} className={({ isActive }) => `block px-3 py-1.5 text-xs ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>{i.icone} {i.label}</NavLink>)}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <NavLink key={m.to} to={m.to} className={({ isActive }) => `rounded px-2 py-1 text-xs font-medium whitespace-nowrap ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-600 hover:bg-leaf-50'}`} title={m.label}>
                   {m.icone} <span className="hidden xl:inline">{m.label}</span>
                 </NavLink>
               ))}

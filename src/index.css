@@ -38,6 +38,9 @@ body { -webkit-tap-highlight-color: transparent; }
 .rdg-cell.cell-dirty { background: #fde68a; }
 .rdg-cell.cell-saved { background: #d9e3f5; transition: background 1.5s; }
 .rdg-cell.cell-error { background: #fecaca; }
+.cab-vertical { writing-mode: vertical-rl; transform: rotate(180deg); display: block; font-size: 11px; line-height: 1.1; white-space: nowrap; margin: 0 auto; height: 100%; padding: 4px 0; }
+.rdg-header-row .rdg-cell { padding: 0 2px; display: flex; align-items: flex-end; justify-content: center; }
+.rdg-header-row .rdg-cell:not(:has(.cab-vertical)) { justify-content: flex-start; padding: 0 8px; }
 
 /* Impressão de documentos */
 @media print {

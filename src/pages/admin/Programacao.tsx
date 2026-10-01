@@ -26,6 +26,8 @@ export default function Programacao() {
   const [estado, setEstado] = useState<Record<string, 'salvando' | 'ok' | 'erro'>>({})
   const [incluir, setIncluir] = useState(false)
   const [excluir, setExcluir] = useState<Linha | null>(null)
+  const [detalhes, setDetalhes] = useState(false)
+  const [prodAberto, setProdAberto] = useState(false)
 
   const datas = useMemo(() => [...new Set(rotas.map((r) => r.data_entrega).filter(Boolean))].sort() as string[], [rotas])
 
@@ -73,24 +75,22 @@ export default function Programacao() {
   }, [visiveis, colsProd])
 
   const colunas: Column<Linha, Resumo>[] = useMemo(() => [
-    { key: 'rota', name: 'Rota', width: 130, frozen: true, renderSummaryCell: ({ row }) => <b>{row.cliente}</b> },
-    { key: 'cliente', name: 'Cliente', width: 220, frozen: true, renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
-    { key: 'nome', name: 'Nome', width: 140 },
-    { key: 'contato', name: 'Contato', width: 120 },
-    { key: 'pagto', name: 'Pagto', width: 90 },
+    { key: 'rota', name: 'Rota', width: 118, frozen: true, renderSummaryCell: ({ row }) => <b>{row.cliente}</b> },
+    { key: 'cliente', name: 'Cliente', width: 200, frozen: true, renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
+    ...(detalhes ? [{ key: 'nome', name: 'Nome', width: 130 }, { key: 'contato', name: 'Contato', width: 110 }, { key: 'pagto', name: 'Pagto', width: 80 }] as Column<Linha, Resumo>[] : []),
     ...colsProd.map((p): Column<Linha, Resumo> => ({
-      key: p.sigla, name: p.nome, width: 92, editable: true, renderEditCell: renderTextEditor,
-      renderHeaderCell: () => <span className="block text-[11px] leading-tight whitespace-normal text-center" title={p.nome}>{p.nome}</span>,
+      key: p.sigla, name: p.nome, width: 46, editable: true, renderEditCell: renderTextEditor,
+      renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
       cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
       renderSummaryCell: ({ row }) => <b>{row[p.sigla] ? fmtNum(row[p.sigla]) : ''}</b>,
       headerCellClass: 'text-center',
     })),
-    { key: 'R', name: 'Reposição', width: 72, editable: true, renderEditCell: renderTextEditor, cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
+    { key: 'R', name: 'Reposição', width: 46, editable: true, renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
-    { key: 'total', name: 'Total R$', width: 110, cellClass: 'cell-num font-semibold', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
-    { key: 'acoes', name: '', width: 40, renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
-  ], [colsProd, estado])
+    { key: 'total', name: 'Total R$', width: 96, cellClass: 'cell-num font-semibold', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
+    { key: 'acoes', name: '', width: 32, renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
+  ], [colsProd, estado, detalhes])
 
   async function onRowsChange(rows: Linha[], { indexes, column }: RowsChangeData<Linha, Resumo>) {
     const row = rows[indexes[0]]
@@ -122,35 +122,45 @@ export default function Programacao() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <Titulo acoes={<button className="btn-primary" onClick={() => setIncluir(true)}>+ Incluir pedido</button>}>Programação da semana</Titulo>
-      <div className="card p-3 mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Campo label="Semana (data de entrega)">
-          <select className="input" value={data} onChange={(e) => setData(e.target.value)}>{datas.map((d) => <option key={d} value={d}>{fmtData(d)}</option>)}</select>
-        </Campo>
-        <Campo label="Rota">
-          <select className="input" value={rotaF} onChange={(e) => setRotaF(e.target.value ? Number(e.target.value) : '')}>
+    <div className="flex h-full flex-col text-xs">
+      {/* filtros numa linha fina */}
+      <div className="card px-3 py-1.5 mb-1.5 bg-rose-50/60 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <span className="font-extrabold text-sm text-leaf-900 mr-1">Programação</span>
+        <label className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Semana</span>
+          <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={data} onChange={(e) => setData(e.target.value)}>{datas.map((d) => <option key={d} value={d}>{fmtData(d)}</option>)}</select></label>
+        <label className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Rota</span>
+          <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={rotaF} onChange={(e) => setRotaF(e.target.value ? Number(e.target.value) : '')}>
             <option value="">Todas</option>{rotas.filter((r) => r.data_entrega === data).map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
-          </select>
-        </Campo>
-        <Campo label="Cliente"><input className="input" placeholder="buscar…" value={texto} onChange={(e) => setTexto(e.target.value)} /></Campo>
-        <Campo label="Produtos (mostrar só)">
-          <div className="flex flex-wrap gap-1 max-h-20 overflow-auto">
-            {produtos.map((p) => (
-              <button key={p.id} onClick={() => setProdF(prodF.includes(p.sigla) ? prodF.filter((s) => s !== p.sigla) : [...prodF, p.sigla])}
-                className={`chip border ${prodF.includes(p.sigla) ? 'bg-leaf-600 text-white border-leaf-600' : 'bg-white border-slate-300 text-slate-600'}`}>{p.nome}</button>
-            ))}
-            {prodF.length > 0 && <button className="chip bg-slate-200" onClick={() => setProdF([])}>limpar</button>}
-          </div>
-        </Campo>
+          </select></label>
+        <label className="flex items-center gap-1.5 flex-1 min-w-[160px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Filtrar</span>
+          <input className="input py-1 px-2 text-xs bg-yellow-50" placeholder="cliente, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} /></label>
+        <div className="relative">
+          <button className={`btn-secondary py-1 text-xs ${prodF.length ? 'bg-yellow-50 border-amber-400' : ''}`} onClick={() => setProdAberto(!prodAberto)}>
+            Produtos{prodF.length ? ` (${prodF.length})` : ''} ▾
+          </button>
+          {prodAberto && (
+            <div className="absolute z-30 mt-1 w-64 max-h-80 overflow-auto rounded-lg border border-slate-300 bg-white shadow-lg p-1" onMouseLeave={() => setProdAberto(false)}>
+              <div className="text-[10px] text-slate-500 px-2 py-1">Mostrar só estes produtos (e só clientes que os pediram)</div>
+              {produtos.map((p) => (
+                <label key={p.id} className="flex items-center gap-2 px-2 py-0.5 hover:bg-leaf-50 cursor-pointer">
+                  <input type="checkbox" checked={prodF.includes(p.sigla)} onChange={(e) => setProdF(e.target.checked ? [...prodF, p.sigla] : prodF.filter((s) => s !== p.sigla))} />{p.nome}
+                </label>
+              ))}
+              {prodF.length > 0 && <button className="btn-secondary w-full mt-1 py-1 text-xs" onClick={() => setProdF([])}>Mostrar todos</button>}
+            </div>
+          )}
+        </div>
+        <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={detalhes} onChange={(e) => setDetalhes(e.target.checked)} /> nome/contato/pagto</label>
+        <span className="text-[11px] text-slate-500">{visiveis.length} pedidos · {fmtMoeda(resumo[0]?.total ?? 0)}</span>
+        <button className="btn-primary py-1 text-xs ml-auto" onClick={() => setIncluir(true)}>+ Incluir pedido</button>
       </div>
-      <div className="text-xs text-slate-500 mb-1">Clique duas vezes (ou Enter) numa célula para editar. Salva automaticamente ao sair da célula. Amarelo = salvando, verde = salvo, vermelho = erro.</div>
       {linhas === null ? <Carregando /> : (
-        <div className="card flex-1 min-h-[420px] overflow-hidden">
+        <div className="card flex-1 min-h-0 overflow-hidden">
           <DataGrid className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
-            onRowsChange={onRowsChange} rowHeight={32} headerRowHeight={52} summaryRowHeight={34} />
+            onRowsChange={onRowsChange} rowHeight={26} headerRowHeight={96} summaryRowHeight={28} />
         </div>
       )}
+      <div className="text-[10px] text-slate-400 mt-0.5">Enter ou duplo clique edita a célula; salva ao sair. Amarelo = salvando · verde = salvo · vermelho = erro.</div>
 
       {incluir && <IncluirPedido data={data} rotas={rotas.filter((r) => r.data_entrega === data)} onFechar={(mudou) => { setIncluir(false); if (mudou) carregar() }} />}
       <Confirmar aberto={!!excluir} titulo="Excluir pedido" perigo texto={`Excluir o pedido de ${excluir?.cliente} (${excluir?.rota})?`} onSim={confirmarExcluir} onNao={() => setExcluir(null)} />
