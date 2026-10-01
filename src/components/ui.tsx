@@ -40,11 +40,11 @@ export function Modal({ aberto, titulo, onFechar, children, largura = 'max-w-2xl
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4" onClick={onFechar}>
       <div className={`card w-full ${largura} max-h-[95vh] overflow-auto rounded-b-none sm:rounded-b-xl`} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3 sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-bold text-slate-800">{titulo}</h2>
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2 sticky top-0 bg-white z-10">
+          <h2 className="text-sm font-bold text-slate-800">{titulo}</h2>
           <button className="rounded-full p-2 text-slate-500 hover:bg-slate-100" onClick={onFechar} aria-label="Fechar">✕</button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-3">{children}</div>
       </div>
     </div>
   )

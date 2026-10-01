@@ -27,7 +27,7 @@ export default function Usuarios() {
   const pendentes = lista.filter((u) => !u.ativo)
   return (
     <div className="mx-auto max-w-3xl">
-      <Titulo acoes={<button className="btn-secondary" onClick={() => setEdit({ id: '', nome: '', email: '', papel: 'VENDEDOR', ativo: true })}>Vincular por UUID</button>}>Usuários</Titulo>
+      <Titulo>Usuários</Titulo>
       <div className="card px-3 py-1.5 mb-1.5 text-xs text-slate-600">
         Peça à pessoa para abrir o site e clicar em <b>Entrar com Google</b>. Ela aparece abaixo como "aguardando liberação"; escolha o papel para liberar.
         Para vendedor, depois vincule em <b>Vendedores</b>.
@@ -64,9 +64,6 @@ export default function Usuarios() {
       <Modal aberto={!!edit} titulo="Usuário" onFechar={() => setEdit(null)} largura="max-w-md">
         {edit && (
           <div className="grid gap-3">
-            {!lista.find((u) => u.id === edit.id) && (
-              <Campo label="UUID (Supabase › Authentication › Users)"><input className="input font-mono text-xs" value={edit.id ?? ''} onChange={(e) => setEdit({ ...edit, id: e.target.value.trim() })} /></Campo>
-            )}
             <Campo label="Nome"><input className="input" value={edit.nome ?? ''} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></Campo>
             <Campo label="E-mail"><input className="input" value={edit.email ?? ''} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></Campo>
             <Campo label="Papel">

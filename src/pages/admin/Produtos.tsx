@@ -31,7 +31,7 @@ export default function Produtos() {
       <div className="card overflow-auto">
         <table className="tabela">
           <thead>
-            <tr><th className="px-2">#</th><th className="px-2">Sigla</th><th className="px-2">Nome</th><th className="px-2">Grupo</th><th className="text-right">Preço compra</th><th className="px-2">Flags</th><th className="px-2"></th></tr>
+            <tr><th className="px-2">#</th><th className="px-2">Sigla</th><th className="px-2">Nome</th><th className="px-2">Grupo</th><th className="text-right">Preço compra</th><th className="text-center">Conta como ave (GTA)</th><th className="text-center">Codorna</th><th className="text-center">Situação</th><th className="px-2"></th></tr>
           </thead>
           <tbody>
             {lista.map((p) => (
@@ -41,12 +41,9 @@ export default function Produtos() {
                 <td className="px-2">{p.nome}</td>
                 <td className="px-2">{p.grupo}</td>
                 <td className="text-right">{p.preco_compra != null ? fmtMoeda(p.preco_compra) : '—'}</td>
-                <td className="space-x-1">
-                  {!p.tem_preco && <Chip cor="cinza">sem preço</Chip>}
-                  {!p.conta_como_ave && <Chip cor="amarelo">não é ave</Chip>}
-                  {p.eh_codorna && <Chip cor="azul">codorna</Chip>}
-                  {!p.ativo && <Chip cor="vermelho">inativo</Chip>}
-                </td>
+                <td className="text-center">{p.conta_como_ave ? 'Sim' : <span className="text-slate-400">Não</span>}</td>
+                <td className="text-center">{p.eh_codorna ? 'Sim' : <span className="text-slate-400">—</span>}</td>
+                <td className="text-center">{p.ativo ? <Chip cor="verde">ativo</Chip> : <Chip cor="vermelho">inativo</Chip>}</td>
                 <td className="text-right"><button className="btn-secondary py-1" onClick={() => setEdit(p)}>Editar</button></td>
               </tr>
             ))}

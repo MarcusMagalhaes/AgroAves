@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarCidades, listarClientes, listarRotas, listarRotasSemana, listarVendedores } from '@/lib/dados'
 import { fmtData, normalizar } from '@/lib/format'
-import type { Cidade, Cliente, Rota, RotaSemana, Vendedor } from '@/lib/types'
+import { FORMAS, type Cidade, type Cliente, type Rota, type RotaSemana, type Vendedor } from '@/lib/types'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
 
 export default function Rotas() {
@@ -139,40 +139,57 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
   }
 
   return (
-    <Modal aberto titulo={`Clientes da rota ${rota.nome} — ordem de visita`} onFechar={onFechar} largura="max-w-4xl">
+    <Modal aberto titulo={`Clientes da rota ${rota.nome} — ordem de visita`} onFechar={onFechar} largura="max-w-[96vw]">
       {!lista ? <Carregando /> : (
-        <div className="grid gap-4 md:grid-cols-[1fr_280px]">
-          <div>
-            <div className="text-sm text-slate-600 mb-2">{lista.length} clientes. Use ▲▼ ou digite a posição. Salve ao terminar.</div>
-            <div className="max-h-[60vh] overflow-auto divide-y divide-slate-100 border rounded-lg">
-              {lista.map((l, i) => {
-                const c = porId[l.cliente_id]
-                return (
-                  <div key={l.cliente_id} className="flex items-center gap-2 px-2 py-1.5 text-sm">
-                    <input type="number" className="input w-14 px-1 py-1 text-center" value={l.ordem_visita}
-                      onChange={(e) => definirPosicao(i, Number(e.target.value))} />
-                    <div className="min-w-0 flex-1"><div className="font-semibold truncate">{c?.razao_social ?? `#${l.cliente_id}`}</div><div className="text-xs text-slate-500 truncate">{c?.nome_fantasia} · {c?.cidade}</div></div>
-                    <button className="btn-secondary px-2 py-1" onClick={() => mover(i, -1)}>▲</button>
-                    <button className="btn-secondary px-2 py-1" onClick={() => mover(i, 1)}>▼</button>
-                    <button className="btn-danger px-2 py-1" onClick={() => remover(l.cliente_id)}>✕</button>
-                  </div>
-                )
-              })}
+        <div className="grid gap-3 md:grid-cols-[1fr_300px] text-[11px]" style={{ height: 'calc(95vh - 110px)' }}>
+          {/* lista da rota, na ordem de visita */}
+          <div className="flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-slate-600"><b>{lista.length}</b> clientes · use ▲▼ ou digite a posição</span>
+              <div className="flex gap-1.5">
+                <button className="btn-secondary py-1" onClick={onFechar}>Fechar</button>
+                <button className="btn-primary py-1" onClick={salvar} disabled={!sujo}>Salvar ordem</button>
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto border rounded-lg">
+              <table className="tabela">
+                <thead><tr><th className="w-12 text-center">Pos.</th><th>Cliente</th><th>Fantasia</th><th>Cidade</th><th>Contato</th><th>Telefone</th><th>Pagto</th><th className="w-24"></th></tr></thead>
+                <tbody>
+                  {lista.map((l, i) => {
+                    const c = porId[l.cliente_id]
+                    return (
+                      <tr key={l.cliente_id}>
+                        <td className="text-center"><input type="text" inputMode="numeric" className="w-10 rounded border border-slate-300 bg-yellow-50 px-0.5 py-0 text-center font-bold" value={l.ordem_visita}
+                          onChange={(e) => { const n = Number(e.target.value.replace(/\D/g, '')); if (n) definirPosicao(i, n) }} /></td>
+                        <td className="font-semibold whitespace-nowrap">{c?.razao_social ?? `#${l.cliente_id}`}</td>
+                        <td className="whitespace-nowrap">{c?.nome_fantasia}</td>
+                        <td className="whitespace-nowrap">{c?.cidade}</td>
+                        <td className="whitespace-nowrap">{c?.contato}</td>
+                        <td className="whitespace-nowrap">{c?.telefone}</td>
+                        <td>{c ? FORMAS[c.forma_pagamento] : ''}</td>
+                        <td className="text-right whitespace-nowrap">
+                          <button className="rounded border border-slate-300 bg-white px-1.5 hover:bg-slate-100" onClick={() => mover(i, -1)} title="Subir">▲</button>
+                          <button className="rounded border border-slate-300 bg-white px-1.5 ml-0.5 hover:bg-slate-100" onClick={() => mover(i, 1)} title="Descer">▼</button>
+                          <button className="rounded border border-red-300 bg-white px-1.5 ml-0.5 text-red-600 hover:bg-red-50" onClick={() => remover(l.cliente_id)} title="Tirar da rota">✕</button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div>
-            <Campo label="Adicionar cliente"><input className="input" placeholder="buscar…" value={busca} onChange={(e) => setBusca(e.target.value)} /></Campo>
-            <div className="mt-2 max-h-[50vh] overflow-auto divide-y divide-slate-100 border rounded-lg">
+          {/* clientes para incluir */}
+          <div className="flex flex-col min-h-0">
+            <input className="input py-1 text-xs bg-yellow-50 mb-1" placeholder="adicionar cliente: buscar nome, cidade…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            <div className="flex-1 min-h-0 overflow-auto border rounded-lg divide-y divide-slate-100">
               {candidatos.map((c) => (
-                <button key={c.id} className="w-full text-left px-2 py-1.5 text-sm hover:bg-leaf-50" onClick={() => adicionar(c.id)}>
-                  <div className="font-medium truncate">{c.razao_social}</div><div className="text-xs text-slate-500">{c.nome_fantasia} · {c.cidade}</div>
+                <button key={c.id} className="w-full text-left px-2 py-1 hover:bg-leaf-50" onClick={() => adicionar(c.id)}>
+                  <div className="font-medium truncate">{c.razao_social}</div><div className="text-[10px] text-slate-500 truncate">{c.nome_fantasia} · {c.cidade}</div>
                 </button>
               ))}
+              {candidatos.length === 0 && <div className="p-3 text-slate-400">Nenhum cliente fora da rota com esse texto</div>}
             </div>
-          </div>
-          <div className="md:col-span-2 flex justify-end gap-2">
-            <button className="btn-secondary" onClick={onFechar}>Fechar</button>
-            <button className="btn-primary" onClick={salvar} disabled={!sujo}>Salvar ordem</button>
           </div>
         </div>
       )}
