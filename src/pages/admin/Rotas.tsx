@@ -4,7 +4,7 @@ import { supabase, ok } from '@/lib/supabase'
 import { listarCidades, listarClientes, listarRotas, listarRotasSemana, listarVendedores } from '@/lib/dados'
 import { fmtData, normalizar } from '@/lib/format'
 import type { Cidade, Cliente, Rota, RotaSemana, Vendedor } from '@/lib/types'
-import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
+import { Campo, Carregando, Chip, Confirmar, Modal, Titulo, useToast } from '@/components/ui'
 import ComboCliente from '@/components/ComboCliente'
 
 export default function Rotas() {
@@ -103,6 +103,7 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
   const [lista, setLista] = useState<{ cliente_id: number; ordem_visita: number }[] | null>(null)
   const [novoId, setNovoId] = useState<number | null>(null)
   const [ultimoAdd, setUltimoAdd] = useState<number | null>(null)
+  const [confirmaRemover, setConfirmaRemover] = useState<number | null>(null)
   const [sujo, setSujo] = useState(false)
 
   useEffect(() => {
@@ -163,7 +164,7 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
                       <td className="whitespace-nowrap">
                         <button className="rounded border border-slate-300 bg-white px-1.5 hover:bg-slate-100" onClick={() => mover(i, -1)} title="Subir">▲</button>
                         <button className="rounded border border-slate-300 bg-white px-1.5 ml-0.5 hover:bg-slate-100" onClick={() => mover(i, 1)} title="Descer">▼</button>
-                        <button className="rounded border border-red-300 bg-white px-1.5 ml-0.5 text-red-600 hover:bg-red-50" onClick={() => remover(l.cliente_id)} title="Tirar da rota">✕</button>
+                        <button className="rounded border border-red-300 bg-white px-1.5 ml-0.5 text-red-600 hover:bg-red-50" onClick={() => setConfirmaRemover(l.cliente_id)} title="Tirar da rota">✕</button>
                       </td>
                       <td className="text-center"><input type="text" inputMode="numeric" className="w-10 rounded border border-slate-300 bg-yellow-50 px-0.5 py-0 text-center font-bold" value={l.ordem_visita}
                         onChange={(e) => { const n = Number(e.target.value.replace(/\D/g, '')); if (n) definirPosicao(i, n) }} /></td>
@@ -180,6 +181,9 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
           </div>
         </div>
       )}
+      <Confirmar aberto={confirmaRemover != null} titulo="Tirar cliente da rota" perigo
+        texto={`Tem certeza que deseja tirar ${porId[confirmaRemover ?? -1]?.razao_social ?? 'este cliente'} da rota ${rota.nome}?\n\nA mudança só é gravada ao clicar em "Salvar ordem".`}
+        onSim={() => { if (confirmaRemover != null) remover(confirmaRemover); setConfirmaRemover(null) }} onNao={() => setConfirmaRemover(null)} />
     </Modal>
   )
 }

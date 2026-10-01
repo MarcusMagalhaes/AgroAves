@@ -6,6 +6,7 @@ import { fmtData, fmtDataHora, fmtMoeda, fmtNum } from '@/lib/format'
 import { corProduto } from '@/lib/types'
 import type { Cidade, PedidoFornecedor as PF, PedidoFornecedorItem, Produto } from '@/lib/types'
 import { Campo, Carregando, Chip, Confirmar, Modal, Titulo, Vazio, useToast } from '@/components/ui'
+import { tom } from '@/lib/types'
 import Programacao from './Programacao'
 
 export default function AjusteEntrega() {
@@ -58,6 +59,13 @@ export default function AjusteEntrega() {
   const linhas = useMemo(() => produtos.filter((p) => itens.some((i) => i.produto_id === p.id) || programado[p.id]), [produtos, itens, programado])
   const item = (pid: number) => itens.find((i) => i.produto_id === pid)
   const prodSelObj = produtos.find((p) => p.id === prodSel)
+  // recarrega só o previsto (soma dos pedidos) quando uma célula é salva dentro da janela
+  async function recarregarPrevisto() {
+    if (!pf) return
+    const prog = ok(await supabase.from('v_programacao_cidade').select('*').eq('data_entrega', pf.data_entrega).eq('cidade_distribuicao_id', pf.cidade_distribuicao_id)) as any[]
+    const pm: Record<number, number> = {}; for (const x of prog) pm[x.produto_id] = Number(x.qtd_programada)
+    setProgramado(pm)
+  }
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -129,8 +137,16 @@ export default function AjusteEntrega() {
       {prodSelObj && pf && (
         <Modal aberto titulo={`Ajustar pedidos de ${prodSelObj.nome} — ${fmtData(pf.data_entrega)} · ${cidades.find((c) => c.id === pf.cidade_distribuicao_id)?.nome}`} onFechar={() => { setProdSel(null); carregar() }}>
           <div className="h-full flex flex-col">
-            <div className="text-[11px] text-slate-600 mb-1">Só os clientes que pediram <b>{prodSelObj.nome}</b> nesta data e cidade. Edite qualquer produto da linha (tire deste e compense em outro); cada célula salva ao sair. Feche a janela para atualizar os totais.</div>
-            <div className="flex-1 min-h-0"><Programacao key={`fx-${prodSelObj.id}`} fixo={{ data: pf.data_entrega, cidadeId: pf.cidade_distribuicao_id, produtoId: prodSelObj.id }} /></div>
+            {(() => { const prev = programado[prodSelObj.id] ?? 0; const confQ = item(prodSelObj.id)?.qtd_confirmada; const dif = confQ == null ? null : confQ - prev; return (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-1.5 rounded-lg px-3 py-1.5 text-xs" style={{ background: tom(corProduto(prodSelObj), 0.2) }}>
+                <span className="font-extrabold">{prodSelObj.nome}</span>
+                <span>Confirmado pela granja: <b className="text-sm">{confQ == null ? '—' : fmtNum(confQ)}</b></span>
+                <span>Previsto nos pedidos: <b className="text-sm">{fmtNum(prev)}</b></span>
+                <span>Diferença: <b className={`text-sm ${dif == null ? '' : dif < 0 ? 'text-red-600' : dif > 0 ? 'text-leaf-700' : 'text-slate-500'}`}>{dif == null ? '—' : dif > 0 ? `+${fmtNum(dif)}` : fmtNum(dif)}</b>{dif != null && dif < 0 && <span className="ml-1 text-red-700">(tirar {fmtNum(-dif)} dos pedidos)</span>}{dif != null && dif > 0 && <span className="ml-1 text-leaf-700">(sobram {fmtNum(dif)})</span>}</span>
+                <span className="text-slate-500 ml-auto">Cada célula salva ao sair. Edite qualquer produto da linha para compensar.</span>
+              </div>
+            ) })()}
+            <div className="flex-1 min-h-0"><Programacao key={`fx-${prodSelObj.id}`} fixo={{ data: pf.data_entrega, cidadeId: pf.cidade_distribuicao_id, produtoId: prodSelObj.id }} aoMudar={recarregarPrevisto} /></div>
           </div>
         </Modal>
       )}
