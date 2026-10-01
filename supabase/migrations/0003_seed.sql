@@ -37,6 +37,6 @@ insert into produto (sigla, nome, grupo, ordem, preco_compra, tem_preco, conta_c
 ('VIVS', 'Viveiro Sem Pé',             'ACESSORIOS',27, 219.14, true, false, false)
 on conflict (sigla) do nothing;
 
--- Primeiro administrador: basta entrar com Google (markvpm@gmail.com) — o gatilho em auth.users cria o registro como ADMIN.
+-- Administradores: markvpm@gmail.com e agroavesdistribuidora10@gmail.com — basta entrar com Google; o gatilho em auth.users cria o registro como ADMIN.
 -- Se o usuário já existia em auth.users antes do gatilho, rode:
--- insert into usuario (id, nome, email, papel) select id, 'Marcus', email, 'ADMIN' from auth.users where email = 'markvpm@gmail.com' on conflict (id) do nothing;
+-- insert into usuario (id, nome, email, papel) select id, 'Marcus', email, 'ADMIN' from auth.users where lower(email) in ('markvpm@gmail.com','agroavesdistribuidora10@gmail.com') on conflict (id) do nothing;

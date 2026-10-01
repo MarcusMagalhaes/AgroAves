@@ -16,7 +16,7 @@ create table if not exists usuario (
 );
 
 -- Novo login (Google ou e-mail) cria automaticamente o registro em usuario:
---   markvpm@gmail.com → ADMIN ativo; demais → VENDEDOR inativo (pendente até o administrador liberar em "Usuários")
+--   e-mails da lista de administradores → ADMIN ativo; demais → VENDEDOR inativo (pendente até o administrador liberar em "Usuários")
 create or replace function fn_novo_usuario_auth() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare v_nome text; v_email text;
@@ -25,8 +25,8 @@ begin
   v_nome := coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(v_email, '@', 1));
   insert into usuario (id, nome, email, papel, ativo)
     values (new.id, v_nome, v_email,
-            case when v_email = 'markvpm@gmail.com' then 'ADMIN' else 'VENDEDOR' end,
-            v_email = 'markvpm@gmail.com')
+            case when v_email in ('markvpm@gmail.com', 'agroavesdistribuidora10@gmail.com') then 'ADMIN' else 'VENDEDOR' end,
+            v_email in ('markvpm@gmail.com', 'agroavesdistribuidora10@gmail.com'))
     on conflict (id) do nothing;
   return new;
 end $$;
