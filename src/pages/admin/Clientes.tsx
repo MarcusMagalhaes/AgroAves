@@ -3,8 +3,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarClientes, listarProdutos, listarRotas, precosDoCliente } from '@/lib/dados'
 import { fmtMoeda, normalizar } from '@/lib/format'
-import { FORMAS, type Cliente, type Produto, type Rota } from '@/lib/types'
+import { FORMAS, corProduto, tom, type Cliente, type Produto, type Rota } from '@/lib/types'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
+import ComboCliente from '@/components/ComboCliente'
 
 const novoCliente = (): Partial<Cliente> => ({ razao_social: '', forma_pagamento: 'BOLETO', exige_nf: false, exige_gta: false, tipo: 'CLIENTE', ativo: true })
 
@@ -24,6 +25,9 @@ export default function Clientes() {
   const [editRotas, setEditRotas] = useState<number[]>([])
   const [precos, setPrecos] = useState<Record<number, string>>({})
   const [aba, setAba] = useState<'dados' | 'precos'>('dados')
+  const [compId, setCompId] = useState<number | null>(null)
+  const [compPrecos, setCompPrecos] = useState<Record<number, string> | null>(null)
+  const [compNome, setCompNome] = useState('')
 
   const carregar = async () => {
     try {
@@ -46,7 +50,7 @@ export default function Clientes() {
   }, [lista, busca, rotaF, inativos, rotasCliente, formaF, nfF, gtaF])
 
   async function abrir(c: Partial<Cliente>) {
-    setEdit(c); setAba('dados')
+    setEdit(c); setAba('dados'); setCompId(null); setCompPrecos(null); setCompNome('')
     setEditRotas(c.id ? (rotasCliente[c.id] ?? []) : [])
     if (c.id) {
       const p = await precosDoCliente(c.id)
@@ -83,12 +87,17 @@ export default function Clientes() {
     } catch (e: any) { toast(e.message, 'erro') }
   }
 
-  async function copiarPrecosDe(codigo: number) {
-    const origem = lista?.find((c) => c.codigo === codigo)
-    if (!origem) { toast('Cliente não encontrado', 'erro'); return }
+  async function compararPrecos() {
+    const origem = lista?.find((c) => c.id === compId)
+    if (!origem) { toast('Escolha o cliente para comparar', 'erro'); return }
     const p = await precosDoCliente(origem.id)
-    setPrecos(Object.fromEntries(p.map((x) => [x.produto_id, String(x.preco)])))
-    toast(`Preços copiados de ${origem.razao_social}`, 'info')
+    setCompPrecos(Object.fromEntries(p.map((x) => [x.produto_id, String(x.preco)])))
+    setCompNome(origem.razao_social)
+  }
+  function copiarPrecos() {
+    if (!compPrecos) return
+    setPrecos({ ...compPrecos })
+    toast(`Preços de ${compNome} copiados. Clique em "Salvar cliente" para gravar.`, 'info')
   }
 
   if (!lista) return <Carregando />
@@ -180,21 +189,26 @@ export default function Clientes() {
               </div>
             ) : (
               <div>
-                <div className="flex flex-wrap items-end gap-2 mb-3">
-                  <Campo label="Copiar preços do cliente (código)"><input className="input w-40" type="number" onKeyDown={(e) => { if (e.key === 'Enter') copiarPrecosDe(Number((e.target as HTMLInputElement).value)) }} placeholder="código + Enter" /></Campo>
-                  <div className="text-xs text-slate-500 pb-2">Deixe em branco os produtos que o cliente não compra. Preços em R$.</div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="font-bold text-slate-500 uppercase text-[10px] whitespace-nowrap">Comparar preços com o cliente</span>
+                  <ComboCliente className="flex-1 min-w-[260px]" valor={compId} onChange={setCompId} placeholder="digite nome, fantasia ou cidade…"
+                    opcoes={(lista ?? []).filter((c) => c.ativo && c.tipo === 'CLIENTE' && c.id !== edit.id).map((c) => ({ id: c.id, rotulo: [c.razao_social, c.nome_fantasia, c.cidade].filter(Boolean).join('  __  ') }))} />
+                  <button className="btn-secondary py-1" disabled={compId == null} onClick={compararPrecos}>Comparar</button>
+                  <button className="btn-accent py-1" disabled={!compPrecos} onClick={copiarPrecos} title="Substitui os preços deste cliente pelos do comparado (só grava ao salvar)">Copiar preços</button>
+                  {compPrecos && <button className="btn-secondary py-1" onClick={() => { setCompPrecos(null); setCompNome('') }}>Fechar comparação</button>}
                 </div>
-                <div className="grid gap-x-6 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-5">
+                {compPrecos && <div className="text-[10px] text-slate-500 mb-1">Caixa branca = preço deste cliente (editável) · caixa cinza = preço de <b>{compNome}</b> (somente leitura)</div>}
+                <div className="grid gap-x-4 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {produtos.filter((p) => p.tem_preco).map((p) => (
-                    <div key={p.id} className="flex items-center gap-2 py-0.5">
-                      <div className="w-12 text-xs font-bold text-slate-500">{p.sigla}</div>
-                      <div className="flex-1 text-sm truncate">{p.nome}</div>
-                      <input className="input w-24 px-2 py-1 text-right" inputMode="decimal" value={precos[p.id] ?? ''} placeholder="—"
+                    <div key={p.id} className="flex items-center gap-1.5 py-0.5">
+                      <div className="flex-1 truncate rounded px-1.5 py-1 text-[11px] font-semibold" style={{ background: tom(corProduto(p), 0.25) }} title={p.nome}>{p.nome}</div>
+                      <input className="input w-20 px-1.5 py-1 text-right text-xs bg-yellow-50" inputMode="decimal" value={precos[p.id] ?? ''} placeholder="—"
                         onChange={(e) => setPrecos({ ...precos, [p.id]: e.target.value })} />
+                      {compPrecos && <input className="input w-20 px-1.5 py-1 text-right text-xs bg-slate-200 text-slate-600" value={compPrecos[p.id] ?? ''} placeholder="—" disabled readOnly />}
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 text-sm text-slate-600">{Object.values(precos).filter((v) => v !== '').length} produtos com preço · {fmtMoeda(0)} = não vende</div>
+                <div className="mt-2 text-[11px] text-slate-600">{Object.values(precos).filter((v) => v !== '').length} produtos com preço · em branco = não vende · nada é gravado até clicar em "Salvar cliente"</div>
               </div>
             )}
             <div className="mt-5 flex justify-end gap-2 border-t border-slate-200 pt-4">
