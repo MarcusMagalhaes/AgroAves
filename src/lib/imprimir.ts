@@ -24,7 +24,7 @@ export function imprimirHtml(titulo: string, html: string, orientacao: 'landscap
   .grid.grid-cols-2 > div { min-height: 80mm; }
   th { white-space: normal !important; }
   td.whitespace-nowrap { white-space: normal !important; }
-  .col-larga { min-width: 38mm !important; width: 38mm; }
+  .col-larga { min-width: 19mm !important; width: 19mm; }
   td.col-pagto { white-space: nowrap !important; }
   .no-print { display: none !important; }
   .print-page { page-break-after: always; }

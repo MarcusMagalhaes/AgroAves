@@ -66,7 +66,7 @@ body { -webkit-tap-highlight-color: transparent; }
 .rdg-header-row .rdg-cell.cab-direita { justify-content: flex-end; }
 
 /* Mapa de entrega: colunas largas (local de entrega e pagamento) */
-.col-larga { min-width: 150px; }
+.col-larga { min-width: 75px; }
 
 /* Impressão de documentos */
 @media print {
