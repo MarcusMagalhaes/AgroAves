@@ -16,6 +16,10 @@ export function imprimirHtml(titulo: string, html: string, orientacao: 'landscap
   tfoot { display: table-footer-group; }
   tr { page-break-inside: avoid; }
   th, td { font-size: 7.5pt !important; padding: 1px 3px !important; line-height: 1.15; }
+  th.p-0 { padding: 0 0 2px 0 !important; }
+  th.p-0 .text-base { font-size: 12pt !important; }
+  th.p-0 .text-\\[11px\\] { font-size: 8pt !important; }
+  th.p-0 img { height: 28px !important; width: auto !important; }
   th { white-space: normal !important; }
   td.whitespace-nowrap { white-space: normal !important; }
   .no-print { display: none !important; }

@@ -98,10 +98,12 @@ export default function Documentos() {
 }
 
 function Cabecalho({ titulo, sub }: { titulo: string; sub?: string }) {
+  // logo à esquerda, título e subtítulo centralizados; a linha inferior acompanha a largura da tabela
   return (
-    <div className="flex items-center justify-between border-b-2 border-leaf-700 pb-2 mb-3">
-      <Logo size={34} />
-      <div className="text-right"><div className="text-lg font-extrabold text-leaf-900">{titulo}</div>{sub && <div className="text-xs text-slate-600">{sub}</div>}</div>
+    <div className="relative border-b-2 border-leaf-700 pb-1.5 mb-1.5 text-center">
+      <div className="absolute left-0 top-0"><Logo size={34} /></div>
+      <div className="text-base font-extrabold text-leaf-900 leading-tight">{titulo}</div>
+      {sub && <div className="text-[11px] text-slate-600">{sub}</div>}
     </div>
   )
 }
@@ -110,8 +112,7 @@ function DocMapa({ rota, mapa }: { rota: RotaSemana; mapa: MapaT }) {
   return (
     <div className="print-landscape card p-4 print:border-0 print:shadow-none print:p-0 overflow-auto">
       <style>{`@media print { @page { size: A4 landscape; } }`}</style>
-      <Cabecalho titulo={`DISTRIBUIÇÃO — ${rota.rota} — ${fmtData(rota.data_entrega)}`} sub={`${rota.cidade_distribuicao} · ${rota.vendedor ?? ''} ${rota.vendedor_telefone ?? ''}`} />
-      <TabelaMapa mapa={mapa} compacto />
+      <TabelaMapa mapa={mapa} compacto cabecalho={<Cabecalho titulo={`DISTRIBUIÇÃO — ${rota.rota} — ${fmtData(rota.data_entrega)}`} sub={`Cidade de distribuição: ${rota.cidade_distribuicao} · Vendedor: ${rota.vendedor ?? ''} ${rota.vendedor_telefone ?? ''}`} />} />
     </div>
   )
 }
@@ -167,9 +168,8 @@ function DocGta({ mapas, produtos, clientes }: { mapas: { rota: RotaSemana; mapa
   return (
     <div className="card p-4 print:border-0 print:shadow-none print:p-0 overflow-auto">
       <style>{`@media print { @page { size: A4 landscape; } }`}</style>
-      <Cabecalho titulo="CONTROLE DE GTA" sub={mapas.map((m) => `${m.rota.rota} ${fmtData(m.rota.data_entrega)}`).join(' · ')} />
       <table className="w-full text-xs border-collapse">
-        <thead><tr className="bg-slate-100"><th className="border p-1">Rota</th><th className="border p-1">Cód</th><th className="border p-1">CNPJ/CPF</th><th className="border p-1 text-left">Razão social</th><th className="border p-1 text-left">Nome fantasia</th><th className="border p-1 text-left">Município</th><th className="border p-1">Aves</th><th className="border p-1">Codornas</th></tr></thead>
+        <thead><tr><th colSpan={8} className="p-0 font-normal"><Cabecalho titulo="CONTROLE DE GTA" sub={mapas.map((m) => `${m.rota.rota} ${fmtData(m.rota.data_entrega)}`).join(' · ')} /></th></tr><tr className="bg-slate-100"><th className="border p-1">Rota</th><th className="border p-1">Cód</th><th className="border p-1">CNPJ/CPF</th><th className="border p-1 text-left">Razão social</th><th className="border p-1 text-left">Nome fantasia</th><th className="border p-1 text-left">Município</th><th className="border p-1">Aves</th><th className="border p-1">Codornas</th></tr></thead>
         <tbody>{linhas.map((l, i) => <tr key={i}><td className="border p-1">{l.rota}</td><td className="border p-1 text-center">{l.codigo}</td><td className="border p-1 whitespace-nowrap">{l.cnpj}</td><td className="border p-1">{l.razao}</td><td className="border p-1">{l.fantasia}</td><td className="border p-1">{l.municipio}</td><td className="border p-1 text-right font-semibold">{fmtNum(l.aves)}</td><td className="border p-1 text-right">{l.codornas || ''}</td></tr>)}</tbody>
         <tfoot><tr className="bg-slate-100 font-bold"><td className="border p-1" colSpan={6}>{linhas.length} clientes</td><td className="border p-1 text-right">{fmtNum(linhas.reduce((s, l) => s + l.aves, 0))}</td><td className="border p-1 text-right">{fmtNum(linhas.reduce((s, l) => s + l.codornas, 0))}</td></tr></tfoot>
       </table>
@@ -184,9 +184,8 @@ function DocNf({ mapas, clientes }: { mapas: { rota: RotaSemana; mapa: MapaT }[]
   if (!mapas.length) return <Vazio texto="Escolha ao menos uma rota" />
   return (
     <div className="card p-4 print:border-0 print:shadow-none print:p-0 overflow-auto">
-      <Cabecalho titulo="CONTROLE DE NOTA FISCAL" sub={mapas.map((m) => `${m.rota.rota} ${fmtData(m.rota.data_entrega)}`).join(' · ')} />
       <table className="w-full text-xs border-collapse">
-        <thead><tr className="bg-slate-100"><th className="border p-1">Rota</th><th className="border p-1">Cód</th><th className="border p-1">CNPJ/CPF</th><th className="border p-1 text-left">Razão social</th><th className="border p-1 text-left">Nome fantasia</th><th className="border p-1 text-left">Município</th><th className="border p-1">Valor</th><th className="border p-1">NF emitida</th></tr></thead>
+        <thead><tr><th colSpan={8} className="p-0 font-normal"><Cabecalho titulo="CONTROLE DE NOTA FISCAL" sub={mapas.map((m) => `${m.rota.rota} ${fmtData(m.rota.data_entrega)}`).join(' · ')} /></th></tr><tr className="bg-slate-100"><th className="border p-1">Rota</th><th className="border p-1">Cód</th><th className="border p-1">CNPJ/CPF</th><th className="border p-1 text-left">Razão social</th><th className="border p-1 text-left">Nome fantasia</th><th className="border p-1 text-left">Município</th><th className="border p-1">Valor</th><th className="border p-1">NF emitida</th></tr></thead>
         <tbody>{linhas.map((l, i) => <tr key={i}><td className="border p-1">{l.rota}</td><td className="border p-1 text-center">{l.codigo}</td><td className="border p-1 whitespace-nowrap">{l.cnpj}</td><td className="border p-1">{l.razao}</td><td className="border p-1">{l.fantasia}</td><td className="border p-1">{l.municipio}</td><td className="border p-1 text-right font-semibold">{fmtMoeda(l.total)}</td><td className="border p-1 text-center">(  )</td></tr>)}</tbody>
         <tfoot><tr className="bg-slate-100 font-bold"><td className="border p-1" colSpan={6}>{linhas.length} clientes</td><td className="border p-1 text-right">{fmtMoeda(linhas.reduce((s, l) => s + l.total, 0))}</td><td className="border p-1" /></tr></tfoot>
       </table>

@@ -1,5 +1,5 @@
 // Mapa de entrega da rota (consulta na tela; impressão em Documentos)
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { listarProdutos, listarRotasSemana } from '@/lib/dados'
 import { montarMapa, type Mapa as MapaT } from '@/lib/mapa'
 import { fmtData, fmtMoeda, fmtNum } from '@/lib/format'
@@ -7,11 +7,13 @@ import type { Produto, RotaSemana } from '@/lib/types'
 import { Campo, Carregando, Titulo, Vazio, useToast } from '@/components/ui'
 import { FORMAS, corProduto, gruposDeProdutos, tom } from '@/lib/types'
 
-export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean }) {
+export function TabelaMapa({ mapa, compacto, cabecalho }: { mapa: MapaT; compacto?: boolean; cabecalho?: React.ReactNode }) {
   const cls = compacto ? 'px-1 py-0.5 text-[10px]' : 'px-1.5 py-0.5 text-[11px]'
+  const totalCols = 6 + mapa.produtosUsados.length + (mapa.totalR > 0 ? 1 : 0) + 1
   return (
     <table className="w-full border-collapse">
       <thead>
+        {cabecalho && <tr><th colSpan={totalCols} className="p-0 font-normal text-left">{cabecalho}</th></tr>}
         <tr className="bg-slate-100">
           <th className={`${cls} border`} colSpan={6}></th>
           {gruposDeProdutos(mapa.produtosUsados).map((g) => <th key={g.grupo} colSpan={g.itens.length} className={`${cls} border text-center font-bold uppercase`} style={{ background: tom(corProduto(g.itens[0]), 0.5) }}>{g.grupo}</th>)}
