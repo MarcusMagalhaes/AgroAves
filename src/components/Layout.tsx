@@ -84,7 +84,7 @@ export default function Layout() {
             <button className="ml-auto text-xs text-brand-600 font-semibold" onClick={sair}>Sair</button>
           </div>
         )}
-        <main className="flex-1 overflow-auto p-2 sm:p-4">
+        <main className="flex-1 overflow-auto px-2 pb-2 pt-1">
           <Outlet />
         </main>
       </div>

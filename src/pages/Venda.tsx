@@ -166,7 +166,7 @@ export default function Venda() {
   return (
     <div className="mx-auto max-w-[1500px] text-sm">
       {/* ===== Cabeçalho compacto: vendedor, semana, filtros, cliente ===== */}
-      <div className="card px-2 py-1.5 mb-1.5 bg-rose-50/60 text-xs">
+      <div className="card px-2 py-1 mb-1.5 bg-rose-50/60 text-xs">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <div className="flex items-center gap-1"><span className="font-bold text-slate-500 uppercase text-[10px]">Vendedor</span><span className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold">{rota?.vendedor ?? '—'}</span></div>
           <div className="flex items-center gap-1"><span className="font-bold text-slate-500 uppercase text-[10px]">Semana</span><span className="rounded border border-slate-300 bg-white px-2 py-0.5 font-bold">{fmtData(rota?.data_entrega)}</span></div>
@@ -196,10 +196,10 @@ export default function Venda() {
       {!cliente ? <div className="card"><Vazio texto="Nenhum cliente selecionado" /></div> : (
         <>
           {/* ===== Financeiro + últimos pedidos (altura só do conteúdo) ===== */}
-          {/* altura da linha = bloco de últimos pedidos; o financeiro rola por dentro se precisar */}
-          <div className="grid gap-1.5 lg:grid-cols-[170px_1fr] mb-1.5 items-stretch">
-            <div className="card bg-emerald-50/50 relative min-h-[64px]">
-              <div className="lg:absolute lg:inset-0 overflow-auto px-2 py-1.5">
+          {/* ===== Financeiro + últimos pedidos: ALTURA FIXA (cabeçalho de 2 linhas + 4 pedidos) ===== */}
+          <div className="grid gap-1.5 lg:grid-cols-[170px_1fr] mb-1.5 lg:h-[128px]">
+            <div className="card bg-emerald-50/50 relative h-full">
+              <div className="lg:absolute lg:inset-0 overflow-auto px-2 py-1">
                 <div className="flex items-baseline justify-between"><span className="label mb-0">Financeiro</span><span className="text-[10px] font-bold text-slate-500 uppercase">Pendência</span></div>
                 {pendencia && Number(pendencia.valor_pendente) > 0 ? (
                   <>
@@ -209,47 +209,50 @@ export default function Venda() {
                 ) : <div className="text-base font-extrabold text-emerald-700 leading-tight">R$ 0,00</div>}
               </div>
             </div>
-            <div className="card px-2 py-1.5 overflow-auto">
-              <div className="text-center text-[11px] font-bold bg-emerald-100 rounded py-0 mb-1">4 Últimos pedidos</div>
-              {ultimos.length === 0 ? <div className="text-center text-xs text-slate-400 py-1">Sem pedidos anteriores</div> : (
-                <table className="w-full border-collapse">
+            <div className="card px-2 py-1 h-full overflow-hidden flex flex-col">
+              <div className="text-center text-[11px] font-bold bg-emerald-100 rounded leading-4 mb-1 shrink-0">4 Últimos pedidos</div>
+              <div className="overflow-x-auto overflow-y-hidden flex-1">
+                <table className="w-full border-collapse table-fixed">
                   <thead>
-                    <tr>
-                      <CabecalhoCel className="text-left whitespace-nowrap">Data</CabecalhoCel>
-                      {prodUlt.map((p) => <CabecalhoCel key={p.id} className="leading-tight font-semibold">{p.nome}</CabecalhoCel>)}
-                      <CabecalhoCel>Repos.</CabecalhoCel>
-                      <CabecalhoCel className="text-right">Total R$</CabecalhoCel>
+                    <tr className="h-[30px]">
+                      <CabecalhoCel className="text-left whitespace-nowrap w-[72px]">Data</CabecalhoCel>
+                      {prodUlt.map((p) => <CabecalhoCel key={p.id} className="leading-[1.1] font-semibold text-[10px] px-0.5 align-middle">{p.nome}</CabecalhoCel>)}
+                      {prodUlt.length === 0 && <CabecalhoCel className="font-normal text-slate-400">Sem pedidos anteriores</CabecalhoCel>}
+                      <CabecalhoCel className="w-[52px]">Repos.</CabecalhoCel>
+                      <CabecalhoCel className="text-right w-[90px]">Total R$</CabecalhoCel>
                     </tr>
                   </thead>
                   <tbody>
-                    {ultimos.map((u) => {
-                      const m = Object.fromEntries((u.itens as any[]).map((i) => [i.sigla, i.quantidade]))
+                    {[0, 1, 2, 3].map((i) => {
+                      const u = ultimos[i]
+                      const m = u ? Object.fromEntries((u.itens as any[]).map((x) => [x.sigla, x.quantidade])) : {}
                       return (
-                        <tr key={u.pedido_id}>
-                          <td className="border border-slate-300 px-1 py-0 text-xs font-bold whitespace-nowrap">{fmtData(u.data_entrega)}</td>
-                          {prodUlt.map((p) => <td key={p.id} className="border border-slate-300 px-1 py-0 text-center text-xs font-semibold">{m[p.sigla] || ''}</td>)}
-                          <td className="border border-slate-300 px-1 py-0 text-center text-xs">{u.reposicao || ''}</td>
-                          <td className="border border-slate-300 px-1 py-0 text-right text-xs font-bold whitespace-nowrap">{fmtMoeda(Number(u.total))}</td>
+                        <tr key={u?.pedido_id ?? `v${i}`} className="h-[20px]">
+                          <td className="border border-slate-300 px-1 py-0 text-[11px] font-bold whitespace-nowrap">{u ? fmtData(u.data_entrega) : ''}</td>
+                          {prodUlt.map((p) => <td key={p.id} className="border border-slate-300 px-1 py-0 text-center text-[11px] font-semibold">{u ? (m[p.sigla] || '') : ''}</td>)}
+                          {prodUlt.length === 0 && <td className="border border-slate-300" />}
+                          <td className="border border-slate-300 px-1 py-0 text-center text-[11px]">{u?.reposicao || ''}</td>
+                          <td className="border border-slate-300 px-1 py-0 text-right text-[11px] font-bold whitespace-nowrap">{u ? fmtMoeda(Number(u.total)) : ''}</td>
                         </tr>
                       )
                     })}
                   </tbody>
                 </table>
-              )}
+              </div>
             </div>
           </div>
 
           {/* ===== Pedido da semana + interesse ===== */}
           <div className="grid gap-1.5 lg:grid-cols-[1fr_220px] items-start">
             <div className="card p-2 bg-sky-50/50">
-              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <div className="flex flex-wrap items-center gap-1.5 mb-1">
                 <button className="btn bg-orange-500 text-white hover:bg-orange-600 py-1 text-xs" onClick={limpar}>Limpar campos</button>
                 <button className="btn-primary py-1 px-5 text-xs" onClick={salvarPedido} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar pedido'}</button>
                 {cliente.pedido_id && <button className="btn-danger py-1 text-xs" onClick={() => setConfirmaExcluir(true)}>Excluir</button>}
-                <div className="flex-1 text-center font-extrabold text-sm">Pedido da Semana</div>
+                <div className="flex-1 text-center font-extrabold text-xs">Pedido da Semana</div>
                 <label className="flex items-center gap-1 text-xs font-bold text-red-700">Reposição
-                  <input type="number" inputMode="numeric" min={0} className="input w-16 px-1 py-1 text-center bg-yellow-50 font-bold text-slate-800" value={reposicao} onChange={(e) => setReposicao(e.target.value)} /></label>
-                <div className="flex items-center gap-2 rounded bg-slate-200 px-2 py-1"><span className="text-xs font-bold">Total</span><span className="text-base font-extrabold min-w-[90px] text-right">{fmtMoeda(total)}</span></div>
+                  <input type="number" inputMode="numeric" min={0} className="input w-16 px-1 py-0.5 text-xs text-center bg-yellow-50 font-bold text-slate-800" value={reposicao} onChange={(e) => setReposicao(e.target.value)} /></label>
+                <div className="flex items-center gap-2 rounded bg-slate-200 px-2 py-0.5"><span className="text-xs font-bold">Total</span><span className="text-sm font-extrabold min-w-[90px] text-right">{fmtMoeda(total)}</span></div>
               </div>
               <div className="grid gap-x-3 md:grid-cols-3">
                 {colunas.map((col, ci) => (
@@ -263,10 +266,10 @@ export default function Venda() {
                             <td className="border border-slate-300 p-0">
                               <input ref={ci === 0 && i === 0 ? primeiroInput : undefined} type="number" inputMode="numeric" min={0} disabled={!tem} value={qtd[p.id] ?? ''}
                                 onChange={(e) => setQtd({ ...qtd, [p.id]: e.target.value })}
-                                className="w-full h-6 bg-yellow-50 text-center font-bold outline-none focus:bg-yellow-200 disabled:bg-slate-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" />
+                                className="w-full h-[22px] bg-yellow-50 text-center text-xs font-bold outline-none focus:bg-yellow-200 disabled:bg-slate-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" />
                             </td>
-                            <td className="border border-slate-300 px-1.5 py-0 text-xs font-semibold whitespace-nowrap">{p.nome}</td>
-                            <td className="border border-slate-300 px-1 py-0 text-right text-[11px]">{tem ? fmtMoeda(preco).replace('R$', '').trim() : '-'}</td>
+                            <td className="border border-slate-300 px-1.5 py-0 text-[11px] font-semibold whitespace-nowrap leading-none">{p.nome}</td>
+                            <td className="border border-slate-300 px-1 py-0 text-right text-[10px]">{tem ? fmtMoeda(preco).replace('R$', '').trim() : '-'}</td>
                           </tr>
                         )
                       })}
