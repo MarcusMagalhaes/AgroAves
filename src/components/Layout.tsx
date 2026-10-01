@@ -8,6 +8,14 @@ type Grupo = { grupo: string; icone: string; itens: Item[] }
 type Entrada = Item | Grupo
 
 const menuAdmin: Entrada[] = [
+  { grupo: 'Cadastros', icone: '🗂️', itens: [
+    { to: '/clientes', label: 'Clientes e preços', icone: '👥' },
+    { to: '/rotas', label: 'Rotas', icone: '🛣️' },
+    { to: '/produtos', label: 'Produtos', icone: '🐣' },
+    { to: '/vendedores', label: 'Vendedores', icone: '🧑‍💼' },
+    { to: '/fornecedores', label: 'Fornecedores', icone: '🏢' },
+    { to: '/usuarios', label: 'Usuários', icone: '🔐' },
+  ] },
   { to: '/venda', label: 'Venda semanal', icone: '🛒' },
   { to: '/programacao', label: 'Programação', icone: '📋' },
   { to: '/fornecedor', label: 'Pedido à granja', icone: '🏭' },
@@ -20,14 +28,6 @@ const menuAdmin: Entrada[] = [
   ] },
   { to: '/financeiro', label: 'Financeiro', icone: '💰' },
   { to: '/fechamento-geral', label: 'Fechamento geral', icone: '📚' },
-  { grupo: 'Cadastros', icone: '🗂️', itens: [
-    { to: '/clientes', label: 'Clientes e preços', icone: '👥' },
-    { to: '/rotas', label: 'Rotas', icone: '🛣️' },
-    { to: '/produtos', label: 'Produtos', icone: '🐣' },
-    { to: '/vendedores', label: 'Vendedores', icone: '🧑‍💼' },
-    { to: '/fornecedores', label: 'Fornecedores', icone: '🏢' },
-    { to: '/usuarios', label: 'Usuários', icone: '🔐' },
-  ] },
 ]
 const menuVendedor: Entrada[] = [
   { to: '/venda', label: 'Venda semanal', icone: '🛒' },
