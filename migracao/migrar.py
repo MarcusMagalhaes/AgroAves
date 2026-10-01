@@ -447,7 +447,7 @@ def carregar(m, dsn):
     try:
         # cidades, fornecedor padrão, vendedores
         execute_values(cur, "insert into cidade_distribuicao (nome) values %s on conflict (nome) do nothing", [(c,) for c in m["cidades"]])
-        cur.execute("insert into fornecedor (nome) values ('GRANJA (padrão)') on conflict (nome) do nothing")
+        cur.execute("insert into fornecedor (nome) values ('Granja') on conflict (nome) do nothing")
         for v in m["vendedores"]:
             cur.execute("insert into vendedor (nome, telefone) select %s, %s where not exists (select 1 from vendedor where nome = %s)", (v["nome"], v["telefone"], v["nome"]))
         # produtos

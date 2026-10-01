@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import Logo from './Logo'
+import Logo, { LogoMark } from './Logo'
 import { useAuth } from '@/lib/auth'
 
 const menuAdmin = [
@@ -32,34 +32,38 @@ export default function Layout() {
   const nav = (
     <nav className="flex flex-col gap-0.5 p-3">
       {menu.map((m, i) =>
-        'sep' in m ? <hr key={i} className="my-2 border-leaf-700" /> : (
+        'sep' in m ? <hr key={i} className="my-2 border-slate-200" /> : (
           <NavLink key={m.to} to={m.to!} onClick={() => setAberto(false)}
-            className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-leaf-600 text-white' : 'text-leaf-100 hover:bg-leaf-700'}`}>
+            className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>
             <span className="text-lg leading-none">{m.icone}</span>{m.label}
           </NavLink>
         ))}
     </nav>
   )
 
+  const rodape = (
+    <div className="p-3 border-t border-slate-200 text-xs">
+      <div className="font-semibold truncate text-slate-800">{usuario?.nome}</div>
+      <div className="text-slate-500 truncate">{usuario?.papel === 'ADMIN' ? 'Administrador' : 'Vendedor'}</div>
+      <button className="mt-2 text-brand-600 font-semibold underline" onClick={sair}>Sair</button>
+    </div>
+  )
+
   return (
     <div className="flex h-full">
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex w-64 flex-col bg-leaf-800 text-white no-print">
-        <div className="p-4 border-b border-leaf-700"><Logo variant="light" size={36} /></div>
+      <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-200 no-print">
+        <div className="p-4 border-b-4 border-brand-600 flex justify-center"><Logo size={44} /></div>
         <div className="flex-1 overflow-auto">{nav}</div>
-        <div className="p-3 border-t border-leaf-700 text-xs">
-          <div className="font-semibold truncate">{usuario?.nome}</div>
-          <div className="text-leaf-200 truncate">{usuario?.papel === 'ADMIN' ? 'Administrador' : 'Vendedor'}</div>
-          <button className="mt-2 text-leaf-100 underline" onClick={sair}>Sair</button>
-        </div>
+        {rodape}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barra superior mobile */}
-        <header className="md:hidden flex items-center justify-between bg-leaf-800 px-3 py-2 text-white no-print">
-          <button className="rounded p-2 text-2xl leading-none" onClick={() => setAberto(true)} aria-label="Menu">☰</button>
-          <Logo variant="light" size={28} />
-          <button className="text-xs text-leaf-100 px-2" onClick={sair}>Sair</button>
+        <header className="md:hidden flex items-center justify-between bg-white border-b-4 border-brand-600 px-3 py-1.5 no-print">
+          <button className="rounded p-2 text-2xl leading-none text-leaf-900" onClick={() => setAberto(true)} aria-label="Menu">☰</button>
+          <Logo size={30} />
+          <button className="text-xs text-brand-600 font-semibold px-2" onClick={sair}>Sair</button>
         </header>
         <main className="flex-1 overflow-auto p-3 sm:p-5">
           <Outlet />
@@ -70,16 +74,17 @@ export default function Layout() {
       {aberto && (
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setAberto(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <aside className="absolute left-0 top-0 h-full w-72 bg-leaf-800 text-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-leaf-700 flex items-center justify-between">
-              <Logo variant="light" size={32} />
-              <button onClick={() => setAberto(false)} className="text-xl">✕</button>
+          <aside className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b-4 border-brand-600 flex items-center justify-between">
+              <Logo size={34} />
+              <button onClick={() => setAberto(false)} className="text-xl text-slate-500">✕</button>
             </div>
-            {nav}
-            <div className="p-4 text-xs text-leaf-200">{usuario?.nome} · {usuario?.papel === 'ADMIN' ? 'Administrador' : 'Vendedor'}</div>
+            <div className="flex-1 overflow-auto">{nav}</div>
+            {rodape}
           </aside>
         </div>
       )}
+      <span className="hidden"><LogoMark size={1} /></span>
     </div>
   )
 }

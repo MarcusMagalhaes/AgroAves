@@ -194,7 +194,7 @@ export default function Venda() {
             {filtrados.length === 0 && <Vazio texto="Nenhum cliente com esse filtro" />}
             {filtrados.map((c) => (
               <button key={c.cliente_id} onClick={() => { setClienteId(c.cliente_id); setMostrarLista(false) }}
-                className={`w-full text-left px-3 py-2.5 hover:bg-brand-50 ${c.cliente_id === clienteId ? 'bg-brand-100' : ''}`}>
+                className={`w-full text-left px-3 py-2.5 hover:bg-leaf-50 ${c.cliente_id === clienteId ? 'bg-leaf-100' : ''}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-semibold text-slate-800 truncate"><span className="text-slate-400 text-xs mr-1">{c.ordem_visita}.</span>{c.razao_social}</div>

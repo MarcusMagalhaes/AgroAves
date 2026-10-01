@@ -4,7 +4,7 @@
 insert into cidade_distribuicao (nome) values ('IPATINGA'), ('REALEZA'), ('VIÇOSA')
 on conflict (nome) do nothing;
 
-insert into fornecedor (nome) values ('GRANJA (padrão)')
+insert into fornecedor (nome) values ('Granja')
 on conflict (nome) do nothing;
 
 insert into produto (sigla, nome, grupo, ordem, preco_compra, tem_preco, conta_como_ave, eh_codorna) values

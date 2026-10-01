@@ -108,7 +108,7 @@ export default function Clientes() {
           </thead>
           <tbody>
             {filtrados.map((c) => (
-              <tr key={c.id} className={`border-t border-slate-100 hover:bg-brand-50 cursor-pointer ${c.ativo ? '' : 'opacity-50'}`} onClick={() => abrir(c)}>
+              <tr key={c.id} className={`border-t border-slate-100 hover:bg-leaf-50 cursor-pointer ${c.ativo ? '' : 'opacity-50'}`} onClick={() => abrir(c)}>
                 <td className="p-2 text-slate-500">{c.codigo}</td>
                 <td className="p-2 font-semibold">{c.razao_social}</td>
                 <td className="p-2">{c.nome_fantasia}</td>

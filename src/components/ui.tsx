@@ -97,7 +97,7 @@ export function Titulo({ children, acoes }: { children: ReactNode; acoes?: React
 
 export function Chip({ cor, children }: { cor: 'verde' | 'amarelo' | 'vermelho' | 'cinza' | 'azul'; children: ReactNode }) {
   const m = {
-    verde: 'bg-leaf-100 text-leaf-800', amarelo: 'bg-brand-100 text-brand-800', vermelho: 'bg-red-100 text-red-800',
+    verde: 'bg-leaf-100 text-leaf-800', amarelo: 'bg-amber-100 text-amber-800', vermelho: 'bg-red-100 text-red-800',
     cinza: 'bg-slate-100 text-slate-600', azul: 'bg-sky-100 text-sky-800',
   }
   return <span className={`chip ${m[cor]}`}>{children}</span>

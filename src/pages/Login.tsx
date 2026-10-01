@@ -25,9 +25,9 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-900 p-4">
+    <div className="min-h-full flex items-center justify-center bg-gradient-to-br from-leaf-900 via-leaf-800 to-brand-700 p-4">
       <div className="card w-full max-w-sm p-6 sm:p-8">
-        <div className="flex justify-center mb-6"><Logo size={48} /></div>
+        <div className="flex justify-center mb-6"><Logo size={64} /></div>
         <h1 className="text-center text-lg font-bold text-slate-700 mb-1">Sistema 2.0</h1>
         {!supabaseConfigurado && (
           <div className="my-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">

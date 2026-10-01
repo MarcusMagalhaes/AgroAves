@@ -192,7 +192,7 @@ function IncluirPedido({ data, rotas, onFechar }: { data: string; rotas: RotaSem
             <Campo label="Cliente (sem pedido na semana)"><input className="input" placeholder="buscar…" value={busca} onChange={(e) => setBusca(e.target.value)} /></Campo>
             <div className="max-h-64 overflow-auto divide-y divide-slate-100 border rounded-lg">
               {clientes.filter((c) => !c.pedido_id && (!t || c.busca.includes(t))).map((c) => (
-                <button key={c.cliente_id} className="w-full text-left px-3 py-2 text-sm hover:bg-brand-50" onClick={() => criar(c.cliente_id)}>
+                <button key={c.cliente_id} className="w-full text-left px-3 py-2 text-sm hover:bg-leaf-50" onClick={() => criar(c.cliente_id)}>
                   <b>{c.razao_social}</b> <span className="text-slate-500">· {c.nome_fantasia} · {c.cidade}</span>
                 </button>
               ))}

@@ -50,7 +50,7 @@ python migracao/migrar.py --admin ../Admin.xlsx --vendas "../VENDAS - Agro Aves 
 python migracao/migrar.py --admin ../Admin.xlsx --vendas "../VENDAS - Agro Aves Distribuidora.xlsx" --dsn "postgresql://postgres:SENHA@db.xxxx.supabase.co:5432/postgres"
 ```
 
-Depois da carga: em **Rotas**, confira vendedor e semana atual; em **Vendedores**, vincule os logins; em **Fornecedores**, renomeie "GRANJA (padrão)".
+Depois da carga: em **Rotas**, confira vendedor e semana atual; em **Vendedores**, vincule os logins; em **Fornecedores**, confira o fornecedor "Granja".
 Revise `migracao/saida/rejeicoes.csv` (decisões D-11…D-17 em `docs/11`).
 
 ## 4. Publicar no GitHub Pages

@@ -164,7 +164,7 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
             <Campo label="Adicionar cliente"><input className="input" placeholder="buscar…" value={busca} onChange={(e) => setBusca(e.target.value)} /></Campo>
             <div className="mt-2 max-h-[50vh] overflow-auto divide-y divide-slate-100 border rounded-lg">
               {candidatos.map((c) => (
-                <button key={c.id} className="w-full text-left px-2 py-1.5 text-sm hover:bg-brand-50" onClick={() => adicionar(c.id)}>
+                <button key={c.id} className="w-full text-left px-2 py-1.5 text-sm hover:bg-leaf-50" onClick={() => adicionar(c.id)}>
                   <div className="font-medium truncate">{c.razao_social}</div><div className="text-xs text-slate-500">{c.nome_fantasia} · {c.cidade}</div>
                 </button>
               ))}

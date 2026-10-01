@@ -20,8 +20,8 @@ body { -webkit-tap-highlight-color: transparent; }
   @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition
          focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 select-none;
 }
-.btn-primary { @apply btn bg-leaf-600 text-white hover:bg-leaf-700 focus:ring-leaf-300; }
-.btn-accent { @apply btn bg-brand-500 text-slate-900 hover:bg-brand-400 focus:ring-brand-300; }
+.btn-primary { @apply btn bg-leaf-900 text-white hover:bg-leaf-700 focus:ring-leaf-300; }
+.btn-accent { @apply btn bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-300; }
 .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-200; }
 .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-300; }
 .card { @apply rounded-xl bg-white shadow-sm border border-slate-200; }
@@ -29,11 +29,11 @@ body { -webkit-tap-highlight-color: transparent; }
 .chip { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
 
 /* Grade tipo planilha */
-.rdg { block-size: 100%; border-radius: 0.75rem; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #fff8e6; }
+.rdg { block-size: 100%; border-radius: 0.75rem; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }
 .rdg-cell.cell-num { text-align: right; font-variant-numeric: tabular-nums; }
 .rdg-cell.cell-edit { background: #fffdf5; }
 .rdg-cell.cell-dirty { background: #fde68a; }
-.rdg-cell.cell-saved { background: #d4f2da; transition: background 1.5s; }
+.rdg-cell.cell-saved { background: #d9e3f5; transition: background 1.5s; }
 .rdg-cell.cell-error { background: #fecaca; }
 
 /* Impressão de documentos */

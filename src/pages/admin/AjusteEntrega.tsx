@@ -129,7 +129,7 @@ export default function AjusteEntrega() {
                 {linhas.map((p) => {
                   const prev = programado[p.id] ?? 0; const confQ = item(p.id)?.qtd_confirmada; const dif = confQ == null ? null : confQ - prev
                   return (
-                    <tr key={p.id} onClick={() => { setProdSel(p.id); carregarClientes(p.id) }} className={`border-t border-slate-100 cursor-pointer hover:bg-brand-50 ${prodSel === p.id ? 'bg-brand-100' : ''}`}>
+                    <tr key={p.id} onClick={() => { setProdSel(p.id); carregarClientes(p.id) }} className={`border-t border-slate-100 cursor-pointer hover:bg-leaf-50 ${prodSel === p.id ? 'bg-leaf-100' : ''}`}>
                       <td className="p-1.5"><b className="text-slate-500 mr-1">{p.sigla}</b><span className="hidden sm:inline">{p.nome}</span></td>
                       <td className="p-1.5 text-right">{fmtNum(prev)}</td>
                       <td className="p-1.5 text-right">{confQ ?? '—'}</td>

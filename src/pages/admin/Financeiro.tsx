@@ -82,7 +82,7 @@ export default function Financeiro() {
             </thead>
             <tbody>
               {visiveis.map((l) => (
-                <tr key={l.id} className="border-t border-slate-100 hover:bg-brand-50">
+                <tr key={l.id} className="border-t border-slate-100 hover:bg-leaf-50">
                   {situacao === 'PENDENTE' && <td className="p-2"><input type="checkbox" checked={sel.has(l.id)} onChange={(e) => { const s = new Set(sel); e.target.checked ? s.add(l.id) : s.delete(l.id); setSel(s) }} /></td>}
                   <td className="p-2 whitespace-nowrap">{fmtData(l.data_referencia)}</td>
                   <td className="p-2 text-slate-500">{l.cliente?.codigo}</td>
