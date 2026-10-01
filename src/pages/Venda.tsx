@@ -7,6 +7,7 @@ import { itensDoPedido, listarProdutos, listarRotasSemana, precosDoCliente, rpc 
 import { fmtData, fmtMoeda, normalizar } from '@/lib/format'
 import { FORMAS, RESULTADOS, type ClienteRotaSemana, type Produto, type Resultado, type RotaSemana } from '@/lib/types'
 import { Carregando, Confirmar, Vazio, useToast } from '@/components/ui'
+import ComboCliente from '@/components/ComboCliente'
 
 type FiltroStatus = 'TODOS' | 'PEDIDO' | 'SEM_PEDIDO' | 'SEM_INTERESSE' | 'SEM_CONTATO'
 const FILTROS: Record<FiltroStatus, string> = {
@@ -189,10 +190,8 @@ export default function Venda() {
         <div className="mt-2 flex items-center gap-2">
           <span className="font-bold text-slate-500 uppercase text-[10px] shrink-0 hidden sm:block">Cliente</span>
           <button className="btn-secondary px-2.5 py-1 text-xs" onClick={() => navegar(-1)} disabled={idx <= 0} title="Cliente anterior">◀</button>
-          <select className="input py-1 px-2 text-sm bg-yellow-50 font-bold flex-1 min-w-0" value={clienteId ?? ''} onChange={(e) => setClienteId(Number(e.target.value))}>
-            {filtrados.length === 0 && <option value="">Nenhum cliente com esse filtro</option>}
-            {filtrados.map((c) => <option key={c.cliente_id} value={c.cliente_id}>{c.ordem_visita}. {rotulo(c)}{c.pedido_id ? '  ✔' : c.resultado === 'SEM_INTERESSE' ? '  ✖' : ''}</option>)}
-          </select>
+          <ComboCliente className="flex-1 min-w-0" valor={clienteId} onChange={setClienteId}
+            opcoes={filtrados.map((c) => ({ id: c.cliente_id, rotulo: `${c.ordem_visita}. ${rotulo(c)}`, sufixo: c.pedido_id ? '✔' : c.resultado === 'SEM_INTERESSE' ? '✖' : undefined }))} />
           <button className="btn-secondary px-2.5 py-1 text-xs" onClick={() => navegar(1)} disabled={idx < 0 || idx >= filtrados.length - 1} title="Próximo cliente">▶</button>
           <span className="text-[11px] text-slate-500 shrink-0 hidden md:block">{idx + 1}/{filtrados.length}</span>
         </div>
@@ -205,7 +204,7 @@ export default function Venda() {
           <div className="grid gap-1.5 lg:grid-cols-[170px_1fr] mb-1.5 lg:h-[158px]">
             <div className="card bg-emerald-50/50 relative h-full">
               <div className="lg:absolute lg:inset-0 overflow-auto px-2 py-1">
-                <div className="flex items-baseline justify-between"><span className="label mb-0">Financeiro</span><span className="text-[10px] font-bold text-slate-500 uppercase">Pendência</span></div>
+                <div className="label mb-0">Financeiro</div>
                 {pendencia && Number(pendencia.valor_pendente) > 0 ? (
                   <>
                     <div className="text-base font-extrabold text-red-700 leading-tight">{fmtMoeda(Number(pendencia.valor_pendente))}</div>
