@@ -40,12 +40,14 @@ body { -webkit-tap-highlight-color: transparent; }
 .barra .campo:has(input[type="text"]) .input, .barra .campo:has(input:not([type])) .input { @apply w-full; }
 .barra h1 { @apply text-sm font-extrabold text-leaf-900 mr-1; }
 /* Tabelas densas */
-.tabela { @apply w-full text-xs; }
+.tabela { @apply w-full; font-size: 11px; }
+.tabela tbody tr:nth-child(even) > td { background-color: #eef2f7; }
+.tabela tbody tr.grupo-prod > td { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; padding-bottom: 2px; }
 .tabela thead th { @apply bg-slate-100 text-left text-[10px] uppercase text-slate-500 px-2 py-1 font-bold sticky top-0; }
 .tabela td { @apply px-2 py-0.5 border-t border-slate-100; }
 
 /* Grade tipo planilha */
-.rdg { block-size: 100%; border-radius: 0.75rem; --rdg-cell-padding-inline: 4px; --rdg-font-size: 12px; font-size: 12px; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }
+.rdg { block-size: 100%; border-radius: 0.75rem; --rdg-cell-padding-inline: 4px; --rdg-font-size: 11px; font-size: 11px; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }
 .rdg-cell.cell-num { text-align: right; font-variant-numeric: tabular-nums; }
 .rdg-cell.cell-centro { text-align: center; font-variant-numeric: tabular-nums; }
 .rdg-cell.cell-centro input { text-align: center; }

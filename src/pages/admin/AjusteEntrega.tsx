@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarCidades, listarProdutos, rpc } from '@/lib/dados'
 import { fmtData, fmtDataHora, fmtMoeda, fmtNum } from '@/lib/format'
+import { corProduto } from '@/lib/types'
 import type { Cidade, PedidoFornecedor as PF, PedidoFornecedorItem, Produto } from '@/lib/types'
 import { Campo, Carregando, Chip, Confirmar, Titulo, Vazio, useToast } from '@/components/ui'
 
@@ -99,17 +100,19 @@ export default function AjusteEntrega() {
             <table className="tabela">
               <thead><tr><th className="text-left">Produto</th><th className="text-right">Pedido</th><th className="text-right">Confirmado</th><th className="text-left">Obs.</th></tr></thead>
               <tbody>
-                {linhas.map((p) => {
+                {linhas.map((p, idx) => {
+                const novoGrupo = idx === 0 || linhas[idx - 1].grupo !== p.grupo
+                const linhaGrupo = novoGrupo ? <tr key={`g${p.id}`} className="grupo-prod"><td colSpan={9} style={{ background: corProduto(p) + '80' }}>{p.grupo ?? 'OUTROS'}</td></tr> : null
                   const it = item(p.id); const c = conf[p.id] ?? { q: '', obs: '' }
                   const dif = (Number(c.q) || 0) - (it?.qtd_pedida ?? 0)
-                  return (
+                  return (<>{linhaGrupo}
                     <tr key={p.id} className="border-t border-slate-100">
-                      <td className="font-semibold">{p.nome}</td>
+                      <td className="font-semibold" style={{ background: corProduto(p) + '33' }}>{p.nome}</td>
                       <td className="text-right">{fmtNum(it?.qtd_pedida ?? 0)}</td>
                       <td className="text-right"><input type="number" className={`input w-24 py-1 text-right ${dif !== 0 ? 'border-amber-400 bg-amber-50' : ''}`} value={c.q} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, q: e.target.value } })} /></td>
                       <td className="px-2"><input className="input py-1" placeholder="substituição…" value={c.obs} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, obs: e.target.value } })} /></td>
                     </tr>
-                  )
+                  </>)
                 })}
               </tbody>
             </table>
@@ -126,16 +129,18 @@ export default function AjusteEntrega() {
             <table className="tabela">
               <thead><tr><th className="text-left">Produto</th><th className="text-right">Previsto</th><th className="text-right">Confirmado</th><th className="text-right">Diferença</th></tr></thead>
               <tbody>
-                {linhas.map((p) => {
+                {linhas.map((p, idx) => {
+                const novoGrupo = idx === 0 || linhas[idx - 1].grupo !== p.grupo
+                const linhaGrupo = novoGrupo ? <tr key={`g${p.id}`} className="grupo-prod"><td colSpan={9} style={{ background: corProduto(p) + '80' }}>{p.grupo ?? 'OUTROS'}</td></tr> : null
                   const prev = programado[p.id] ?? 0; const confQ = item(p.id)?.qtd_confirmada; const dif = confQ == null ? null : confQ - prev
-                  return (
+                  return (<>{linhaGrupo}
                     <tr key={p.id} onClick={() => { setProdSel(p.id); carregarClientes(p.id) }} className={`border-t border-slate-100 cursor-pointer hover:bg-leaf-50 ${prodSel === p.id ? 'bg-leaf-100' : ''}`}>
-                      <td className="font-semibold">{p.nome}</td>
+                      <td className="font-semibold" style={{ background: corProduto(p) + '33' }}>{p.nome}</td>
                       <td className="text-right">{fmtNum(prev)}</td>
                       <td className="text-right">{confQ ?? '—'}</td>
                       <td className={`p-1.5 text-right font-bold ${dif == null ? '' : dif < 0 ? 'text-red-600' : dif > 0 ? 'text-leaf-700' : 'text-slate-400'}`}>{dif == null ? '' : dif > 0 ? `+${dif}` : dif}</td>
                     </tr>
-                  )
+                  </>)
                 })}
               </tbody>
             </table>

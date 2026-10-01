@@ -5,7 +5,7 @@ import { supabase, ok } from '@/lib/supabase'
 import { listarProdutos, listarRotasSemana } from '@/lib/dados'
 import { montarMapa, type Mapa as MapaT } from '@/lib/mapa'
 import { dataExtenso, fmtData, fmtMoeda, fmtNum } from '@/lib/format'
-import { FORMAS, type Produto, type RotaSemana } from '@/lib/types'
+import { FORMAS, corProduto, type Produto, type RotaSemana } from '@/lib/types'
 import { Campo, Carregando, Vazio, useToast } from '@/components/ui'
 import { TabelaMapa } from '@/pages/Mapa'
 import Logo from '@/components/Logo'
@@ -132,7 +132,7 @@ function DocRecibos({ rota, mapa, produtos }: { rota: RotaSemana; mapa: MapaT; p
                 <thead><tr className="border-b border-slate-300"><th className="text-right">Qtd</th><th className="text-left pl-2">Produto</th><th className="text-right">Unit.</th><th className="text-right">Total</th></tr></thead>
                 <tbody>
                   {produtos.filter((p) => l.qtd[p.id]).map((p) => (
-                    <tr key={p.id}><td className="text-right">{l.qtd[p.id]}</td><td className="pl-2">{p.nome}</td><td className="text-right">{fmtMoeda(l.precos[p.id])}</td><td className="text-right">{fmtMoeda(l.qtd[p.id] * (l.precos[p.id] ?? 0))}</td></tr>
+                    <tr key={p.id}><td className="text-right">{l.qtd[p.id]}</td><td className="pl-2" style={{ background: corProduto(p) + '33' }}>{p.nome}</td><td className="text-right">{fmtMoeda(l.precos[p.id])}</td><td className="text-right">{fmtMoeda(l.qtd[p.id] * (l.precos[p.id] ?? 0))}</td></tr>
                   ))}
                   {l.pedido.reposicao > 0 && <tr><td className="text-right">{l.pedido.reposicao}</td><td className="pl-2">Reposição</td><td className="text-right">—</td><td className="text-right">—</td></tr>}
                 </tbody>

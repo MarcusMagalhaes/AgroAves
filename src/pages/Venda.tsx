@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth'
 import { supabase, ok } from '@/lib/supabase'
 import { itensDoPedido, listarProdutos, listarRotasSemana, precosDoCliente, rpc } from '@/lib/dados'
 import { fmtData, fmtMoeda, normalizar } from '@/lib/format'
-import { FORMAS, RESULTADOS, type ClienteRotaSemana, type Produto, type Resultado, type RotaSemana } from '@/lib/types'
+import { FORMAS, RESULTADOS, corProduto, type ClienteRotaSemana, type Produto, type Resultado, type RotaSemana } from '@/lib/types'
 import { Carregando, Confirmar, Vazio, useToast } from '@/components/ui'
 import ComboCliente from '@/components/ComboCliente'
 
@@ -220,7 +220,7 @@ export default function Venda() {
                   <thead>
                     <tr className="h-[32px]">
                       <CabecalhoCel className="text-left whitespace-nowrap w-[72px]">Data</CabecalhoCel>
-                      {prodUlt.map((p) => <CabecalhoCel key={p.id} className="leading-[1.1] font-semibold text-[10px] px-0.5 align-middle">{p.nome}</CabecalhoCel>)}
+                      {prodUlt.map((p) => <th key={p.id} className="border border-slate-300 px-0.5 py-0.5 text-[10px] font-semibold text-slate-800 leading-[1.1] align-middle" style={{ background: corProduto(p) + '66' }}>{p.nome}</th>)}
                       {prodUlt.length === 0 && <CabecalhoCel className="font-normal text-slate-400">Sem pedidos anteriores</CabecalhoCel>}
                       <CabecalhoCel className="w-[52px]">Repos.</CabecalhoCel>
                       <CabecalhoCel className="text-right w-[90px]">Total R$</CabecalhoCel>
@@ -272,7 +272,7 @@ export default function Venda() {
                                 onChange={(e) => setQtd({ ...qtd, [p.id]: soDigitos(e.target.value) })} onKeyDown={bloqueiaNaoNumerico}
                                 className="w-full h-[22px] bg-yellow-50 text-center text-xs font-bold outline-none focus:bg-yellow-200 disabled:bg-slate-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" />
                             </td>
-                            <td className="border border-slate-300 px-1.5 py-0 text-[11px] font-semibold whitespace-nowrap leading-none">{p.nome}</td>
+                            <td className="border border-slate-300 px-1.5 py-0 text-[11px] font-semibold whitespace-nowrap leading-none" style={{ background: corProduto(p) + '33' }}>{p.nome}</td>
                             <td className="border border-slate-300 px-1 py-0 text-right text-[10px]">{tem ? fmtMoeda(preco).replace('R$', '').trim() : '-'}</td>
                           </tr>
                         )

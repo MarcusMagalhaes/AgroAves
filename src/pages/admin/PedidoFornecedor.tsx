@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarCidades, listarFornecedores, listarProdutos, listarRotasSemana, rpc } from '@/lib/dados'
 import { fmtData, fmtDataHora, fmtNum } from '@/lib/format'
+import { corProduto } from '@/lib/types'
 import type { Cidade, Fornecedor, PedidoFornecedor as PF, PedidoFornecedorItem, Produto, RotaSemana } from '@/lib/types'
 import { Campo, Carregando, Chip, Confirmar, Titulo, useToast } from '@/components/ui'
 import { Link } from 'react-router-dom'
@@ -103,11 +104,13 @@ export default function PedidoFornecedor() {
             </thead>
             <tbody>
               {linhas.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-slate-400">Nenhum pedido programado para esta data e cidade</td></tr>}
-              {linhas.map((p) => {
+              {linhas.map((p, idx) => {
+                const novoGrupo = idx === 0 || linhas[idx - 1].grupo !== p.grupo
+                const linhaGrupo = novoGrupo ? <tr key={`g${p.id}`} className="grupo-prod"><td colSpan={9} style={{ background: corProduto(p) + '80' }}>{p.grupo ?? 'OUTROS'}</td></tr> : null
                 const prog = programado[p.id] ?? 0; const ped = Number(aPedir[p.id]) || 0
-                return (
+                return (<>{linhaGrupo}
                   <tr key={p.id} className="border-t border-slate-100">
-                    <td className="font-semibold">{p.nome}</td>
+                    <td className="font-semibold" style={{ background: corProduto(p) + '33' }}>{p.nome}</td>
                     <td className="text-right font-semibold">{fmtNum(prog)}</td>
                     <td className="text-right">
                       <input type="number" inputMode="numeric" className={`input w-28 text-right py-1 ${ped !== prog ? 'border-amber-400 bg-amber-50' : ''}`} value={aPedir[p.id] ?? ''}
@@ -115,7 +118,7 @@ export default function PedidoFornecedor() {
                     </td>
                     {pf && <td className="text-right">{itens[p.id]?.qtd_confirmada ?? <span className="text-slate-400">—</span>}</td>}
                   </tr>
-                )
+                </>)
               })}
             </tbody>
             <tfoot className="bg-slate-50 font-bold"><tr><td className="px-2">TOTAL</td><td className="text-right">{fmtNum(totProg)}</td><td className="text-right">{fmtNum(totPed)}</td>{pf && <td />}</tr></tfoot>

@@ -8,7 +8,7 @@ import { Campo, Carregando, Titulo, Vazio, useToast } from '@/components/ui'
 import { FORMAS, corProduto, gruposDeProdutos } from '@/lib/types'
 
 export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean }) {
-  const cls = compacto ? 'px-1 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'
+  const cls = compacto ? 'px-1 py-0.5 text-[10px]' : 'px-1.5 py-0.5 text-[11px]'
   return (
     <table className="w-full border-collapse">
       <thead>
