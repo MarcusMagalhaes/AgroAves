@@ -79,16 +79,17 @@ export default function Programacao() {
     { key: 'cliente', name: 'Cliente', width: 190, frozen: 'start', renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
     ...(detalhes ? [{ key: 'nome', name: 'Nome', width: 130 }, { key: 'contato', name: 'Contato', width: 110 }, { key: 'pagto', name: 'Pagto', width: 80 }] as Column<Linha, Resumo>[] : []),
     ...colsProd.map((p): Column<Linha, Resumo> => ({
-      key: p.sigla, name: p.nome, width: 42, editable: true, renderEditCell: renderTextEditor,
+      key: p.sigla, name: p.nome, width: 38, editable: true, renderEditCell: renderTextEditor,
       renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
-      cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
+      cellClass: (row) => `cell-centro cell-edit ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
       renderSummaryCell: ({ row }) => <b>{row[p.sigla] ? fmtNum(row[p.sigla]) : ''}</b>,
+      summaryCellClass: 'cell-centro',
       headerCellClass: 'text-center',
     })),
-    { key: 'R', name: 'Reposição', width: 42, editable: true, renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
+    { key: 'R', name: 'Reposição', width: 38, editable: true, summaryCellClass: 'cell-centro', renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-centro cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
-    { key: 'total', name: 'Total R$', width: 112, frozen: 'end', cellClass: 'cell-num font-semibold', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
+    { key: 'total', name: 'Total R$', width: 98, frozen: 'end', cellClass: 'cell-num font-semibold', summaryCellClass: 'cell-num', headerCellClass: 'cab-direita', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
     { key: 'acoes', name: '', width: 30, frozen: 'end', renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
   ], [colsProd, estado, detalhes])
 

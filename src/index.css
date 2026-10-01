@@ -34,15 +34,18 @@ body { -webkit-tap-highlight-color: transparent; }
 /* Grade tipo planilha */
 .rdg { block-size: 100%; border-radius: 0.75rem; --rdg-cell-padding-inline: 4px; --rdg-font-size: 12px; font-size: 12px; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }
 .rdg-cell.cell-num { text-align: right; font-variant-numeric: tabular-nums; }
+.rdg-cell.cell-centro { text-align: center; font-variant-numeric: tabular-nums; }
+.rdg-cell.cell-centro input { text-align: center; }
 .rdg-cell.cell-edit { background: #fffdf5; }
 .rdg-cell.cell-dirty { background: #fde68a; }
 .rdg-cell.cell-saved { background: #d9e3f5; transition: background 1.5s; }
 .rdg-cell.cell-error { background: #fecaca; }
-.cab-vertical { writing-mode: vertical-rl; transform: rotate(180deg); display: block; font-size: 10.5px; line-height: 1.1; white-space: nowrap; margin: 0 auto; height: 100%; padding: 4px 0; }
+.cab-vertical { writing-mode: vertical-rl; transform: rotate(180deg); display: block; font-size: 10.5px; line-height: 1.05; white-space: normal; overflow-wrap: anywhere; margin: 0 auto; max-height: 86px; padding: 3px 0; text-align: left; }
 .rdg-cell[aria-selected] { outline-width: 1px; }
 .rdg-cell.rdg-cell-frozen { box-shadow: 2px 0 4px -2px rgba(0,0,0,.25); }
 .rdg-header-row .rdg-cell { padding: 0 2px; display: flex; align-items: flex-end; justify-content: center; }
 .rdg-header-row .rdg-cell:not(:has(.cab-vertical)) { justify-content: flex-start; padding: 0 8px; }
+.rdg-header-row .rdg-cell.cab-direita { justify-content: flex-end; }
 
 /* Impressão de documentos */
 @media print {
