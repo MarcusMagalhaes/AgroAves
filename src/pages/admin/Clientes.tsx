@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarClientes, listarProdutos, listarRotas, precosDoCliente } from '@/lib/dados'
-import { fmtMoeda, normalizar } from '@/lib/format'
+import { fmtPreco, mascaraPreco, normalizar, parsePreco } from '@/lib/format'
 import { FORMAS, corProduto, tom, type Cliente, type Produto, type Rota } from '@/lib/types'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
 import ComboCliente from '@/components/ComboCliente'
@@ -54,7 +54,7 @@ export default function Clientes() {
     setEditRotas(c.id ? (rotasCliente[c.id] ?? []) : [])
     if (c.id) {
       const p = await precosDoCliente(c.id)
-      setPrecos(Object.fromEntries(p.map((x) => [x.produto_id, String(x.preco)])))
+      setPrecos(Object.fromEntries(p.map((x) => [x.produto_id, fmtPreco(x.preco)])))
     } else setPrecos({})
   }
 
@@ -80,7 +80,7 @@ export default function Clientes() {
       }
       // preços
       const linhas = produtos.filter((p) => p.tem_preco && precos[p.id] !== undefined && precos[p.id] !== '')
-        .map((p) => ({ cliente_id: salvo.id, produto_id: p.id, preco: Number(String(precos[p.id]).replace(',', '.')) }))
+        .map((p) => ({ cliente_id: salvo.id, produto_id: p.id, preco: parsePreco(precos[p.id]) ?? 0 }))
       ok(await supabase.from('preco_cliente').delete().eq('cliente_id', salvo.id))
       if (linhas.length) ok(await supabase.from('preco_cliente').insert(linhas))
       toast('Cliente salvo'); setEdit(null); carregar()
@@ -91,7 +91,7 @@ export default function Clientes() {
     const origem = lista?.find((c) => c.id === compId)
     if (!origem) { toast('Escolha o cliente para comparar', 'erro'); return }
     const p = await precosDoCliente(origem.id)
-    setCompPrecos(Object.fromEntries(p.map((x) => [x.produto_id, String(x.preco)])))
+    setCompPrecos(Object.fromEntries(p.map((x) => [x.produto_id, fmtPreco(x.preco)])))
     setCompNome(origem.razao_social)
   }
   function copiarPrecos() {
@@ -206,7 +206,8 @@ export default function Clientes() {
                         <div key={p.id} className="flex items-center gap-1.5 py-0.5">
                           <div className="flex-1 truncate rounded px-1.5 py-1 text-[11px] font-semibold" style={{ background: tom(corProduto(p), 0.25) }} title={p.nome}>{p.nome}</div>
                           <input className="input w-12 px-1 py-1 text-right text-[11px] bg-yellow-50" inputMode="decimal" value={precos[p.id] ?? ''} placeholder="—"
-                            onChange={(e) => setPrecos({ ...precos, [p.id]: e.target.value })} />
+                            onChange={(e) => setPrecos({ ...precos, [p.id]: mascaraPreco(e.target.value) })}
+                            onBlur={(e) => setPrecos({ ...precos, [p.id]: fmtPreco(e.target.value) })} />
                           {compPrecos && <input className="input w-12 px-1 py-1 text-right text-[11px] bg-slate-200 text-slate-600" value={compPrecos[p.id] ?? ''} placeholder="—" disabled readOnly />}
                         </div>
                       ))}

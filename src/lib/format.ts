@@ -28,3 +28,25 @@ export const normalizar = (s: string | null | undefined) =>
   (s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 export const somenteDigitos = (s: string) => s.replace(/\D/g, '')
+
+/** Número → texto de preço com vírgula e 2 casas ('4,95'); vazio para null */
+export const fmtPreco = (v: number | string | null | undefined) => {
+  if (v === null || v === undefined || v === '') return ''
+  const n = typeof v === 'number' ? v : parsePreco(v)
+  return n == null ? '' : n.toFixed(2).replace('.', ',')
+}
+/** Texto digitado ('4,95', '4.95', 'R$ 1.256,10') → número ou null */
+export const parsePreco = (s: string | number | null | undefined): number | null => {
+  if (s === null || s === undefined || s === '') return null
+  if (typeof s === 'number') return s
+  const t = s.replace(/[^\d,.-]/g, '')
+  const semMilhar = t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t
+  const n = Number(semMilhar)
+  return Number.isFinite(n) ? n : null
+}
+/** Mantém só dígitos e uma vírgula enquanto digita */
+export const mascaraPreco = (s: string) => {
+  const t = s.replace(/\./g, ',').replace(/[^\d,]/g, '')
+  const i = t.indexOf(',')
+  return i < 0 ? t : t.slice(0, i + 1) + t.slice(i + 1).replace(/,/g, '').slice(0, 2)
+}
