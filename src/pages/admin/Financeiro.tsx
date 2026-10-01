@@ -4,7 +4,7 @@ import { supabase, ok } from '@/lib/supabase'
 import { rpc } from '@/lib/dados'
 import { fmtData, fmtMoeda, hojeISO, normalizar } from '@/lib/format'
 import { FORMAS, type Titulo as TituloT } from '@/lib/types'
-import { Campo, Carregando, Chip, Titulo, useToast } from '@/components/ui'
+import { Campo, Carregando, Chip, Confirmar, Progresso, Titulo, useToast } from '@/components/ui'
 
 type Linha = TituloT & { cliente: { codigo: number; razao_social: string; nome_fantasia: string | null; cidade: string | null } }
 
@@ -38,8 +38,27 @@ export default function Financeiro() {
   }, [lista, texto])
   const total = visiveis.reduce((s, l) => s + Number(l.valor), 0)
 
+  // confirmação antes de baixar (um título ou em massa) e progresso durante a baixa em massa
+  const [confirma, setConfirma] = useState<{ ids: number[]; valor: number; nome?: string } | null>(null)
+  const [progresso, setProgresso] = useState<{ atual: number; total: number } | null>(null)
+  function pedirBaixa(ids: number[]) {
+    const tit = (lista ?? []).filter((l) => ids.includes(l.id))
+    setConfirma({ ids, valor: tit.reduce((s, l) => s + Number(l.valor), 0), nome: tit.length === 1 ? tit[0].cliente?.razao_social : undefined })
+  }
   async function baixar(ids: number[]) {
-    try { for (const id of ids) await rpc('baixar_titulo', { p_id: id, p_data: dataBaixa }); toast(`${ids.length} título(s) baixado(s)`); setSel(new Set()); carregar() } catch (e: any) { toast(e.message, 'erro') }
+    setConfirma(null)
+    const total = ids.length
+    if (total > 1) setProgresso({ atual: 0, total })
+    let feitos = 0; let erros = 0
+    try {
+      for (const id of ids) {
+        try { await rpc('baixar_titulo', { p_id: id, p_data: dataBaixa }); feitos++ } catch { erros++ }
+        if (total > 1) setProgresso({ atual: feitos + erros, total })
+      }
+      toast(erros ? `${feitos} baixado(s), ${erros} com erro` : `${feitos} título(s) baixado(s)`, erros ? 'erro' : 'ok')
+    } finally {
+      setProgresso(null); setSel(new Set()); carregar()
+    }
   }
   async function estornar(id: number) {
     if (!confirm('Estornar a baixa deste título?')) return
@@ -67,7 +86,7 @@ export default function Financeiro() {
         {situacao === 'PENDENTE' && (
           <div className="flex items-center gap-2">
             <span>Data da baixa</span><input className="input w-40 py-1" type="date" value={dataBaixa} onChange={(e) => setDataBaixa(e.target.value)} />
-            <button className="btn-primary py-1.5" disabled={!sel.size} onClick={() => baixar([...sel])}>Baixar selecionados ({sel.size})</button>
+            <button className="btn-primary py-1.5" disabled={!sel.size} onClick={() => pedirBaixa([...sel])}>Baixar selecionados ({sel.size})</button>
           </div>
         )}
       </div>
@@ -93,7 +112,7 @@ export default function Financeiro() {
                   <td className="px-2"><Chip cor={l.situacao === 'PENDENTE' ? 'amarelo' : l.situacao === 'BAIXADO' ? 'verde' : 'cinza'}>{l.situacao}</Chip>{l.motivo && <div className="text-[10px] text-slate-400">{l.motivo}</div>}</td>
                   <td className="whitespace-nowrap">{fmtData(l.data_baixa)}</td>
                   <td className="text-right whitespace-nowrap">
-                    {l.situacao === 'PENDENTE' && <button className="btn-primary py-1" onClick={() => baixar([l.id])}>Baixar</button>}
+                    {l.situacao === 'PENDENTE' && <button className="btn-primary py-1" onClick={() => pedirBaixa([l.id])}>Baixar</button>}
                     {l.situacao === 'BAIXADO' && <button className="btn-secondary py-1" onClick={() => estornar(l.id)}>Estornar</button>}
                   </td>
                 </tr>
@@ -103,6 +122,12 @@ export default function Financeiro() {
         </div>
       )}
       <p className="mt-1 text-[10px] text-slate-400">Títulos são gerados automaticamente quando a granja confirma a entrega da semana/cidade. Alteração no pedido cancela o pendente e lança a diferença; o que já foi baixado é preservado.</p>
+      <Confirmar aberto={!!confirma} titulo={confirma && confirma.ids.length > 1 ? 'Baixar títulos em massa' : 'Baixar título'}
+        texto={confirma ? (confirma.ids.length > 1
+          ? `Deseja baixar todos os ${confirma.ids.length.toLocaleString('pt-BR')} títulos selecionados?\nTotal: ${fmtMoeda(confirma.valor)} · Data da baixa: ${fmtData(dataBaixa)}`
+          : `Deseja baixar o título de ${confirma.nome ?? 'este cliente'}?\nValor: ${fmtMoeda(confirma.valor)} · Data da baixa: ${fmtData(dataBaixa)}`) : ''}
+        onSim={() => confirma && baixar(confirma.ids)} onNao={() => setConfirma(null)} />
+      {progresso && <Progresso titulo="Baixando títulos" atual={progresso.atual} total={progresso.total} />}
     </div>
   )
 }

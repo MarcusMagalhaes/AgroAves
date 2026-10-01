@@ -83,6 +83,22 @@ export function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
   )
 }
 
+/** Tela de progresso para ações em massa (ex.: "Baixando 35 de 1.000") */
+export function Progresso({ titulo, atual, total }: { titulo: string; atual: number; total: number }) {
+  const pct = total > 0 ? Math.round((atual / total) * 100) : 0
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50">
+      <div className="card w-[min(92vw,420px)] p-6 text-center">
+        <img src={`${import.meta.env.BASE_URL}marca.png`} alt="" className="mx-auto h-16 w-16 animate-pulse" />
+        <div className="mt-3 text-sm font-bold text-slate-800">{titulo}</div>
+        <div className="mt-1 text-2xl font-extrabold text-leaf-900 tabular-nums">{atual.toLocaleString('pt-BR')} de {total.toLocaleString('pt-BR')}</div>
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-leaf-700 transition-all" style={{ width: `${pct}%` }} /></div>
+        <div className="mt-1 text-[11px] text-slate-500">{pct}% · aguarde, não feche a página</div>
+      </div>
+    </div>
+  )
+}
+
 export function Vazio({ texto }: { texto: string }) {
   return <div className="p-8 text-center text-slate-400">{texto}</div>
 }
