@@ -198,15 +198,20 @@ export default function Clientes() {
                   {compPrecos && <button className="btn-secondary py-1" onClick={() => { setCompPrecos(null); setCompNome('') }}>Fechar comparação</button>}
                 </div>
                 {compPrecos && <div className="text-[10px] text-slate-500 mb-1">Caixa branca = preço deste cliente (editável) · caixa cinza = preço de <b>{compNome}</b> (somente leitura)</div>}
-                <div className="grid gap-x-4 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {produtos.filter((p) => p.tem_preco).map((p) => (
-                    <div key={p.id} className="flex items-center gap-1.5 py-0.5">
-                      <div className="flex-1 truncate rounded px-1.5 py-1 text-[11px] font-semibold" style={{ background: tom(corProduto(p), 0.25) }} title={p.nome}>{p.nome}</div>
-                      <input className="input w-20 px-1.5 py-1 text-right text-xs bg-yellow-50" inputMode="decimal" value={precos[p.id] ?? ''} placeholder="—"
-                        onChange={(e) => setPrecos({ ...precos, [p.id]: e.target.value })} />
-                      {compPrecos && <input className="input w-20 px-1.5 py-1 text-right text-xs bg-slate-200 text-slate-600" value={compPrecos[p.id] ?? ''} placeholder="—" disabled readOnly />}
+                {/* 3 colunas preenchidas de cima para baixo, na ordem do cadastro (como na tela de venda) */}
+                <div className="grid gap-x-4 gap-y-0.5 md:grid-cols-3">
+                  {(() => { const lp = produtos.filter((p) => p.tem_preco); const n = Math.ceil(lp.length / 3); return [0, 1, 2].map((ci) => (
+                    <div key={ci}>
+                      {lp.slice(ci * n, ci * n + n).map((p) => (
+                        <div key={p.id} className="flex items-center gap-1.5 py-0.5">
+                          <div className="flex-1 truncate rounded px-1.5 py-1 text-[11px] font-semibold" style={{ background: tom(corProduto(p), 0.25) }} title={p.nome}>{p.nome}</div>
+                          <input className="input w-12 px-1 py-1 text-right text-[11px] bg-yellow-50" inputMode="decimal" value={precos[p.id] ?? ''} placeholder="—"
+                            onChange={(e) => setPrecos({ ...precos, [p.id]: e.target.value })} />
+                          {compPrecos && <input className="input w-12 px-1 py-1 text-right text-[11px] bg-slate-200 text-slate-600" value={compPrecos[p.id] ?? ''} placeholder="—" disabled readOnly />}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )) })()}
                 </div>
                 <div className="mt-2 text-[11px] text-slate-600">{Object.values(precos).filter((v) => v !== '').length} produtos com preço · em branco = não vende · nada é gravado até clicar em "Salvar cliente"</div>
               </div>
