@@ -17,6 +17,9 @@ export default function Clientes() {
   const [busca, setBusca] = useState('')
   const [rotaF, setRotaF] = useState<number | ''>('')
   const [inativos, setInativos] = useState(false)
+  const [formaF, setFormaF] = useState('')
+  const [nfF, setNfF] = useState(false)
+  const [gtaF, setGtaF] = useState(false)
   const [edit, setEdit] = useState<Partial<Cliente> | null>(null)
   const [editRotas, setEditRotas] = useState<number[]>([])
   const [precos, setPrecos] = useState<Record<number, string>>({})
@@ -38,8 +41,9 @@ export default function Clientes() {
     return (lista ?? []).filter((c) =>
       (inativos || c.ativo) && c.tipo === 'CLIENTE' &&
       (rotaF === '' || (rotasCliente[c.id] ?? []).includes(rotaF)) &&
+      (!formaF || c.forma_pagamento === formaF) && (!nfF || c.exige_nf) && (!gtaF || c.exige_gta) &&
       (!t || normalizar(`${c.codigo} ${c.razao_social} ${c.nome_fantasia} ${c.cidade} ${c.contato} ${c.cnpj_cpf}`).includes(t)))
-  }, [lista, busca, rotaF, inativos, rotasCliente])
+  }, [lista, busca, rotaF, inativos, rotasCliente, formaF, nfF, gtaF])
 
   async function abrir(c: Partial<Cliente>) {
     setEdit(c); setAba('dados')
@@ -98,6 +102,13 @@ export default function Clientes() {
             <option value="">Todas</option>{rotas.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
           </select>
         </Campo>
+        <Campo label="Pagamento">
+          <select className="input" value={formaF} onChange={(e) => setFormaF(e.target.value)}>
+            <option value="">Todos</option>{Object.entries(FORMAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </Campo>
+        <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={nfF} onChange={(e) => setNfF(e.target.checked)} /> NF</label>
+        <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={gtaF} onChange={(e) => setGtaF(e.target.checked)} /> GTA</label>
         <label className="flex items-center gap-2 text-sm pb-2"><input type="checkbox" checked={inativos} onChange={(e) => setInativos(e.target.checked)} /> mostrar inativos</label>
       </div>
       <div className="text-[10px] text-slate-400 mb-1">{filtrados.length} clientes</div>
@@ -163,7 +174,7 @@ export default function Clientes() {
                       </label>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Cliente novo na rota entra no fim da ordem de visita (ajuste em Rotas › Clientes e ordem).</p>
+                  <p className="text-xs text-slate-500 mt-1">Cliente novo na rota entra no fim da ordem de entrega (ajuste em Rotas › Clientes e ordem).</p>
                 </Campo>
                 <Campo label="Observação" className="sm:col-span-3 lg:col-span-5"><textarea className="input" rows={2} value={edit.observacao ?? ''} onChange={(e) => setEdit({ ...edit, observacao: e.target.value })} /></Campo>
               </div>

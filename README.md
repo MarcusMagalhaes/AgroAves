@@ -15,7 +15,7 @@ app/
     components/          Layout (menu responsivo), Logo (marca nova), ui (modal, toast, campos)
     pages/               Login, Venda (tela do vendedor), Mapa
     pages/admin/         Programacao (planilha), PedidoFornecedor, AjusteEntrega, Documentos (mapa/recibos/GTA/NF), Financeiro, Fechamento,
-                         Clientes, Rotas (ordem de visita), Produtos, Vendedores, Fornecedores, Usuarios
+                         Clientes, Rotas (ordem de entrega), Produtos, Vendedores, Fornecedores, Usuarios
   migracao/migrar.py     extrai os .xlsx, limpa, gera CSVs + rejeições e (opcional) carrega no banco com reconciliação
 ```
 

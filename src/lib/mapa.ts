@@ -1,4 +1,4 @@
-// Monta o mapa de entrega de uma rota/semana: clientes na ordem de visita × produtos
+// Monta o mapa de entrega de uma rota/semana: clientes na ordem de entrega × produtos
 import { supabase, ok } from './supabase'
 import type { PedidoItem, PedidoView, Produto } from './types'
 
