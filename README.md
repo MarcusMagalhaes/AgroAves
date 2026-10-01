@@ -21,10 +21,15 @@ app/
 
 ## 1. Banco (Supabase)
 
-1. Crie um projeto em supabase.com. Em **SQL Editor**, execute na ordem: `0001_schema.sql`, `0002_rls.sql`, `0003_seed.sql`.
-2. Em **Authentication › Users › Add user**, crie o administrador (e-mail + senha). Copie o UUID.
-3. No SQL Editor: `insert into usuario (id, nome, email, papel) values ('<uuid>', 'Marcus', 'markvpm@gmail.com', 'ADMIN');`
-4. Em **Settings › API** copie `Project URL` e `anon public key`.
+1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql`, `0002_rls.sql`, `0003_seed.sql`.
+2. **Login com Google** (Authentication › Providers › Google): ative e cole Client ID + Secret de um cliente OAuth do Google Cloud
+   (pode reutilizar o do Controle Metanoia, acrescentando as origens/redirecionamentos abaixo):
+   - Origens JavaScript autorizadas: `https://qqpavhptvptgktnzoawi.supabase.co` e `https://marcusmagalhaes.github.io`
+   - URI de redirecionamento: `https://qqpavhptvptgktnzoawi.supabase.co/auth/v1/callback`
+3. Authentication › **URL Configuration**: Site URL `https://marcusmagalhaes.github.io/AgroAves/`; Redirect URLs `https://marcusmagalhaes.github.io/AgroAves/**` e `http://localhost:5173/**`.
+4. Abra o site e clique **Entrar com Google** com markvpm@gmail.com: o gatilho em `auth.users` cria o usuário como ADMIN.
+   Outras pessoas que entrarem ficam "aguardando liberação" até o administrador definir o papel em **Usuários**.
+5. Em **Settings › API** estão `Project URL` e `anon key` usadas no `.env` e nos secrets do GitHub.
 
 ## 2. Rodar localmente
 
@@ -50,17 +55,14 @@ Revise `migracao/saida/rejeicoes.csv` (decisões D-11…D-17 em `docs/11`).
 
 ## 4. Publicar no GitHub Pages
 
-```bash
-# uma vez: criar o repositório (ex.: agroaves) e apontar o remote
-git init && git add . && git commit -m "AgroAves 2.0" && git branch -M main
-git remote add origin https://github.com/MarcusMagalhaes/AgroAves.git && git push -u origin main
-# a cada versão:
-VITE_BASE=/AgroAves/ npm run build && npm run deploy     # publica dist/ na branch gh-pages
-```
+Repositório: https://github.com/MarcusMagalhaes/AgroAves · Site: https://marcusmagalhaes.github.io/AgroAves/
 
-Em **Settings › Pages** do repositório escolha a branch `gh-pages`. O site fica em `https://marcusmagalhaes.github.io/AgroAves/`.
-As variáveis `VITE_SUPABASE_*` são embutidas no build (a chave *anon* é pública por desenho; a segurança está nas políticas RLS).
-No Supabase, em **Authentication › URL Configuration**, adicione a URL do site.
+Todo push em `main` dispara `.github/workflows/deploy.yml`, que compila e publica no GitHub Pages (fonte "GitHub Actions").
+Secrets do repositório: `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` (a chave *anon* é pública por desenho; a segurança está nas políticas RLS).
+
+```bash
+git add -A && git commit -m "..." && git push      # publica automaticamente
+```
 
 ## Perfis
 

@@ -15,6 +15,25 @@ create table if not exists usuario (
   criado_em   timestamptz not null default now()
 );
 
+-- Novo login (Google ou e-mail) cria automaticamente o registro em usuario:
+--   markvpm@gmail.com → ADMIN ativo; demais → VENDEDOR inativo (pendente até o administrador liberar em "Usuários")
+create or replace function fn_novo_usuario_auth() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_nome text; v_email text;
+begin
+  v_email := lower(coalesce(new.email, ''));
+  v_nome := coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(v_email, '@', 1));
+  insert into usuario (id, nome, email, papel, ativo)
+    values (new.id, v_nome, v_email,
+            case when v_email = 'markvpm@gmail.com' then 'ADMIN' else 'VENDEDOR' end,
+            v_email = 'markvpm@gmail.com')
+    on conflict (id) do nothing;
+  return new;
+end $$;
+
+drop trigger if exists trg_novo_usuario_auth on auth.users;
+create trigger trg_novo_usuario_auth after insert on auth.users for each row execute function fn_novo_usuario_auth();
+
 -- Função auxiliar: papel do usuário logado (usada nas políticas RLS)
 create or replace function papel_atual() returns text
 language sql stable security definer set search_path = public as $$

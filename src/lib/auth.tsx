@@ -24,8 +24,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!s) { setUsuario(null); return }
     const { data, error } = await supabase.from('usuario').select('*').eq('id', s.user.id).maybeSingle()
     if (error) { setErro(error.message); setUsuario(null); return }
-    if (!data) { setErro('Usuário autenticado, mas sem cadastro no sistema. Peça ao administrador.'); setUsuario(null); return }
-    if (!data.ativo) { setErro('Usuário desativado.'); setUsuario(null); return }
+    if (!data) { setErro('Sua conta foi reconhecida, mas ainda não está cadastrada no sistema. Peça ao administrador para liberar o acesso.'); setUsuario(null); return }
+    if (!data.ativo) { setErro(`Olá, ${data.nome}. Seu acesso está aguardando liberação pelo administrador.`); setUsuario(null); return }
     setErro(null)
     setUsuario(data as Usuario)
   }
