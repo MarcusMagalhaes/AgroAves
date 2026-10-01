@@ -100,8 +100,8 @@ export default function Programacao({ historico = false }: { historico?: boolean
   }, [visiveis, colsProd])
 
   const colunas: Column<Linha, Resumo>[] = useMemo(() => [
-    ...(historico ? [{ key: 'data', name: 'Data', width: 78, frozen: 'start' as const, renderCell: ({ row }: { row: Linha }) => <>{fmtData(row.data)}</>, renderSummaryCell: () => <b>TOTAL</b> }] : []),
-    { key: 'rota', name: 'Rota', width: 110, frozen: 'start', renderSummaryCell: ({ row }) => <b>{historico ? '' : row.cliente}</b> },
+    ...(historico ? [{ key: 'data', name: 'Data', width: 82, frozen: 'start' as const, renderCell: ({ row }: { row: Linha }) => <>{fmtData(row.data)}</>, renderSummaryCell: () => <b>TOTAL</b> }] : []),
+    { key: 'rota', name: 'Rota', width: 115, frozen: 'start', renderSummaryCell: ({ row }) => <b>{historico ? '' : row.cliente}</b> },
     { key: 'cliente', name: 'Cliente', width: 190, frozen: 'start', renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
     ...(detalhes ? [{ key: 'nome', name: 'Nome', width: 130 }, { key: 'contato', name: 'Contato', width: 110 }, { key: 'pagto', name: 'Pagto', width: 80 }] as Column<Linha, Resumo>[] : []),
     ...colsProd.map((p): Column<Linha, Resumo> => ({

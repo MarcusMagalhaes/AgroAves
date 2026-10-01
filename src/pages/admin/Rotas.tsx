@@ -3,8 +3,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarCidades, listarClientes, listarRotas, listarRotasSemana, listarVendedores } from '@/lib/dados'
 import { fmtData, normalizar } from '@/lib/format'
-import { FORMAS, type Cidade, type Cliente, type Rota, type RotaSemana, type Vendedor } from '@/lib/types'
+import type { Cidade, Cliente, Rota, RotaSemana, Vendedor } from '@/lib/types'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
+import ComboCliente from '@/components/ComboCliente'
 
 export default function Rotas() {
   const { toast } = useToast()
@@ -100,7 +101,8 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
   const { toast } = useToast()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [lista, setLista] = useState<{ cliente_id: number; ordem_visita: number }[] | null>(null)
-  const [busca, setBusca] = useState('')
+  const [novoId, setNovoId] = useState<number | null>(null)
+  const [ultimoAdd, setUltimoAdd] = useState<number | null>(null)
   const [sujo, setSujo] = useState(false)
 
   useEffect(() => {
@@ -111,10 +113,7 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
 
   const porId = useMemo(() => Object.fromEntries(clientes.map((c) => [c.id, c])), [clientes])
   const naRota = new Set((lista ?? []).map((l) => l.cliente_id))
-  const candidatos = useMemo(() => {
-    const t = normalizar(busca)
-    return clientes.filter((c) => c.ativo && !naRota.has(c.id) && (!t || normalizar(`${c.razao_social} ${c.nome_fantasia} ${c.cidade}`).includes(t))).slice(0, 30)
-  }, [clientes, busca, lista])
+  const foraDaRota = useMemo(() => clientes.filter((c) => c.ativo && !naRota.has(c.id)), [clientes, lista])
 
   function mover(i: number, delta: number) {
     if (!lista) return
@@ -123,7 +122,7 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
     setLista(nova.map((l, k) => ({ ...l, ordem_visita: k + 1 }))); setSujo(true)
   }
   function remover(id: number) { setLista(lista!.filter((l) => l.cliente_id !== id).map((l, k) => ({ ...l, ordem_visita: k + 1 }))); setSujo(true) }
-  function adicionar(id: number) { setLista([...(lista ?? []), { cliente_id: id, ordem_visita: (lista?.length ?? 0) + 1 }]); setSujo(true); setBusca('') }
+  function adicionar(id: number) { setLista([...(lista ?? []), { cliente_id: id, ordem_visita: (lista?.length ?? 0) + 1 }]); setSujo(true); setUltimoAdd(id) }
   function definirPosicao(i: number, pos: number) {
     if (!lista) return
     const nova = [...lista]; const [it] = nova.splice(i, 1); nova.splice(Math.max(0, Math.min(lista.length - 1, pos - 1)), 0, it)
@@ -141,55 +140,43 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
   return (
     <Modal aberto titulo={`Clientes da rota ${rota.nome} — ordem de visita`} onFechar={onFechar} largura="max-w-[96vw]">
       {!lista ? <Carregando /> : (
-        <div className="grid gap-3 md:grid-cols-[1fr_300px] text-[11px]" style={{ height: 'calc(95vh - 110px)' }}>
-          {/* lista da rota, na ordem de visita */}
-          <div className="flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-slate-600"><b>{lista.length}</b> clientes · use ▲▼ ou digite a posição</span>
-              <div className="flex gap-1.5">
-                <button className="btn-secondary py-1" onClick={onFechar}>Fechar</button>
-                <button className="btn-primary py-1" onClick={salvar} disabled={!sujo}>Salvar ordem</button>
-              </div>
-            </div>
-            <div className="flex-1 min-h-0 overflow-auto border rounded-lg">
-              <table className="tabela">
-                <thead><tr><th className="w-12 text-center">Pos.</th><th>Cliente</th><th>Fantasia</th><th>Cidade</th><th>Contato</th><th>Telefone</th><th>Pagto</th><th className="w-24"></th></tr></thead>
-                <tbody>
-                  {lista.map((l, i) => {
-                    const c = porId[l.cliente_id]
-                    return (
-                      <tr key={l.cliente_id}>
-                        <td className="text-center"><input type="text" inputMode="numeric" className="w-10 rounded border border-slate-300 bg-yellow-50 px-0.5 py-0 text-center font-bold" value={l.ordem_visita}
-                          onChange={(e) => { const n = Number(e.target.value.replace(/\D/g, '')); if (n) definirPosicao(i, n) }} /></td>
-                        <td className="font-semibold whitespace-nowrap">{c?.razao_social ?? `#${l.cliente_id}`}</td>
-                        <td className="whitespace-nowrap">{c?.nome_fantasia}</td>
-                        <td className="whitespace-nowrap">{c?.cidade}</td>
-                        <td className="whitespace-nowrap">{c?.contato}</td>
-                        <td className="whitespace-nowrap">{c?.telefone}</td>
-                        <td>{c ? FORMAS[c.forma_pagamento] : ''}</td>
-                        <td className="text-right whitespace-nowrap">
-                          <button className="rounded border border-slate-300 bg-white px-1.5 hover:bg-slate-100" onClick={() => mover(i, -1)} title="Subir">▲</button>
-                          <button className="rounded border border-slate-300 bg-white px-1.5 ml-0.5 hover:bg-slate-100" onClick={() => mover(i, 1)} title="Descer">▼</button>
-                          <button className="rounded border border-red-300 bg-white px-1.5 ml-0.5 text-red-600 hover:bg-red-50" onClick={() => remover(l.cliente_id)} title="Tirar da rota">✕</button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+        <div className="flex flex-col text-[11px]" style={{ height: 'calc(95vh - 110px)' }}>
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="text-slate-600 whitespace-nowrap"><b>{lista.length}</b> clientes · ▲▼ ou digite a posição</span>
+            <span className="font-bold text-slate-500 uppercase text-[10px] ml-2 whitespace-nowrap">Buscar cliente fora da rota</span>
+            <ComboCliente className="flex-1 min-w-[260px]" valor={novoId} onChange={setNovoId} placeholder="digite nome, fantasia ou cidade…"
+              opcoes={foraDaRota.map((c) => ({ id: c.id, rotulo: [c.razao_social, c.nome_fantasia, c.cidade].filter(Boolean).join('  __  ') }))} />
+            <button className="btn-accent py-1" disabled={novoId == null} onClick={() => { if (novoId != null) { adicionar(novoId); setNovoId(null) } }}>+ Adicionar ao final</button>
+            <div className="ml-auto flex gap-1.5">
+              <button className="btn-secondary py-1" onClick={onFechar}>Fechar</button>
+              <button className="btn-primary py-1" onClick={salvar} disabled={!sujo}>Salvar ordem</button>
             </div>
           </div>
-          {/* clientes para incluir */}
-          <div className="flex flex-col min-h-0">
-            <input className="input py-1 text-xs bg-yellow-50 mb-1" placeholder="adicionar cliente: buscar nome, cidade…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            <div className="flex-1 min-h-0 overflow-auto border rounded-lg divide-y divide-slate-100">
-              {candidatos.map((c) => (
-                <button key={c.id} className="w-full text-left px-2 py-1 hover:bg-leaf-50" onClick={() => adicionar(c.id)}>
-                  <div className="font-medium truncate">{c.razao_social}</div><div className="text-[10px] text-slate-500 truncate">{c.nome_fantasia} · {c.cidade}</div>
-                </button>
-              ))}
-              {candidatos.length === 0 && <div className="p-3 text-slate-400">Nenhum cliente fora da rota com esse texto</div>}
-            </div>
+          <div className="flex-1 min-h-0 overflow-auto border rounded-lg">
+            <table className="tabela">
+              <thead><tr><th className="w-24"></th><th className="w-12 text-center">Pos.</th><th>Cliente</th><th>Fantasia</th><th>Cidade</th><th>Contato</th><th>Local de entrega</th></tr></thead>
+              <tbody>
+                {lista.map((l, i) => {
+                  const c = porId[l.cliente_id]
+                  return (
+                    <tr key={l.cliente_id} className={l.cliente_id === ultimoAdd ? 'bg-amber-100' : ''}>
+                      <td className="whitespace-nowrap">
+                        <button className="rounded border border-slate-300 bg-white px-1.5 hover:bg-slate-100" onClick={() => mover(i, -1)} title="Subir">▲</button>
+                        <button className="rounded border border-slate-300 bg-white px-1.5 ml-0.5 hover:bg-slate-100" onClick={() => mover(i, 1)} title="Descer">▼</button>
+                        <button className="rounded border border-red-300 bg-white px-1.5 ml-0.5 text-red-600 hover:bg-red-50" onClick={() => remover(l.cliente_id)} title="Tirar da rota">✕</button>
+                      </td>
+                      <td className="text-center"><input type="text" inputMode="numeric" className="w-10 rounded border border-slate-300 bg-yellow-50 px-0.5 py-0 text-center font-bold" value={l.ordem_visita}
+                        onChange={(e) => { const n = Number(e.target.value.replace(/\D/g, '')); if (n) definirPosicao(i, n) }} /></td>
+                      <td className="font-semibold whitespace-nowrap">{c?.razao_social ?? `#${l.cliente_id}`}</td>
+                      <td className="whitespace-nowrap">{c?.nome_fantasia}</td>
+                      <td className="whitespace-nowrap">{c?.cidade}</td>
+                      <td className="whitespace-nowrap">{c?.contato}</td>
+                      <td className="whitespace-nowrap">{c?.local_entrega}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
