@@ -5,7 +5,8 @@ import { listarCidades, listarProdutos, rpc } from '@/lib/dados'
 import { fmtData, fmtDataHora, fmtMoeda, fmtNum } from '@/lib/format'
 import { corProduto } from '@/lib/types'
 import type { Cidade, PedidoFornecedor as PF, PedidoFornecedorItem, Produto } from '@/lib/types'
-import { Campo, Carregando, Chip, Confirmar, Titulo, Vazio, useToast } from '@/components/ui'
+import { Campo, Carregando, Chip, Confirmar, Modal, Titulo, Vazio, useToast } from '@/components/ui'
+import Programacao from './Programacao'
 
 export default function AjusteEntrega() {
   const { toast } = useToast()
@@ -17,7 +18,6 @@ export default function AjusteEntrega() {
   const [conf, setConf] = useState<Record<number, { q: string; obs: string }>>({})
   const [programado, setProgramado] = useState<Record<number, number>>({})
   const [prodSel, setProdSel] = useState<number | null>(null)
-  const [clientes, setClientes] = useState<any[]>([])
   const [carregando, setCarregando] = useState(false)
   const [confirmaEntrega, setConfirmaEntrega] = useState(false)
 
@@ -39,20 +39,9 @@ export default function AjusteEntrega() {
       const prog = ok(await supabase.from('v_programacao_cidade').select('*').eq('data_entrega', pf.data_entrega).eq('cidade_distribuicao_id', pf.cidade_distribuicao_id)) as any[]
       const pm: Record<number, number> = {}; for (const x of prog) pm[x.produto_id] = Number(x.qtd_programada)
       setProgramado(pm)
-      if (prodSel) await carregarClientes(prodSel, pf)
     } catch (e: any) { toast(e.message, 'erro') } finally { setCarregando(false) }
   }
   useEffect(() => { carregar() }, [pfId])
-
-  async function carregarClientes(produtoId: number, p: PF = pf!) {
-    const rows = ok(await supabase.from('pedido_item').select('pedido_id, quantidade, preco_unitario, pedido:pedido!inner(id, total, status, cidade_distribuicao_id, reposicao, semana_rota:semana_rota!inner(data_entrega, rota:rota(nome)), cliente:cliente(razao_social, nome_fantasia, cidade, forma_pagamento))')
-      .eq('produto_id', produtoId).eq('pedido.cidade_distribuicao_id', p.cidade_distribuicao_id).eq('pedido.semana_rota.data_entrega', p.data_entrega).neq('pedido.status', 'EXCLUIDO')) as any[]
-    setClientes(rows.map((r) => ({
-      pedido_id: r.pedido_id, quantidade: r.quantidade, preco: Number(r.preco_unitario), total: Number(r.pedido.total),
-      rota: r.pedido.semana_rota?.rota?.nome, cliente: r.pedido.cliente?.razao_social ?? '(reposição/sobra da rota)', nome: r.pedido.cliente?.nome_fantasia,
-      cidade: r.pedido.cliente?.cidade, pagto: r.pedido.cliente?.forma_pagamento, edit: String(r.quantidade),
-    })).sort((a, b) => (a.rota ?? '').localeCompare(b.rota ?? '') || a.cliente.localeCompare(b.cliente)))
-  }
 
   async function salvarConfirmacao(status: 'CONFIRMADO' | 'ENTREGUE') {
     if (!pf) return
@@ -66,16 +55,6 @@ export default function AjusteEntrega() {
     } catch (e: any) { toast(e.message, 'erro') }
   }
 
-  async function salvarQtdCliente(c: any) {
-    const q = Math.max(0, Math.floor(Number(c.edit) || 0))
-    if (q === c.quantidade) return
-    try {
-      await rpc('atualizar_item_pedido', { p_pedido_id: c.pedido_id, p_produto_id: prodSel, p_quantidade: q })
-      toast(`${c.cliente}: ${c.quantidade} → ${q}`)
-      await carregar()
-    } catch (e: any) { toast(e.message, 'erro'); setClientes((cs) => cs.map((x) => (x.pedido_id === c.pedido_id ? { ...x, edit: String(x.quantidade) } : x))) }
-  }
-
   const linhas = useMemo(() => produtos.filter((p) => itens.some((i) => i.produto_id === p.id) || programado[p.id]), [produtos, itens, programado])
   const item = (pid: number) => itens.find((i) => i.produto_id === pid)
   const prodSelObj = produtos.find((p) => p.id === prodSel)
@@ -85,7 +64,7 @@ export default function AjusteEntrega() {
       <Titulo>Ajuste da entrega</Titulo>
       <div className="barra">
         <Campo label="Pedido à granja (data / cidade)">
-          <select className="input" value={pfId} onChange={(e) => { setPfId(Number(e.target.value)); setProdSel(null); setClientes([]) }}>
+          <select className="input" value={pfId} onChange={(e) => { setPfId(Number(e.target.value)); setProdSel(null) }}>
             {pedidos.map((p) => <option key={p.id} value={p.id}>{fmtData(p.data_entrega)} — {cidades.find((c) => c.id === p.cidade_distribuicao_id)?.nome} — {p.status}</option>)}
           </select>
         </Campo>
@@ -125,7 +104,7 @@ export default function AjusteEntrega() {
           {/* 2. Redistribuição entre clientes */}
           <div className="card p-3">
             <div className="font-bold text-leaf-900 mb-1">2. Ajustar pedidos dos clientes</div>
-            <p className="text-xs text-slate-500 mb-2">Previsto = soma atual dos pedidos. Clique num produto para ver quem pediu e alterar as quantidades. O sistema só mostra a diferença, não distribui.</p>
+            <p className="text-xs text-slate-500 mb-2">Previsto = soma atual dos pedidos. Clique num produto para abrir a programação só dos clientes que o pediram e ajustar os pedidos. O sistema só mostra a diferença, não distribui.</p>
             <table className="tabela">
               <thead><tr><th className="text-left">Produto</th><th className="text-right">Previsto</th><th className="text-right">Confirmado</th><th className="text-right">Diferença</th></tr></thead>
               <tbody>
@@ -134,7 +113,7 @@ export default function AjusteEntrega() {
                 const linhaGrupo = novoGrupo ? <tr key={`g${p.id}`} className="grupo-prod"><td colSpan={9} style={{ background: corProduto(p) + '66' }}>{p.grupo ?? 'OUTROS'}</td></tr> : null
                   const prev = programado[p.id] ?? 0; const confQ = item(p.id)?.qtd_confirmada; const dif = confQ == null ? null : confQ - prev
                   return (<>{linhaGrupo}
-                    <tr key={p.id} onClick={() => { setProdSel(p.id); carregarClientes(p.id) }} className={`border-t border-slate-100 cursor-pointer hover:bg-leaf-50 ${prodSel === p.id ? 'bg-leaf-100' : ''}`}>
+                    <tr key={p.id} onClick={() => setProdSel(p.id)} className={`border-t border-slate-100 cursor-pointer hover:bg-leaf-50 ${prodSel === p.id ? 'bg-leaf-100' : ''}`}>
                       <td className="font-semibold" style={{ background: corProduto(p) + '26' }}>{p.nome}</td>
                       <td className="text-right">{fmtNum(prev)}</td>
                       <td className="text-right">{confQ ?? '—'}</td>
@@ -144,34 +123,16 @@ export default function AjusteEntrega() {
                 })}
               </tbody>
             </table>
-            {prodSelObj && (
-              <div className="mt-3 border-t border-slate-200 pt-3">
-                <div className="font-semibold mb-1">Clientes que pediram <b>{prodSelObj.nome}</b> ({clientes.length})</div>
-                <div className="max-h-80 overflow-auto">
-                  <table className="w-full text-xs">
-                    <thead className="text-slate-500"><tr><th className="p-1 text-left">Rota</th><th className="p-1 text-left">Cliente</th><th className="p-1 text-left">Pagto</th><th className="p-1 text-right">Qtd</th><th className="p-1 text-right">Total pedido</th></tr></thead>
-                    <tbody>
-                      {clientes.map((c) => (
-                        <tr key={c.pedido_id} className="border-t border-slate-100">
-                          <td className="p-1">{c.rota}</td>
-                          <td className="p-1"><div className="font-semibold">{c.cliente}</div><div className="text-slate-500">{c.nome} · {c.cidade}</div></td>
-                          <td className="p-1">{c.pagto}</td>
-                          <td className="p-1 text-right">
-                            <input type="number" className="input w-20 py-0.5 text-right" value={c.edit}
-                              onChange={(e) => setClientes((cs) => cs.map((x) => (x.pedido_id === c.pedido_id ? { ...x, edit: e.target.value } : x)))}
-                              onBlur={() => salvarQtdCliente(c)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
-                          </td>
-                          <td className="p-1 text-right">{fmtMoeda(c.total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot><tr className="font-bold border-t"><td className="p-1" colSpan={3}>Soma atual</td><td className="p-1 text-right">{fmtNum(clientes.reduce((s, c) => s + c.quantidade, 0))}</td><td /></tr></tfoot>
-                  </table>
-                </div>
-              </div>
-            )}
           </div>
         </div>
+      )}
+      {prodSelObj && pf && (
+        <Modal aberto titulo={`Ajustar pedidos de ${prodSelObj.nome} — ${fmtData(pf.data_entrega)} · ${cidades.find((c) => c.id === pf.cidade_distribuicao_id)?.nome}`} onFechar={() => { setProdSel(null); carregar() }}>
+          <div className="h-full flex flex-col">
+            <div className="text-[11px] text-slate-600 mb-1">Só os clientes que pediram <b>{prodSelObj.nome}</b> nesta data e cidade. Edite qualquer produto da linha (tire deste e compense em outro); cada célula salva ao sair. Feche a janela para atualizar os totais.</div>
+            <div className="flex-1 min-h-0"><Programacao key={`fx-${prodSelObj.id}`} fixo={{ data: pf.data_entrega, cidadeId: pf.cidade_distribuicao_id, produtoId: prodSelObj.id }} /></div>
+          </div>
+        </Modal>
       )}
       <Confirmar aberto={confirmaEntrega} titulo="Marcar como entregue" texto="Confirma que a mercadoria chegou? Os títulos financeiros desta data/cidade serão gerados ou atualizados." onSim={() => salvarConfirmacao('ENTREGUE')} onNao={() => setConfirmaEntrega(false)} />
     </div>

@@ -28,7 +28,8 @@ function EditorNumero({ row, column, onRowChange, onClose }: RenderEditCellProps
 }
 const LARG_FIXA_ESQ = 110 + 190  // rota + cliente (congeladas); +78 da Data no histórico
 
-export default function Programacao({ historico = false }: { historico?: boolean }) {
+export interface FiltroFixo { data: string; cidadeId: number; produtoId: number }
+export default function Programacao({ historico = false, fixo, aoMudar }: { historico?: boolean; fixo?: FiltroFixo; aoMudar?: () => void }) {
   const { toast } = useToast()
   const [rotas, setRotas] = useState<RotaSemana[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
@@ -55,6 +56,8 @@ export default function Programacao({ historico = false }: { historico?: boolean
         const sem = ok(await supabase.from('semana_rota').select('data_entrega').eq('status', 'FECHADA').order('data_entrega', { ascending: false })) as { data_entrega: string }[]
         const d = [...new Set(sem.map((x) => x.data_entrega))]
         setDatasFechadas(d); if (d[0]) setData(d[0])
+      } else if (fixo) {
+        setData(fixo.data)
       } else {
         const d = [...new Set(r.map((x) => x.data_entrega))].filter(Boolean).sort(); if (d[0]) setData(d[0] as string)
       }
@@ -67,12 +70,14 @@ export default function Programacao({ historico = false }: { historico?: boolean
     try {
       let q = supabase.from('v_pedido').select('*').eq('data_entrega', data).neq('status', 'EXCLUIDO').eq('semana_status', historico ? 'FECHADA' : 'ABERTA').order('rota').order('ordem_visita')
       if (rotaF !== '') q = q.eq('rota_id', rotaF)
-      const pedidos = ok(await q) as PedidoView[]
+      if (fixo) q = q.eq('cidade_distribuicao_id', fixo.cidadeId)
+      let pedidos = ok(await q) as PedidoView[]
       const ids = pedidos.map((p) => p.id)
       const itens = ids.length ? ok(await supabase.from('pedido_item').select('*').in('pedido_id', ids)) as PedidoItem[] : []
       const porSigla = Object.fromEntries(produtos.map((p) => [p.id, p.sigla]))
       const m: Record<number, Record<string, number>> = {}
       for (const i of itens) (m[i.pedido_id] ??= {})[porSigla[i.produto_id]] = i.quantidade
+      if (fixo) { const sg = porSigla[fixo.produtoId]; pedidos = pedidos.filter((p) => (m[p.id]?.[sg] ?? 0) > 0) }
       setLinhas(pedidos.map((p) => ({
         id: p.id, data: p.data_entrega, rota: p.rota, semana_rota_id: p.semana_rota_id, cliente_id: p.cliente_id,
         cliente: p.tipo === 'CLIENTE' ? p.razao_social ?? '' : `(${p.tipo} da rota)`, nome: p.nome_fantasia ?? '', contato: p.contato ?? '',
@@ -137,6 +142,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
         atualizar({ total: Number(total) })
       }
       setEstado((e) => ({ ...e, [chave]: 'ok' }))
+      aoMudar?.()
       setTimeout(() => setEstado((e) => { const { [chave]: _, ...r } = e; return r }), 1500)
     } catch (err: any) {
       setEstado((e) => ({ ...e, [chave]: 'erro' })); toast(err.message, 'erro')
@@ -152,12 +158,12 @@ export default function Programacao({ historico = false }: { historico?: boolean
     <div className="flex h-full flex-col text-xs">
       {/* filtros numa linha fina */}
       <div className="card px-3 py-1.5 mb-1.5 bg-rose-50/60 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        <span className="font-extrabold text-sm text-leaf-900 mr-1">{historico ? 'Fechamento geral' : 'Programação'}</span>
+        {!fixo && <span className="font-extrabold text-sm text-leaf-900 mr-1">{historico ? 'Fechamento geral' : 'Programação'}</span>}
         <label className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Semana</span>
-          <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={data} onChange={(e) => setData(e.target.value)}>{datas.map((d) => <option key={d} value={d}>{fmtData(d)}</option>)}</select></label>
+          {fixo ? <span className="font-bold">{fmtData(data)}</span> : <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={data} onChange={(e) => setData(e.target.value)}>{datas.map((d) => <option key={d} value={d}>{fmtData(d)}</option>)}</select>}</label>
         <label className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Rota</span>
           <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={rotaF} onChange={(e) => setRotaF(e.target.value ? Number(e.target.value) : '')}>
-            <option value="">Todas</option>{rotas.filter((r) => historico || r.data_entrega === data).map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
+            <option value="">Todas</option>{rotas.filter((r) => historico || (r.data_entrega === data && (!fixo || r.cidade_distribuicao_id === fixo.cidadeId))).map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
           </select></label>
         <label className="flex items-center gap-1.5 flex-1 min-w-[160px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Filtrar</span>
           <input className="input py-1 px-2 text-xs bg-yellow-50" placeholder="cliente, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} /></label>
@@ -179,7 +185,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
         </div>
         <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={detalhes} onChange={(e) => setDetalhes(e.target.checked)} /> nome/contato/pagto</label>
         <span className="text-[11px] text-slate-500">{visiveis.length} pedidos · {fmtMoeda(resumo[0]?.total ?? 0)}</span>
-        {!historico && <button className="btn-primary py-1 text-xs ml-auto" onClick={() => setIncluir(true)}>+ Incluir pedido</button>}
+        {!historico && !fixo && <button className="btn-primary py-1 text-xs ml-auto" onClick={() => setIncluir(true)}>+ Incluir pedido</button>}
       </div>
       {linhas === null ? <Carregando /> : (
         <div className="card flex-1 min-h-0 overflow-hidden flex flex-col">

@@ -19,7 +19,6 @@ const menuAdmin: Entrada[] = [
   { to: '/venda', label: 'Venda semanal', icone: '🛒' },
   { to: '/programacao', label: 'Programação', icone: '📋' },
   { to: '/fornecedor', label: 'Pedido à granja', icone: '🏭' },
-  { to: '/ajuste', label: 'Ajuste da entrega', icone: '⚖️' },
   { grupo: 'Impressões', icone: '🖨️', itens: [
     { to: '/documentos/mapa', label: 'Mapa de entrega', icone: '🗺️' },
     { to: '/documentos/recibos', label: 'Recibos', icone: '🧾' },
