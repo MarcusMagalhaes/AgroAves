@@ -79,13 +79,14 @@ export default function Programacao() {
     { key: 'contato', name: 'Contato', width: 120 },
     { key: 'pagto', name: 'Pagto', width: 90 },
     ...colsProd.map((p): Column<Linha, Resumo> => ({
-      key: p.sigla, name: p.sigla, width: 64, editable: true, renderEditCell: renderTextEditor,
+      key: p.sigla, name: p.nome, width: 92, editable: true, renderEditCell: renderTextEditor,
+      renderHeaderCell: () => <span className="block text-[11px] leading-tight whitespace-normal text-center" title={p.nome}>{p.nome}</span>,
       cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
       renderSummaryCell: ({ row }) => <b>{row[p.sigla] ? fmtNum(row[p.sigla]) : ''}</b>,
       headerCellClass: 'text-center',
     })),
-    { key: 'R', name: 'R', width: 60, editable: true, renderEditCell: renderTextEditor, cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
+    { key: 'R', name: 'Reposição', width: 72, editable: true, renderEditCell: renderTextEditor, cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
     { key: 'total', name: 'Total R$', width: 110, cellClass: 'cell-num font-semibold', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
     { key: 'acoes', name: '', width: 40, renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
@@ -137,7 +138,7 @@ export default function Programacao() {
           <div className="flex flex-wrap gap-1 max-h-20 overflow-auto">
             {produtos.map((p) => (
               <button key={p.id} onClick={() => setProdF(prodF.includes(p.sigla) ? prodF.filter((s) => s !== p.sigla) : [...prodF, p.sigla])}
-                className={`chip border ${prodF.includes(p.sigla) ? 'bg-leaf-600 text-white border-leaf-600' : 'bg-white border-slate-300 text-slate-600'}`}>{p.sigla}</button>
+                className={`chip border ${prodF.includes(p.sigla) ? 'bg-leaf-600 text-white border-leaf-600' : 'bg-white border-slate-300 text-slate-600'}`}>{p.nome}</button>
             ))}
             {prodF.length > 0 && <button className="chip bg-slate-200" onClick={() => setProdF([])}>limpar</button>}
           </div>
@@ -147,7 +148,7 @@ export default function Programacao() {
       {linhas === null ? <Carregando /> : (
         <div className="card flex-1 min-h-[420px] overflow-hidden">
           <DataGrid className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
-            onRowsChange={onRowsChange} rowHeight={32} headerRowHeight={34} summaryRowHeight={34} />
+            onRowsChange={onRowsChange} rowHeight={32} headerRowHeight={52} summaryRowHeight={34} />
         </div>
       )}
 

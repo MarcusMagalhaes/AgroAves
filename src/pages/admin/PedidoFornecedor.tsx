@@ -107,7 +107,7 @@ export default function PedidoFornecedor() {
                 const prog = programado[p.id] ?? 0; const ped = Number(aPedir[p.id]) || 0
                 return (
                   <tr key={p.id} className="border-t border-slate-100">
-                    <td className="p-2"><b className="text-slate-500 mr-2">{p.sigla}</b>{p.nome}</td>
+                    <td className="p-2 font-semibold">{p.nome}</td>
                     <td className="p-2 text-right font-semibold">{fmtNum(prog)}</td>
                     <td className="p-2 text-right">
                       <input type="number" inputMode="numeric" className={`input w-28 text-right py-1 ${ped !== prog ? 'border-amber-400 bg-amber-50' : ''}`} value={aPedir[p.id] ?? ''}

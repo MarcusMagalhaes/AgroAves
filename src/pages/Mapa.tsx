@@ -19,8 +19,8 @@ export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean
           <th className={`${cls} border text-left`}>Cidade</th>
           <th className={`${cls} border text-left`}>Local de entrega</th>
           <th className={`${cls} border text-left`}>Pagto</th>
-          {mapa.produtosUsados.map((p) => <th key={p.id} className={`${cls} border text-center`} title={p.nome}>{p.sigla}</th>)}
-          {mapa.totalR > 0 && <th className={`${cls} border text-center`}>R</th>}
+          {mapa.produtosUsados.map((p) => <th key={p.id} className={`${cls} border text-center align-bottom leading-tight`} style={{ maxWidth: 60 }}>{p.nome}</th>)}
+          {mapa.totalR > 0 && <th className={`${cls} border text-center align-bottom`}>Reposição</th>}
           <th className={`${cls} border text-right`}>Total R$</th>
         </tr>
       </thead>

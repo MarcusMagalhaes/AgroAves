@@ -104,7 +104,7 @@ export default function AjusteEntrega() {
                   const dif = (Number(c.q) || 0) - (it?.qtd_pedida ?? 0)
                   return (
                     <tr key={p.id} className="border-t border-slate-100">
-                      <td className="p-1.5"><b className="text-slate-500 mr-1">{p.sigla}</b><span className="hidden sm:inline">{p.nome}</span></td>
+                      <td className="p-1.5 font-semibold">{p.nome}</td>
                       <td className="p-1.5 text-right">{fmtNum(it?.qtd_pedida ?? 0)}</td>
                       <td className="p-1.5 text-right"><input type="number" className={`input w-24 py-1 text-right ${dif !== 0 ? 'border-amber-400 bg-amber-50' : ''}`} value={c.q} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, q: e.target.value } })} /></td>
                       <td className="p-1.5"><input className="input py-1" placeholder="substituição…" value={c.obs} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, obs: e.target.value } })} /></td>
@@ -130,7 +130,7 @@ export default function AjusteEntrega() {
                   const prev = programado[p.id] ?? 0; const confQ = item(p.id)?.qtd_confirmada; const dif = confQ == null ? null : confQ - prev
                   return (
                     <tr key={p.id} onClick={() => { setProdSel(p.id); carregarClientes(p.id) }} className={`border-t border-slate-100 cursor-pointer hover:bg-leaf-50 ${prodSel === p.id ? 'bg-leaf-100' : ''}`}>
-                      <td className="p-1.5"><b className="text-slate-500 mr-1">{p.sigla}</b><span className="hidden sm:inline">{p.nome}</span></td>
+                      <td className="p-1.5 font-semibold">{p.nome}</td>
                       <td className="p-1.5 text-right">{fmtNum(prev)}</td>
                       <td className="p-1.5 text-right">{confQ ?? '—'}</td>
                       <td className={`p-1.5 text-right font-bold ${dif == null ? '' : dif < 0 ? 'text-red-600' : dif > 0 ? 'text-leaf-700' : 'text-slate-400'}`}>{dif == null ? '' : dif > 0 ? `+${dif}` : dif}</td>
@@ -141,7 +141,7 @@ export default function AjusteEntrega() {
             </table>
             {prodSelObj && (
               <div className="mt-3 border-t border-slate-200 pt-3">
-                <div className="font-semibold mb-1">Clientes que pediram <b>{prodSelObj.sigla} — {prodSelObj.nome}</b> ({clientes.length})</div>
+                <div className="font-semibold mb-1">Clientes que pediram <b>{prodSelObj.nome}</b> ({clientes.length})</div>
                 <div className="max-h-80 overflow-auto">
                   <table className="w-full text-xs">
                     <thead className="text-slate-500"><tr><th className="p-1 text-left">Rota</th><th className="p-1 text-left">Cliente</th><th className="p-1 text-left">Pagto</th><th className="p-1 text-right">Qtd</th><th className="p-1 text-right">Total pedido</th></tr></thead>

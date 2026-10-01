@@ -1,18 +1,17 @@
-// Tela de venda semanal — segue o layout da aba "Venda Semana" (modelo Marcus):
-// filtros (rota, texto, status) → lista de clientes → painel do cliente (pendência, últimos pedidos) → grade de produtos → contato
-import { useEffect, useMemo, useState } from 'react'
+// Tela de venda semanal — mesmo padrão da aba "Venda Semana" da planilha:
+// cabeçalho (vendedor, semana, filtros, cliente) → financeiro + 4 últimos pedidos → grade 3 colunas × 9 produtos → interesse
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '@/lib/auth'
 import { supabase, ok } from '@/lib/supabase'
 import { itensDoPedido, listarProdutos, listarRotasSemana, precosDoCliente, rpc } from '@/lib/dados'
 import { fmtData, fmtMoeda, normalizar } from '@/lib/format'
 import { FORMAS, RESULTADOS, type ClienteRotaSemana, type Produto, type Resultado, type RotaSemana } from '@/lib/types'
-import { Campo, Carregando, Chip, Confirmar, Titulo, Vazio, useToast } from '@/components/ui'
+import { Carregando, Confirmar, Vazio, useToast } from '@/components/ui'
 
 type FiltroStatus = 'TODOS' | 'PEDIDO' | 'SEM_PEDIDO' | 'SEM_INTERESSE' | 'SEM_CONTATO'
 const FILTROS: Record<FiltroStatus, string> = {
   TODOS: 'Todos', PEDIDO: 'Pedido registrado', SEM_PEDIDO: 'Sem pedido', SEM_INTERESSE: 'Sem interesse', SEM_CONTATO: 'Sem contato',
 }
-
 function passaFiltro(c: ClienteRotaSemana, f: FiltroStatus) {
   switch (f) {
     case 'PEDIDO': return c.resultado === 'PEDIDO'
@@ -22,14 +21,11 @@ function passaFiltro(c: ClienteRotaSemana, f: FiltroStatus) {
     default: return true
   }
 }
+const rotulo = (c: ClienteRotaSemana) =>
+  [c.razao_social, c.nome_fantasia, c.cidade, c.contato, c.telefone].filter(Boolean).join('  __  ')
 
-function corStatus(r: Resultado | null) {
-  if (r === 'PEDIDO') return 'verde'
-  if (r === 'SEM_INTERESSE') return 'vermelho'
-  if (r === 'SEM_CONTATO') return 'cinza'
-  if (r === 'INTERESSE_SEM_PEDIDO') return 'amarelo'
-  return 'cinza'
-}
+const CabecalhoCel = ({ children, className = '' }: { children: ReactNode; className?: string }) =>
+  <th className={`bg-slate-200 border border-slate-300 px-1 py-0.5 text-[11px] font-bold text-slate-700 ${className}`}>{children}</th>
 
 export default function Venda() {
   const { usuario } = useAuth()
@@ -42,17 +38,17 @@ export default function Venda() {
   const [clientes, setClientes] = useState<ClienteRotaSemana[]>([])
   const [carregando, setCarregando] = useState(true)
   const [clienteId, setClienteId] = useState<number | null>(null)
-  const [mostrarLista, setMostrarLista] = useState(true)
 
-  // dados do cliente selecionado
   const [precos, setPrecos] = useState<Record<number, number>>({})
   const [qtd, setQtd] = useState<Record<number, string>>({})
   const [reposicao, setReposicao] = useState('')
   const [pendencia, setPendencia] = useState<{ valor_pendente: number; semanas: string[] } | null>(null)
   const [ultimos, setUltimos] = useState<any[]>([])
   const [resultado, setResultado] = useState<Resultado | null>(null)
+  const [marca, setMarca] = useState<Resultado | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [confirmaExcluir, setConfirmaExcluir] = useState(false)
+  const primeiroInput = useRef<HTMLInputElement>(null)
 
   const rota = rotas.find((r) => r.rota_id === rotaId) ?? null
   const cliente = clientes.find((c) => c.cliente_id === clienteId) ?? null
@@ -60,7 +56,7 @@ export default function Venda() {
   useEffect(() => {
     Promise.all([listarRotasSemana(), listarProdutos()]).then(([r, p]) => {
       setRotas(r); setProdutos(p)
-      if (r.length && rotaId == null) setRotaId(r[0].rota_id)
+      if (r.length) setRotaId(r[0].rota_id)
     }).catch((e) => toast(e.message, 'erro')).finally(() => setCarregando(false))
   }, [])
 
@@ -79,9 +75,15 @@ export default function Venda() {
     return clientes.filter((c) => passaFiltro(c, filtro) && t.every((p) => c.busca.includes(p)))
   }, [clientes, texto, filtro])
 
-  // ao trocar de cliente: relê pedido e contato gravados (comportamento da aba Marcus)
+  // cliente selecionado saiu do filtro → mantém, mas se nenhum, escolhe o primeiro
   useEffect(() => {
-    if (!cliente) return
+    if (filtrados.length && (clienteId == null || !filtrados.some((c) => c.cliente_id === clienteId))) setClienteId(filtrados[0].cliente_id)
+    if (!filtrados.length) setClienteId(null)
+  }, [filtrados])
+
+  // ao trocar de cliente: relê pedido e contato gravados
+  useEffect(() => {
+    if (!cliente) { setQtd({}); setReposicao(''); setPendencia(null); setUltimos([]); setResultado(null); setMarca(null); return }
     let vivo = true
     ;(async () => {
       try {
@@ -94,7 +96,7 @@ export default function Venda() {
         setPrecos(Object.fromEntries(pc.map((p) => [p.produto_id, Number(p.preco)])))
         setPendencia(pend?.[0] ?? null)
         setUltimos(ult ?? [])
-        setResultado(cliente.resultado)
+        setResultado(cliente.resultado); setMarca(cliente.resultado)
         if (cliente.pedido_id) {
           const itens = await itensDoPedido(cliente.pedido_id)
           const { data } = await supabase.from('pedido').select('reposicao').eq('id', cliente.pedido_id).single()
@@ -102,13 +104,13 @@ export default function Venda() {
           setQtd(Object.fromEntries(itens.map((i) => [i.produto_id, String(i.quantidade)])))
           setReposicao(data?.reposicao ? String(data.reposicao) : '')
         } else { setQtd({}); setReposicao('') }
+        setTimeout(() => primeiroInput.current?.focus(), 50)
       } catch (e: any) { toast(e.message, 'erro') }
     })()
     return () => { vivo = false }
   }, [clienteId])
 
-  const total = useMemo(() =>
-    produtos.reduce((s, p) => s + (Number(qtd[p.id]) || 0) * (precos[p.id] ?? 0), 0), [qtd, precos, produtos])
+  const total = useMemo(() => produtos.reduce((s, p) => s + (Number(qtd[p.id]) || 0) * (precos[p.id] ?? 0), 0), [qtd, precos, produtos])
 
   async function salvarPedido() {
     if (!cliente || !rota?.semana_rota_id) return
@@ -117,208 +119,187 @@ export default function Venda() {
     setSalvando(true)
     try {
       await rpc('salvar_pedido', { p_semana_rota_id: rota.semana_rota_id, p_cliente_id: cliente.cliente_id, p_itens: itens, p_reposicao: Number(reposicao) || 0 })
-      toast(`Pedido de ${cliente.razao_social} salvo: ${fmtMoeda(total)}`)
-      setResultado('PEDIDO')
+      toast(`Pedido salvo: ${fmtMoeda(total)}`)
+      setResultado('PEDIDO'); setMarca('PEDIDO')
       await carregarClientes(true)
     } catch (e: any) { toast(e.message, 'erro') } finally { setSalvando(false) }
   }
-
   async function excluirPedido() {
     if (!cliente?.pedido_id) return
     setConfirmaExcluir(false)
-    try {
-      await rpc('excluir_pedido', { p_pedido_id: cliente.pedido_id })
-      toast('Pedido excluído')
-      setQtd({}); setReposicao(''); setResultado(null)
-      await carregarClientes(true)
-    } catch (e: any) { toast(e.message, 'erro') }
+    try { await rpc('excluir_pedido', { p_pedido_id: cliente.pedido_id }); toast('Pedido excluído'); setQtd({}); setReposicao(''); setResultado(null); setMarca(null); await carregarClientes(true) }
+    catch (e: any) { toast(e.message, 'erro') }
   }
-
-  async function registrarContato(r: Resultado) {
+  async function registrarInteresse() {
     if (!cliente || !rota?.semana_rota_id) return
-    if (r === 'SEM_INTERESSE' && cliente.pedido_id) {
-      if (!confirm('Este cliente tem pedido na semana. Marcar "sem interesse" vai excluir o pedido. Continuar?')) return
-      await rpc('excluir_pedido', { p_pedido_id: cliente.pedido_id })
-      setQtd({}); setReposicao('')
+    if (!marca) { toast('Marque uma opção de interesse do cliente', 'erro'); return }
+    if (marca === 'PEDIDO' && !cliente.pedido_id) { toast('"Realizou pedido" é marcado automaticamente ao salvar o pedido', 'erro'); return }
+    if (marca === 'SEM_INTERESSE' && cliente.pedido_id) {
+      if (!confirm('Este cliente tem pedido na semana. Marcar "não teve interesse" vai excluir o pedido. Continuar?')) return
+      await rpc('excluir_pedido', { p_pedido_id: cliente.pedido_id }); setQtd({}); setReposicao('')
     }
     try {
       ok(await supabase.from('contato_cliente').upsert(
-        { semana_rota_id: rota.semana_rota_id, cliente_id: cliente.cliente_id, resultado: r, registrado_por: usuario!.id, registrado_em: new Date().toISOString() },
+        { semana_rota_id: rota.semana_rota_id, cliente_id: cliente.cliente_id, resultado: marca, registrado_por: usuario!.id, registrado_em: new Date().toISOString() },
         { onConflict: 'semana_rota_id,cliente_id' }))
-      setResultado(r)
-      toast('Contato registrado')
-      await carregarClientes(true)
+      setResultado(marca); toast('Interesse registrado'); await carregarClientes(true)
     } catch (e: any) { toast(e.message, 'erro') }
   }
-
-  function limpar() { setQtd({}); setReposicao('') }
+  function limpar() { setQtd({}); setReposicao(''); setMarca(resultado) }
+  function navegar(d: number) {
+    const i = filtrados.findIndex((c) => c.cliente_id === clienteId)
+    const j = i + d; if (j >= 0 && j < filtrados.length) setClienteId(filtrados[j].cliente_id)
+  }
 
   if (carregando) return <Carregando />
   if (!rotas.length) return <Vazio texto="Nenhuma rota disponível para você. Fale com o administrador." />
 
-  const grupos = [...new Set(produtos.map((p) => p.grupo ?? 'OUTROS'))]
+  // 3 colunas de produtos na ordem do cadastro (como na planilha)
+  const colunas: Produto[][] = [[], [], []]
+  const porCol = Math.ceil(produtos.length / 3)
+  produtos.forEach((p, i) => colunas[Math.min(2, Math.floor(i / porCol))].push(p))
+  const idx = filtrados.findIndex((c) => c.cliente_id === clienteId)
+  // produtos presentes nos últimos pedidos (colunas da tabela de histórico)
+  const siglasUlt = new Set<string>(ultimos.flatMap((u) => (u.itens as any[]).map((i) => i.sigla)))
+  const prodUlt = produtos.filter((p) => siglasUlt.has(p.sigla))
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <Titulo>Venda semanal</Titulo>
-
-      {/* Filtros */}
-      <div className="card p-3 sm:p-4 mb-3 grid gap-3 sm:grid-cols-[1fr_1fr_1fr]">
-        <Campo label="Rota">
-          <select className="input" value={rotaId ?? ''} onChange={(e) => setRotaId(Number(e.target.value))}>
-            {rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota} — {fmtData(r.data_entrega)}</option>)}
-          </select>
-        </Campo>
-        <Campo label="Buscar cliente">
-          <input className="input" placeholder="nome, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} />
-        </Campo>
-        <Campo label="Pedido na semana">
-          <select className="input" value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroStatus)}>
-            {Object.entries(FILTROS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </Campo>
-        {rota && (
-          <div className="sm:col-span-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600">
-            <span>Semana: <b>{fmtData(rota.data_entrega)}</b></span>
-            <span>Distribuição: <b>{rota.cidade_distribuicao}</b></span>
-            <span>Vendedor: <b>{rota.vendedor ?? '—'}</b> {rota.vendedor_telefone}</span>
-            <span>Clientes: <b>{filtrados.length}</b> de {clientes.length}</span>
+    <div className="mx-auto max-w-[1500px] text-sm">
+      {/* ===== Cabeçalho: vendedor, semana, filtros, cliente ===== */}
+      <div className="card p-2 sm:p-3 mb-2 bg-rose-50/60">
+        <div className="grid gap-2 lg:grid-cols-[auto_1fr_1fr_1fr] items-end">
+          <div className="flex gap-2 text-xs">
+            <div><div className="label mb-0.5">Vendedor</div><div className="rounded border border-slate-300 bg-white px-2 py-1.5 font-bold min-w-[110px]">{rota?.vendedor ?? '—'}</div></div>
+            <div><div className="label mb-0.5">Semana</div><div className="rounded border border-slate-300 bg-white px-2 py-1.5 font-bold">{fmtData(rota?.data_entrega)}</div></div>
           </div>
-        )}
+          <div><div className="label mb-0.5">Rota</div>
+            <select className="input py-1.5 bg-yellow-50 font-bold" value={rotaId ?? ''} onChange={(e) => setRotaId(Number(e.target.value))}>
+              {rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
+            </select></div>
+          <div><div className="label mb-0.5">Texto</div><input className="input py-1.5 bg-yellow-50" placeholder="buscar cliente, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} /></div>
+          <div><div className="label mb-0.5">Pedido na semana</div>
+            <select className="input py-1.5 bg-yellow-50 italic" value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroStatus)}>
+              {Object.entries(FILTROS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select></div>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <div className="label mb-0 shrink-0 hidden sm:block">Cliente</div>
+          <button className="btn-secondary px-2 py-1.5" onClick={() => navegar(-1)} disabled={idx <= 0} title="Cliente anterior">◀</button>
+          <select className="input py-1.5 bg-yellow-50 font-bold flex-1 min-w-0" value={clienteId ?? ''} onChange={(e) => setClienteId(Number(e.target.value))}>
+            {filtrados.length === 0 && <option value="">Nenhum cliente com esse filtro</option>}
+            {filtrados.map((c) => <option key={c.cliente_id} value={c.cliente_id}>{c.ordem_visita}. {rotulo(c)}{c.pedido_id ? '  ✔' : c.resultado === 'SEM_INTERESSE' ? '  ✖' : ''}</option>)}
+          </select>
+          <button className="btn-secondary px-2 py-1.5" onClick={() => navegar(1)} disabled={idx < 0 || idx >= filtrados.length - 1} title="Próximo cliente">▶</button>
+          <div className="text-xs text-slate-500 shrink-0 hidden md:block">{idx + 1}/{filtrados.length} · {rota?.cidade_distribuicao}</div>
+        </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[340px_1fr]">
-        {/* Lista de clientes */}
-        <div className={`card overflow-hidden ${cliente && !mostrarLista ? 'hidden lg:block' : ''}`}>
-          <div className="max-h-[60vh] lg:max-h-[calc(100vh-260px)] overflow-auto divide-y divide-slate-100">
-            {filtrados.length === 0 && <Vazio texto="Nenhum cliente com esse filtro" />}
-            {filtrados.map((c) => (
-              <button key={c.cliente_id} onClick={() => { setClienteId(c.cliente_id); setMostrarLista(false) }}
-                className={`w-full text-left px-3 py-2.5 hover:bg-leaf-50 ${c.cliente_id === clienteId ? 'bg-leaf-100' : ''}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-slate-800 truncate"><span className="text-slate-400 text-xs mr-1">{c.ordem_visita}.</span>{c.razao_social}</div>
-                    <div className="text-xs text-slate-500 truncate">{c.nome_fantasia} · {c.cidade} · {c.contato}</div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    {c.pedido_id ? <Chip cor="verde">{fmtMoeda(c.total)}</Chip> : c.resultado ? <Chip cor={corStatus(c.resultado)}>{c.resultado === 'SEM_INTERESSE' ? 'sem interesse' : c.resultado === 'SEM_CONTATO' ? 'sem contato' : 'religar'}</Chip> : null}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Painel do cliente */}
-        <div className={`${!cliente || (cliente && mostrarLista) ? 'hidden lg:block' : ''}`}>
-          {!cliente ? <div className="card"><Vazio texto="Escolha um cliente na lista" /></div> : (
-            <div className="space-y-3">
-              <button className="lg:hidden btn-secondary" onClick={() => setMostrarLista(true)}>← Lista de clientes</button>
-
-              {/* Dados do cliente */}
-              <div className="card p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <div className="text-lg font-extrabold text-leaf-900">{cliente.razao_social}</div>
-                    <div className="text-sm text-slate-600">{cliente.nome_fantasia} · Cód. {cliente.codigo}</div>
-                  </div>
-                  <Chip cor={cliente.forma_pagamento === 'BOLETO' ? 'azul' : cliente.forma_pagamento === 'ANTECIPADO' ? 'verde' : 'amarelo'}>{FORMAS[cliente.forma_pagamento]}</Chip>
-                </div>
-                <div className="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-                  <div><span className="text-slate-500">Cidade:</span> {cliente.cidade}</div>
-                  <div><span className="text-slate-500">Contato:</span> {cliente.contato} {cliente.telefone && <a className="text-leaf-700 font-semibold" href={`tel:${cliente.telefone}`}>{cliente.telefone}</a>}</div>
-                  <div className="sm:col-span-2"><span className="text-slate-500">Local de entrega:</span> {cliente.local_entrega}</div>
-                </div>
-                {pendencia && Number(pendencia.valor_pendente) > 0 && (
-                  <div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                    <b>Pendência: {fmtMoeda(Number(pendencia.valor_pendente))}</b>
-                    <div className="text-xs">Semanas: {pendencia.semanas.map(fmtData).join(' | ')}</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Últimos pedidos */}
-              {ultimos.length > 0 && (
-                <div className="card p-4">
-                  <div className="label">Últimos pedidos</div>
-                  <div className="overflow-auto">
-                    <table className="w-full text-xs">
-                      <tbody>
-                        {ultimos.map((u) => (
-                          <tr key={u.pedido_id} className="border-t border-slate-100">
-                            <td className="py-1 pr-3 whitespace-nowrap font-semibold">{fmtData(u.data_entrega)}</td>
-                            <td className="py-1 pr-3 text-slate-600">{(u.itens as any[]).map((i) => `${i.sigla} ${i.quantidade}`).join(' · ')}{u.reposicao ? ` · R ${u.reposicao}` : ''}</td>
-                            <td className="py-1 text-right whitespace-nowrap font-semibold">{fmtMoeda(Number(u.total))}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Grade de produtos */}
-              <div className="card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="label mb-0">Pedido da semana {rota && fmtData(rota.data_entrega)}</div>
-                  <div className="text-lg font-extrabold text-leaf-800">{fmtMoeda(total)}</div>
-                </div>
-                <div className="grid gap-x-6 gap-y-1 md:grid-cols-2 xl:grid-cols-3">
-                  {grupos.map((g) => (
-                    <div key={g}>
-                      <div className="mt-2 mb-1 text-xs font-bold uppercase tracking-wide text-leaf-700">{g}</div>
-                      {produtos.filter((p) => (p.grupo ?? 'OUTROS') === g).map((p) => {
-                        const preco = precos[p.id]
-                        const temPreco = preco != null
-                        return (
-                          <div key={p.id} className={`flex items-center gap-2 py-0.5 ${temPreco ? '' : 'opacity-40'}`}>
-                            <input type="number" inputMode="numeric" min={0} step={1}
-                              className="input w-20 px-2 py-1.5 text-center font-semibold"
-                              disabled={!temPreco} value={qtd[p.id] ?? ''}
-                              onChange={(e) => setQtd({ ...qtd, [p.id]: e.target.value })} />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-medium truncate"><span className="text-slate-400 mr-1">{p.sigla}</span>{p.nome}</div>
-                            </div>
-                            <div className="text-xs text-slate-500 w-16 text-right">{temPreco ? fmtMoeda(preco) : '—'}</div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ))}
-                  <div>
-                    <div className="mt-2 mb-1 text-xs font-bold uppercase tracking-wide text-leaf-700">Reposição</div>
-                    <div className="flex items-center gap-2 py-0.5">
-                      <input type="number" inputMode="numeric" min={0} className="input w-20 px-2 py-1.5 text-center font-semibold" value={reposicao} onChange={(e) => setReposicao(e.target.value)} />
-                      <div className="text-sm font-medium"><span className="text-slate-400 mr-1">R</span>Reposição (sem valor)</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 justify-end">
-                  <button className="btn-secondary" onClick={limpar}>Limpar campos</button>
-                  {cliente.pedido_id && <button className="btn-danger" onClick={() => setConfirmaExcluir(true)}>Excluir pedido</button>}
-                  <button className="btn-primary px-6" onClick={salvarPedido} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar pedido'}</button>
-                </div>
-              </div>
-
-              {/* Contato */}
-              <div className="card p-4">
-                <div className="label">Resultado do contato</div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {(Object.keys(RESULTADOS) as Resultado[]).filter((r) => r !== 'PEDIDO').map((r) => (
-                    <button key={r} onClick={() => registrarContato(r)}
-                      className={`rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition ${resultado === r ? 'border-leaf-600 bg-leaf-50 text-leaf-900' : 'border-slate-200 hover:bg-slate-50'}`}>
-                      {resultado === r ? '✔ ' : ''}{RESULTADOS[r]}
-                    </button>
-                  ))}
-                  <div className={`rounded-lg border px-3 py-2.5 text-sm font-medium ${resultado === 'PEDIDO' ? 'border-leaf-600 bg-leaf-50 text-leaf-900' : 'border-slate-200 text-slate-400'}`}>
-                    {resultado === 'PEDIDO' ? '✔ ' : ''}{RESULTADOS.PEDIDO} <span className="text-xs">(automático ao salvar)</span>
-                  </div>
-                </div>
+      {!cliente ? <div className="card"><Vazio texto="Nenhum cliente selecionado" /></div> : (
+        <>
+          {/* ===== Financeiro + últimos pedidos ===== */}
+          <div className="grid gap-2 lg:grid-cols-[180px_1fr] mb-2">
+            <div className="card p-2 bg-emerald-50/50">
+              <div className="label mb-0.5">Financeiro</div>
+              <div className="text-[11px] font-bold text-slate-600 uppercase">Pendência</div>
+              {pendencia && Number(pendencia.valor_pendente) > 0 ? (
+                <>
+                  <div className="text-lg font-extrabold text-red-700">{fmtMoeda(Number(pendencia.valor_pendente))}</div>
+                  <div className="text-[11px] text-slate-600 leading-tight">Semanas: {pendencia.semanas.map(fmtData).join(' | ')}</div>
+                </>
+              ) : <div className="text-lg font-extrabold text-emerald-700">R$ 0,00</div>}
+              <div className="mt-2 text-[11px] text-slate-600 leading-tight">
+                <div><b>{cliente.razao_social}</b></div>
+                <div>{cliente.nome_fantasia}</div>
+                <div>{cliente.cidade} · {FORMAS[cliente.forma_pagamento]}</div>
+                <div>{cliente.contato} {cliente.telefone && <a className="text-leaf-700 font-semibold" href={`tel:${cliente.telefone}`}>{cliente.telefone}</a>}</div>
+                <div className="text-slate-500">{cliente.local_entrega}</div>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+            <div className="card p-2 overflow-auto">
+              <div className="text-center text-xs font-bold bg-emerald-100 rounded py-0.5 mb-1">4 Últimos pedidos</div>
+              {ultimos.length === 0 ? <div className="text-center text-xs text-slate-400 py-3">Sem pedidos anteriores</div> : (
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <CabecalhoCel className="text-left whitespace-nowrap">Data</CabecalhoCel>
+                      {prodUlt.map((p) => <CabecalhoCel key={p.id} className="leading-tight font-semibold">{p.nome}</CabecalhoCel>)}
+                      <CabecalhoCel>Repos.</CabecalhoCel>
+                      <CabecalhoCel className="text-right">Total R$</CabecalhoCel>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ultimos.map((u) => {
+                      const m = Object.fromEntries((u.itens as any[]).map((i) => [i.sigla, i.quantidade]))
+                      return (
+                        <tr key={u.pedido_id}>
+                          <td className="border border-slate-300 px-1 py-0.5 text-xs font-bold whitespace-nowrap">{fmtData(u.data_entrega)}</td>
+                          {prodUlt.map((p) => <td key={p.id} className="border border-slate-300 px-1 py-0.5 text-center text-xs font-semibold">{m[p.sigla] || ''}</td>)}
+                          <td className="border border-slate-300 px-1 py-0.5 text-center text-xs">{u.reposicao || ''}</td>
+                          <td className="border border-slate-300 px-1 py-0.5 text-right text-xs font-bold whitespace-nowrap">{fmtMoeda(Number(u.total))}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* ===== Pedido da semana + interesse ===== */}
+          <div className="grid gap-2 lg:grid-cols-[1fr_230px]">
+            <div className="card p-2 bg-sky-50/50">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <button className="btn bg-orange-500 text-white hover:bg-orange-600 py-1.5" onClick={limpar}>Limpar campos</button>
+                <button className="btn-primary py-1.5 px-5" onClick={salvarPedido} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar pedido'}</button>
+                {cliente.pedido_id && <button className="btn-danger py-1.5" onClick={() => setConfirmaExcluir(true)}>Excluir</button>}
+                <div className="flex-1 text-center font-extrabold text-base">Pedido da Semana</div>
+                <label className="flex items-center gap-1 text-xs font-bold text-red-700">Reposição
+                  <input type="number" inputMode="numeric" min={0} className="input w-16 px-1 py-1 text-center bg-yellow-50 font-bold text-slate-800" value={reposicao} onChange={(e) => setReposicao(e.target.value)} /></label>
+                <div className="flex items-center gap-2 rounded bg-slate-200 px-2 py-1"><span className="text-xs font-bold">Total</span><span className="text-base font-extrabold min-w-[90px] text-right">{fmtMoeda(total)}</span></div>
+              </div>
+              <div className="grid gap-x-3 md:grid-cols-3">
+                {colunas.map((col, ci) => (
+                  <table key={ci} className="w-full border-collapse">
+                    <thead><tr><CabecalhoCel className="w-14">Quant.</CabecalhoCel><CabecalhoCel className="text-left">Discriminação</CabecalhoCel><CabecalhoCel className="w-16">Unit.</CabecalhoCel></tr></thead>
+                    <tbody>
+                      {col.map((p, i) => {
+                        const preco = precos[p.id]; const tem = preco != null
+                        return (
+                          <tr key={p.id} className={tem ? '' : 'opacity-40'}>
+                            <td className="border border-slate-300 p-0">
+                              <input ref={ci === 0 && i === 0 ? primeiroInput : undefined} type="number" inputMode="numeric" min={0} disabled={!tem} value={qtd[p.id] ?? ''}
+                                onChange={(e) => setQtd({ ...qtd, [p.id]: e.target.value })}
+                                className="w-full h-7 bg-yellow-50 text-center font-bold outline-none focus:bg-yellow-200 disabled:bg-slate-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" />
+                            </td>
+                            <td className="border border-slate-300 px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap">{p.nome}</td>
+                            <td className="border border-slate-300 px-1 py-0.5 text-right text-[11px]">{tem ? fmtMoeda(preco).replace('R$', '').trim() : '-'}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                ))}
+              </div>
+            </div>
+
+            <div className="card p-2 bg-sky-50/50">
+              <div className="text-center font-bold bg-sky-200 rounded py-0.5 mb-1">Interesse do Cliente</div>
+              <table className="w-full border-collapse">
+                <tbody>
+                  {(['INTERESSE_SEM_PEDIDO', 'SEM_INTERESSE', 'SEM_CONTATO', 'PEDIDO'] as Resultado[]).map((r) => (
+                    <tr key={r} className="cursor-pointer" onClick={() => setMarca(marca === r ? null : r)}>
+                      <td className={`border border-slate-300 px-1.5 py-1.5 text-xs leading-tight ${marca === r ? 'font-bold' : ''}`}>{RESULTADOS[r]}</td>
+                      <td className={`border border-slate-300 w-9 text-center text-xl font-black ${marca === r ? 'bg-white' : 'bg-yellow-50'}`}>{marca === r ? 'X' : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button className="btn-primary w-full mt-2 py-1.5" onClick={registrarInteresse}>Registrar interesse</button>
+              {resultado && <div className="mt-1 text-[11px] text-center text-slate-500">Registrado: {RESULTADOS[resultado]}</div>}
+            </div>
+          </div>
+        </>
+      )}
 
       <Confirmar aberto={confirmaExcluir} titulo="Excluir pedido" perigo
         texto={`Excluir o pedido de ${cliente?.razao_social} desta semana?`} onSim={excluirPedido} onNao={() => setConfirmaExcluir(false)} />

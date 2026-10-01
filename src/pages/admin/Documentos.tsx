@@ -131,14 +131,14 @@ function DocRecibos({ rota, mapa, produtos }: { rota: RotaSemana; mapa: MapaT; p
               <div>{l.pedido.cidade} · {l.pedido.telefone}</div>
               <div className="flex justify-between"><span>Item: <b>{l.item}</b> · Contato: {l.pedido.contato}</span><span>Cond. pg: <b>{l.pedido.forma_pagamento === 'ANTECIPADO' ? 'Pago' : l.pedido.forma_pagamento ? FORMAS[l.pedido.forma_pagamento] : ''}</b></span></div>
               <table className="w-full mt-2 border-collapse">
-                <thead><tr className="border-b border-slate-300"><th className="text-left">Sigla</th><th className="text-right">Qtd</th><th className="text-left pl-2">Produto</th><th className="text-right">Unit.</th><th className="text-right">Total</th></tr></thead>
+                <thead><tr className="border-b border-slate-300"><th className="text-right">Qtd</th><th className="text-left pl-2">Produto</th><th className="text-right">Unit.</th><th className="text-right">Total</th></tr></thead>
                 <tbody>
                   {produtos.filter((p) => l.qtd[p.id]).map((p) => (
-                    <tr key={p.id}><td>{p.sigla}</td><td className="text-right">{l.qtd[p.id]}</td><td className="pl-2">{p.nome}</td><td className="text-right">{fmtMoeda(l.precos[p.id])}</td><td className="text-right">{fmtMoeda(l.qtd[p.id] * (l.precos[p.id] ?? 0))}</td></tr>
+                    <tr key={p.id}><td className="text-right">{l.qtd[p.id]}</td><td className="pl-2">{p.nome}</td><td className="text-right">{fmtMoeda(l.precos[p.id])}</td><td className="text-right">{fmtMoeda(l.qtd[p.id] * (l.precos[p.id] ?? 0))}</td></tr>
                   ))}
-                  {l.pedido.reposicao > 0 && <tr><td>R</td><td className="text-right">{l.pedido.reposicao}</td><td className="pl-2">Reposição</td><td className="text-right">—</td><td className="text-right">—</td></tr>}
+                  {l.pedido.reposicao > 0 && <tr><td className="text-right">{l.pedido.reposicao}</td><td className="pl-2">Reposição</td><td className="text-right">—</td><td className="text-right">—</td></tr>}
                 </tbody>
-                <tfoot><tr className="border-t border-slate-400 font-bold"><td colSpan={4} className="text-right pr-2">TOTAL</td><td className="text-right">{fmtMoeda(Number(l.pedido.total))}</td></tr></tfoot>
+                <tfoot><tr className="border-t border-slate-400 font-bold"><td colSpan={3} className="text-right pr-2">TOTAL</td><td className="text-right">{fmtMoeda(Number(l.pedido.total))}</td></tr></tfoot>
               </table>
               <div className="mt-6 border-t border-slate-400 pt-1 text-center text-[10px]">ASSINATURA</div>
               <div className="text-center text-[9px] text-slate-500">{EMAIL_EMPRESA}</div>

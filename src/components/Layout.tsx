@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import Logo, { LogoMark } from './Logo'
 import { useAuth } from '@/lib/auth'
@@ -26,7 +26,9 @@ const menuVendedor = [
 
 export default function Layout() {
   const { usuario, sair } = useAuth()
-  const [aberto, setAberto] = useState(false)
+  const [aberto, setAberto] = useState(false)          // drawer no celular
+  const [recolhido, setRecolhido] = useState(() => { try { return localStorage.getItem('menuRecolhido') === '1' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem('menuRecolhido', recolhido ? '1' : '0') } catch { /* ignore */ } }, [recolhido])
   const menu = usuario?.papel === 'ADMIN' ? menuAdmin : menuVendedor
 
   const nav = (
@@ -40,7 +42,6 @@ export default function Layout() {
         ))}
     </nav>
   )
-
   const rodape = (
     <div className="p-3 border-t border-slate-200 text-xs">
       <div className="font-semibold truncate text-slate-800">{usuario?.nome}</div>
@@ -51,9 +52,12 @@ export default function Layout() {
 
   return (
     <div className="flex h-full">
-      {/* Sidebar desktop */}
-      <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-200 no-print">
-        <div className="p-4 border-b-4 border-brand-600 flex justify-center"><Logo size={44} /></div>
+      {/* Sidebar desktop (recolhível) */}
+      <aside className={`hidden md:flex flex-col bg-white border-r border-slate-200 no-print transition-all ${recolhido ? 'w-0 overflow-hidden border-r-0' : 'w-64'}`}>
+        <div className="p-4 border-b-4 border-brand-600 flex items-center justify-between gap-2">
+          <Logo size={40} />
+          <button className="rounded p-1 text-slate-500 hover:bg-slate-100" title="Esconder menu" onClick={() => setRecolhido(true)}>«</button>
+        </div>
         <div className="flex-1 overflow-auto">{nav}</div>
         {rodape}
       </aside>
@@ -65,7 +69,22 @@ export default function Layout() {
           <Logo size={30} />
           <button className="text-xs text-brand-600 font-semibold px-2" onClick={sair}>Sair</button>
         </header>
-        <main className="flex-1 overflow-auto p-3 sm:p-5">
+        {/* Barra fina no desktop quando o menu está escondido */}
+        {recolhido && (
+          <div className="hidden md:flex items-center gap-3 bg-white border-b border-slate-200 px-3 py-1 no-print">
+            <button className="rounded p-1 text-slate-600 hover:bg-slate-100 text-lg leading-none" title="Mostrar menu" onClick={() => setRecolhido(false)}>☰</button>
+            <LogoMark size={26} />
+            <nav className="flex gap-1 overflow-auto">
+              {menu.filter((m) => !('sep' in m)).map((m) => (
+                <NavLink key={m.to} to={m.to!} className={({ isActive }) => `rounded px-2 py-1 text-xs font-medium whitespace-nowrap ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-600 hover:bg-leaf-50'}`} title={m.label}>
+                  {m.icone} <span className="hidden xl:inline">{m.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+            <button className="ml-auto text-xs text-brand-600 font-semibold" onClick={sair}>Sair</button>
+          </div>
+        )}
+        <main className="flex-1 overflow-auto p-2 sm:p-4">
           <Outlet />
         </main>
       </div>
@@ -84,7 +103,6 @@ export default function Layout() {
           </aside>
         </div>
       )}
-      <span className="hidden"><LogoMark size={1} /></span>
     </div>
   )
 }
