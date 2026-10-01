@@ -8,14 +8,14 @@ import { FORMAS, corProduto, gruposDeProdutos, type PedidoItem, type PedidoView,
 import { Campo, Carregando, Confirmar, Modal, Titulo, useToast } from '@/components/ui'
 
 interface Linha {
-  id: number; rota: string; semana_rota_id: number; cliente_id: number | null; cliente: string; nome: string; contato: string
+  id: number; data: string; rota: string; semana_rota_id: number; cliente_id: number | null; cliente: string; nome: string; contato: string
   pagto: string; tipo: string; ordem: number; R: number; total: number; busca: string
   [sigla: string]: any  // quantidades por sigla
 }
 type Resumo = { id: string; cliente: string; [k: string]: any }
-const LARG_FIXA_ESQ = 110 + 190  // rota + cliente (congeladas)
+const LARG_FIXA_ESQ = 110 + 190  // rota + cliente (congeladas); +78 da Data no histórico
 
-export default function Programacao() {
+export default function Programacao({ historico = false }: { historico?: boolean }) {
   const { toast } = useToast()
   const [rotas, setRotas] = useState<RotaSemana[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
@@ -32,18 +32,27 @@ export default function Programacao() {
   const gridRef = useRef<DataGridHandle>(null)
   const faixaRef = useRef<HTMLDivElement>(null)
 
-  const datas = useMemo(() => [...new Set(rotas.map((r) => r.data_entrega).filter(Boolean))].sort() as string[], [rotas])
+  const [datasFechadas, setDatasFechadas] = useState<string[]>([])
+  const datas = useMemo(() => historico ? datasFechadas : [...new Set(rotas.map((r) => r.data_entrega).filter(Boolean))].sort() as string[], [rotas, datasFechadas, historico])
 
   useEffect(() => {
-    Promise.all([listarRotasSemana(), listarProdutos()]).then(([r, p]) => { setRotas(r); setProdutos(p); const d = [...new Set(r.map((x) => x.data_entrega))].filter(Boolean).sort(); if (d[0]) setData(d[0] as string) })
-      .catch((e) => toast(e.message, 'erro'))
+    Promise.all([listarRotasSemana(), listarProdutos()]).then(async ([r, p]) => {
+      setRotas(r); setProdutos(p)
+      if (historico) {
+        const sem = ok(await supabase.from('semana_rota').select('data_entrega').eq('status', 'FECHADA').order('data_entrega', { ascending: false })) as { data_entrega: string }[]
+        const d = [...new Set(sem.map((x) => x.data_entrega))]
+        setDatasFechadas(d); if (d[0]) setData(d[0])
+      } else {
+        const d = [...new Set(r.map((x) => x.data_entrega))].filter(Boolean).sort(); if (d[0]) setData(d[0] as string)
+      }
+    }).catch((e) => toast(e.message, 'erro'))
   }, [])
 
   async function carregar() {
     if (!data) return
     setLinhas(null)
     try {
-      let q = supabase.from('v_pedido').select('*').eq('data_entrega', data).neq('status', 'EXCLUIDO').eq('semana_status', 'ABERTA').order('rota').order('ordem_visita')
+      let q = supabase.from('v_pedido').select('*').eq('data_entrega', data).neq('status', 'EXCLUIDO').eq('semana_status', historico ? 'FECHADA' : 'ABERTA').order('rota').order('ordem_visita')
       if (rotaF !== '') q = q.eq('rota_id', rotaF)
       const pedidos = ok(await q) as PedidoView[]
       const ids = pedidos.map((p) => p.id)
@@ -52,7 +61,7 @@ export default function Programacao() {
       const m: Record<number, Record<string, number>> = {}
       for (const i of itens) (m[i.pedido_id] ??= {})[porSigla[i.produto_id]] = i.quantidade
       setLinhas(pedidos.map((p) => ({
-        id: p.id, rota: p.rota, semana_rota_id: p.semana_rota_id, cliente_id: p.cliente_id,
+        id: p.id, data: p.data_entrega, rota: p.rota, semana_rota_id: p.semana_rota_id, cliente_id: p.cliente_id,
         cliente: p.tipo === 'CLIENTE' ? p.razao_social ?? '' : `(${p.tipo} da rota)`, nome: p.nome_fantasia ?? '', contato: p.contato ?? '',
         pagto: p.forma_pagamento ? FORMAS[p.forma_pagamento] : '', tipo: p.tipo, ordem: p.ordem_visita, R: p.reposicao, total: Number(p.total),
         busca: normalizar(`${p.razao_social} ${p.nome_fantasia} ${p.cidade} ${p.contato} ${p.cliente_codigo}`),
@@ -78,11 +87,12 @@ export default function Programacao() {
   }, [visiveis, colsProd])
 
   const colunas: Column<Linha, Resumo>[] = useMemo(() => [
-    { key: 'rota', name: 'Rota', width: 110, frozen: 'start', renderSummaryCell: ({ row }) => <b>{row.cliente}</b> },
+    ...(historico ? [{ key: 'data', name: 'Data', width: 78, frozen: 'start' as const, renderCell: ({ row }: { row: Linha }) => <>{fmtData(row.data)}</>, renderSummaryCell: () => <b>TOTAL</b> }] : []),
+    { key: 'rota', name: 'Rota', width: 110, frozen: 'start', renderSummaryCell: ({ row }) => <b>{historico ? '' : row.cliente}</b> },
     { key: 'cliente', name: 'Cliente', width: 190, frozen: 'start', renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
     ...(detalhes ? [{ key: 'nome', name: 'Nome', width: 130 }, { key: 'contato', name: 'Contato', width: 110 }, { key: 'pagto', name: 'Pagto', width: 80 }] as Column<Linha, Resumo>[] : []),
     ...colsProd.map((p): Column<Linha, Resumo> => ({
-      key: p.sigla, name: p.nome, width: 40, minWidth: 40, editable: true, renderEditCell: renderTextEditor,
+      key: p.sigla, name: p.nome, width: 40, minWidth: 40, editable: !historico, renderEditCell: renderTextEditor,
       renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
       cellClass: (row) => `cell-centro cell-edit cor-p${p.id} ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
@@ -90,11 +100,11 @@ export default function Programacao() {
       summaryCellClass: `cell-centro cor-p${p.id}`,
       headerCellClass: `text-center cor-p${p.id}`,
     })),
-    { key: 'R', name: 'Reposição', width: 40, minWidth: 40, editable: true, summaryCellClass: 'cell-centro', renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-centro cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
+    { key: 'R', name: 'Reposição', width: 40, minWidth: 40, editable: !historico, summaryCellClass: 'cell-centro', renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-centro cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
     { key: 'total', name: 'Total R$', width: 95, minWidth: 95, frozen: 'end', cellClass: 'cell-num font-semibold', summaryCellClass: 'cell-num', headerCellClass: 'cab-direita', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
-    { key: 'acoes', name: '', width: 30, frozen: 'end', renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
-  ], [colsProd, estado, detalhes])
+    ...(historico ? [] : [{ key: 'acoes', name: '', width: 30, frozen: 'end' as const, renderCell: ({ row }: { row: Linha }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> }]),
+  ], [colsProd, estado, detalhes, historico])
 
   async function onRowsChange(rows: Linha[], { indexes, column }: RowsChangeData<Linha, Resumo>) {
     const row = rows[indexes[0]]
@@ -129,12 +139,12 @@ export default function Programacao() {
     <div className="flex h-full flex-col text-xs">
       {/* filtros numa linha fina */}
       <div className="card px-3 py-1.5 mb-1.5 bg-rose-50/60 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        <span className="font-extrabold text-sm text-leaf-900 mr-1">Programação</span>
+        <span className="font-extrabold text-sm text-leaf-900 mr-1">{historico ? 'Fechamento geral' : 'Programação'}</span>
         <label className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Semana</span>
           <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={data} onChange={(e) => setData(e.target.value)}>{datas.map((d) => <option key={d} value={d}>{fmtData(d)}</option>)}</select></label>
         <label className="flex items-center gap-1.5"><span className="font-bold text-slate-500 uppercase text-[10px]">Rota</span>
           <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={rotaF} onChange={(e) => setRotaF(e.target.value ? Number(e.target.value) : '')}>
-            <option value="">Todas</option>{rotas.filter((r) => r.data_entrega === data).map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
+            <option value="">Todas</option>{rotas.filter((r) => historico || r.data_entrega === data).map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
           </select></label>
         <label className="flex items-center gap-1.5 flex-1 min-w-[160px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Filtrar</span>
           <input className="input py-1 px-2 text-xs bg-yellow-50" placeholder="cliente, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} /></label>
@@ -156,7 +166,7 @@ export default function Programacao() {
         </div>
         <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={detalhes} onChange={(e) => setDetalhes(e.target.checked)} /> nome/contato/pagto</label>
         <span className="text-[11px] text-slate-500">{visiveis.length} pedidos · {fmtMoeda(resumo[0]?.total ?? 0)}</span>
-        <button className="btn-primary py-1 text-xs ml-auto" onClick={() => setIncluir(true)}>+ Incluir pedido</button>
+        {!historico && <button className="btn-primary py-1 text-xs ml-auto" onClick={() => setIncluir(true)}>+ Incluir pedido</button>}
       </div>
       {linhas === null ? <Carregando /> : (
         <div className="card flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -164,7 +174,7 @@ export default function Programacao() {
           <style>{colsProd.map((p) => `.cor-p${p.id}{background-color:${corProduto(p)}24}.rdg-header-row .cor-p${p.id}{background-color:${corProduto(p)}66}`).join('\n')}</style>
           {/* faixa de categorias, alinhada às colunas e sincronizada com a rolagem horizontal */}
           <div className="flex h-5 shrink-0 border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide overflow-hidden">
-            <div style={{ width: LARG_FIXA_ESQ, flex: 'none' }} className="px-2 leading-5 text-slate-500">Categorias</div>
+            <div style={{ width: LARG_FIXA_ESQ + (historico ? 78 : 0), flex: 'none' }} className="px-2 leading-5 text-slate-500">Categorias</div>
             <div className="flex-1 overflow-hidden">
               <div ref={faixaRef} className="flex h-full will-change-transform">
                 {detalhes && <div style={{ width: 130 + 110 + 80, flex: 'none' }} />}
@@ -175,7 +185,7 @@ export default function Programacao() {
                 <div style={{ width: 40, flex: 'none' }} />
               </div>
             </div>
-            <div style={{ width: 90 + 30, flex: 'none' }} />
+            <div style={{ width: 90 + (historico ? 0 : 30), flex: 'none' }} />
           </div>
           <div className="flex-1 min-h-0">
             <DataGrid ref={gridRef} className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
@@ -184,7 +194,7 @@ export default function Programacao() {
           </div>
         </div>
       )}
-      <div className="text-[10px] text-slate-400 mt-0.5">Enter ou duplo clique edita a célula; salva ao sair. Amarelo = salvando · verde = salvo · vermelho = erro.</div>
+      <div className="text-[10px] text-slate-400 mt-0.5">{historico ? 'Histórico das programações fechadas — somente leitura.' : 'Enter ou duplo clique edita a célula; salva ao sair. Amarelo = salvando · verde = salvo · vermelho = erro.'}</div>
 
       {incluir && <IncluirPedido data={data} rotas={rotas.filter((r) => r.data_entrega === data)} onFechar={(mudou) => { setIncluir(false); if (mudou) carregar() }} />}
       <Confirmar aberto={!!excluir} titulo="Excluir pedido" perigo texto={`Excluir o pedido de ${excluir?.cliente} (${excluir?.rota})?`} onSim={confirmarExcluir} onNao={() => setExcluir(null)} />

@@ -44,6 +44,7 @@ function Rotas_() {
         <Route path="/documentos" element={<Navigate to="/documentos/mapa" replace />} />
         <Route path="/documentos/:doc" element={<Protegido admin><Documentos /></Protegido>} />
         <Route path="/financeiro" element={<Protegido admin><Financeiro /></Protegido>} />
+        <Route path="/fechamento-geral" element={<Protegido admin><Programacao historico /></Protegido>} />
         <Route path="/fechamento" element={<Protegido admin><Fechamento /></Protegido>} />
         <Route path="/clientes" element={<Protegido admin><Clientes /></Protegido>} />
         <Route path="/rotas" element={<Protegido admin><Rotas /></Protegido>} />

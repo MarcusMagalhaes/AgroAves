@@ -19,7 +19,7 @@ const menuAdmin: Entrada[] = [
     { to: '/documentos/nf', label: 'Nota fiscal', icone: '🧮' },
   ] },
   { to: '/financeiro', label: 'Financeiro', icone: '💰' },
-  { to: '/fechamento', label: 'Fechamento semanal', icone: '📅' },
+  { to: '/fechamento-geral', label: 'Fechamento geral', icone: '📚' },
   { grupo: 'Cadastros', icone: '🗂️', itens: [
     { to: '/clientes', label: 'Clientes e preços', icone: '👥' },
     { to: '/rotas', label: 'Rotas', icone: '🛣️' },
