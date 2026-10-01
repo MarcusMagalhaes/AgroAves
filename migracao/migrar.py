@@ -436,87 +436,102 @@ def gravar_csv(m, pasta):
     print(f"CSVs em {pasta} — {len(rejeicoes)} rejeições/avisos (rejeicoes.csv)")
 
 
-# ---------- carga no banco ----------
+# ---------- carga no banco (em lote: tabelas temporárias + insert ... select) ----------
 def carregar(m, dsn):
     import psycopg2
-    from psycopg2.extras import execute_values, Json
+    from psycopg2.extras import execute_values
 
     cn = psycopg2.connect(dsn)
     cn.autocommit = False
     cur = cn.cursor()
+    ev = lambda sql, rows: execute_values(cur, sql, rows, page_size=2000) if rows else None
     try:
-        # cidades, fornecedor padrão, vendedores
-        execute_values(cur, "insert into cidade_distribuicao (nome) values %s on conflict (nome) do nothing", [(c,) for c in m["cidades"]])
+        print("1/8 cadastros básicos")
+        ev("insert into cidade_distribuicao (nome) values %s on conflict (nome) do nothing", [(c,) for c in m["cidades"]])
         cur.execute("insert into fornecedor (nome) values ('Granja') on conflict (nome) do nothing")
-        for v in m["vendedores"]:
-            cur.execute("insert into vendedor (nome, telefone) select %s, %s where not exists (select 1 from vendedor where nome = %s)", (v["nome"], v["telefone"], v["nome"]))
-        # produtos
-        for p in m["produtos"]:
-            cur.execute("""insert into produto (sigla, nome, grupo, ordem, preco_compra, tem_preco, conta_como_ave, eh_codorna) values (%s,%s,%s,%s,%s,true,%s,%s)
-                           on conflict (sigla) do update set nome=excluded.nome, grupo=excluded.grupo, ordem=excluded.ordem, preco_compra=excluded.preco_compra, conta_como_ave=excluded.conta_como_ave, eh_codorna=excluded.eh_codorna""",
-                        (p["sigla"], p["nome"], p["grupo"], p["ordem"], p["preco_compra"], p["conta_como_ave"], p["eh_codorna"]))
-        # rotas
-        for r in m["rotas"]:
-            cur.execute("""insert into rota (nome, vendedor_id, cidade_distribuicao_id, intervalo_dias)
-                           values (%s, (select id from vendedor where nome=%s), (select id from cidade_distribuicao where nome=%s), %s)
-                           on conflict (nome) do update set vendedor_id=excluded.vendedor_id, cidade_distribuicao_id=excluded.cidade_distribuicao_id""",
-                        (r["nome"], (r["vendedor"] or "").upper(), r["cidade"], INTERVALO_DIAS))
-        # clientes
-        for c in m["clientes"]:
-            cur.execute("""insert into cliente (codigo, codigo_externo, cnpj_cpf, razao_social, nome_fantasia, endereco, cidade, contato, telefone, local_entrega, exige_nf, exige_gta, forma_pagamento, tipo, ativo, observacao)
-                           values (%(codigo)s,%(codigo_externo)s,%(cnpj_cpf)s,%(razao_social)s,%(nome_fantasia)s,%(endereco)s,%(cidade)s,%(contato)s,%(telefone)s,%(local_entrega)s,%(exige_nf)s,%(exige_gta)s,%(forma_pagamento)s,%(tipo)s,%(ativo)s,%(observacao)s)
-                           on conflict (codigo) do update set codigo_externo=excluded.codigo_externo, cnpj_cpf=excluded.cnpj_cpf, razao_social=excluded.razao_social, nome_fantasia=excluded.nome_fantasia,
-                             endereco=excluded.endereco, cidade=excluded.cidade, contato=excluded.contato, telefone=excluded.telefone, local_entrega=excluded.local_entrega,
-                             exige_nf=excluded.exige_nf, exige_gta=excluded.exige_gta, forma_pagamento=excluded.forma_pagamento, tipo=excluded.tipo, ativo=excluded.ativo""",
-                        {**c, "observacao": c.get("observacao")})
-        # preços
+        ev("insert into vendedor (nome, telefone) select v.nome, v.tel from (values %s) v(nome, tel) where not exists (select 1 from vendedor x where x.nome = v.nome)",
+           [(v["nome"], v["telefone"]) for v in m["vendedores"]])
+        ev("""insert into produto (sigla, nome, grupo, ordem, preco_compra, tem_preco, conta_como_ave, eh_codorna) values %s
+              on conflict (sigla) do update set nome=excluded.nome, grupo=excluded.grupo, ordem=excluded.ordem, preco_compra=excluded.preco_compra,
+              conta_como_ave=excluded.conta_como_ave, eh_codorna=excluded.eh_codorna""",
+           [(p["sigla"], p["nome"], p["grupo"], p["ordem"], p["preco_compra"], True, p["conta_como_ave"], p["eh_codorna"]) for p in m["produtos"]])
+        ev("""insert into rota (nome, vendedor_id, cidade_distribuicao_id, intervalo_dias)
+              select v.nome, (select id from vendedor where nome = v.vend), (select id from cidade_distribuicao where nome = v.cid), v.dias from (values %s) v(nome, vend, cid, dias)
+              on conflict (nome) do update set vendedor_id=excluded.vendedor_id, cidade_distribuicao_id=excluded.cidade_distribuicao_id""",
+           [(r["nome"], (r["vendedor"] or "").upper(), r["cidade"], INTERVALO_DIAS) for r in m["rotas"]])
+
+        print("2/8 clientes, preços, rotas × clientes")
+        ev("""insert into cliente (codigo, codigo_externo, cnpj_cpf, razao_social, nome_fantasia, endereco, cidade, contato, telefone, local_entrega, exige_nf, exige_gta, forma_pagamento, tipo, ativo, observacao) values %s
+              on conflict (codigo) do update set codigo_externo=excluded.codigo_externo, cnpj_cpf=excluded.cnpj_cpf, razao_social=excluded.razao_social, nome_fantasia=excluded.nome_fantasia,
+              endereco=excluded.endereco, cidade=excluded.cidade, contato=excluded.contato, telefone=excluded.telefone, local_entrega=excluded.local_entrega,
+              exige_nf=excluded.exige_nf, exige_gta=excluded.exige_gta, forma_pagamento=excluded.forma_pagamento, tipo=excluded.tipo, ativo=excluded.ativo""",
+           [(c["codigo"], c["codigo_externo"], c["cnpj_cpf"], c["razao_social"], c["nome_fantasia"], c["endereco"], c["cidade"], c["contato"], c["telefone"], c["local_entrega"],
+             c["exige_nf"], c["exige_gta"], c["forma_pagamento"], c["tipo"], c["ativo"], c.get("observacao")) for c in m["clientes"]])
         cur.execute("delete from preco_cliente")
-        execute_values(cur, """insert into preco_cliente (cliente_id, produto_id, preco)
-                               select c.id, p.id, v.preco from (values %s) v(codigo, sigla, preco) join cliente c on c.codigo=v.codigo join produto p on p.sigla=v.sigla
-                               on conflict do nothing""", [(p["codigo"], p["sigla"], p["preco"]) for p in m["precos"]])
-        # rota_cliente
+        ev("""insert into preco_cliente (cliente_id, produto_id, preco)
+              select c.id, p.id, v.preco from (values %s) v(codigo, sigla, preco) join cliente c on c.codigo=v.codigo join produto p on p.sigla=v.sigla on conflict do nothing""",
+           [(p["codigo"], p["sigla"], p["preco"]) for p in m["precos"]])
         cur.execute("delete from rota_cliente")
-        execute_values(cur, """insert into rota_cliente (rota_id, cliente_id, ordem_visita)
-                               select r.id, c.id, v.ordem from (values %s) v(rota, codigo, ordem) join rota r on r.nome=v.rota join cliente c on c.codigo=v.codigo""",
-                       [(x["rota"], x["codigo"], x["ordem_visita"]) for x in m["rota_cliente"]])
-        # limpa legado anterior
+        ev("""insert into rota_cliente (rota_id, cliente_id, ordem_visita)
+              select r.id, c.id, v.ordem from (values %s) v(rota, codigo, ordem) join rota r on r.nome=v.rota join cliente c on c.codigo=v.codigo""",
+           [(x["rota"], x["codigo"], x["ordem_visita"]) for x in m["rota_cliente"]])
+
+        print("3/8 limpando carga legada anterior")
         cur.execute("delete from titulo where motivo like 'LEGADO%'")
         cur.execute("delete from pedido where observacao like 'LEGADO%'")
         cur.execute("delete from contato_cliente where registrado_por is null")
         cur.execute("delete from pedido_fornecedor where observacao = 'LEGADO'")
-        # semanas
-        for (rota, data), status in m["semanas"].items():
-            if status == "ABERTA":
-                cur.execute("update semana_rota set status='FECHADA', fechada_em=now() where rota_id=(select id from rota where nome=%s) and status='ABERTA' and data_entrega<>%s", (rota, data))
-            cur.execute("""insert into semana_rota (rota_id, data_entrega, status, fechada_em) values ((select id from rota where nome=%s), %s, %s, case when %s='FECHADA' then now() end)
-                           on conflict (rota_id, data_entrega) do update set status=excluded.status""", (rota, data, status, status))
-        # pedidos + itens
-        for p in m["pedidos"]:
-            cur.execute("""insert into pedido (semana_rota_id, cliente_id, tipo, forma_pagamento, cidade_distribuicao_id, reposicao, total, status, observacao, criado_em)
-                           values ((select s.id from semana_rota s join rota r on r.id=s.rota_id where r.nome=%s and s.data_entrega=%s),
-                                   (select id from cliente where codigo=%s), %s, %s, (select id from cidade_distribuicao where nome=%s), %s, %s, %s, %s, %s) returning id""",
-                        (p["rota"], p["data"], p["codigo"], p["tipo"], p["forma"], p["distribuicao"], p["reposicao"], p["total"], p["status"], p["observacao"], datetime.datetime.combine(p["data"], datetime.time(12))))
-            pid = cur.fetchone()[0]
-            if p["itens"]:
-                execute_values(cur, "insert into pedido_item (pedido_id, produto_id, quantidade, preco_unitario) select %s, p.id, v.q, v.pr from (values %%s) v(sigla, q, pr) join produto p on p.sigla=v.sigla" % pid,
-                               [(s, q, pr) for s, (q, pr) in p["itens"].items()])
-        # contatos
-        execute_values(cur, """insert into contato_cliente (semana_rota_id, cliente_id, resultado, registrado_em)
-                               select s.id, c.id, v.res, v.data + time '08:00' from (values %s) v(rota, data, codigo, res)
-                               join rota r on r.nome=v.rota join semana_rota s on s.rota_id=r.id and s.data_entrega=v.data join cliente c on c.codigo=v.codigo
-                               on conflict (semana_rota_id, cliente_id) do update set resultado=excluded.resultado""",
-                       [(c["rota"], c["data"], c["codigo"], c["resultado"]) for c in m["contatos"]])
-        # títulos
-        for t in m["titulos"]:
-            cur.execute("""insert into titulo (pedido_id, cliente_id, data_referencia, valor, forma_pagamento, situacao, data_baixa, motivo, criado_em, criado_por)
-                           values ((select p.id from pedido p join semana_rota s on s.id=p.semana_rota_id join rota r on r.id=s.rota_id join cliente c on c.id=p.cliente_id
-                                    where c.codigo=%s and s.data_entrega=%s and r.nome=%s and p.tipo='CLIENTE' limit 1),
-                                   (select id from cliente where codigo=%s), %s, %s, %s, %s, %s, %s, coalesce(%s, now()), (select id from usuario where email=%s))""",
-                        (t["codigo"], t["data"], t["rota"], t["codigo"], t["data"], t["valor"], t["forma"], t["situacao"], t["data_baixa"], t["motivo"], t["criado_em"], t["email"]))
-        # encadeia cancelados → substituto (melhor esforço: próximo título não cancelado do mesmo cliente/data criado depois)
+
+        print("4/8 semanas")
+        abertas = [(rota, data) for (rota, data), st in m["semanas"].items() if st == "ABERTA"]
+        ev("""update semana_rota s set status='FECHADA', fechada_em=now() from (values %s) v(rota, data), rota r
+              where r.nome=v.rota and s.rota_id=r.id and s.status='ABERTA' and s.data_entrega<>v.data""", [(r, d) for r, d in abertas])
+        ev("""insert into semana_rota (rota_id, data_entrega, status, fechada_em)
+              select r.id, v.data, v.st, case when v.st='FECHADA' then now() end from (values %s) v(rota, data, st) join rota r on r.nome=v.rota
+              on conflict (rota_id, data_entrega) do update set status=excluded.status""",
+           [(rota, data, st) for (rota, data), st in m["semanas"].items()])
+
+        print("5/8 pedidos e itens")
+        cur.execute("""create temp table tmp_pedido (k int primary key, rota text, data date, codigo int, tipo text, forma text, distribuicao text,
+                       reposicao int, total numeric, status text, observacao text, criado_em timestamptz) on commit drop""")
+        cur.execute("create temp table tmp_item (k int, sigla text, q int, pr numeric) on commit drop")
+        ped = m["pedidos"]
+        ev("insert into tmp_pedido values %s",
+           [(k, p["rota"], p["data"], p["codigo"], p["tipo"], p["forma"], p["distribuicao"], p["reposicao"], p["total"], p["status"],
+             "LEGADO#%d %s" % (k, p["observacao"]), datetime.datetime.combine(p["data"], datetime.time(12))) for k, p in enumerate(ped)])
+        ev("insert into tmp_item values %s", [(k, s_, q, pr) for k, p in enumerate(ped) for s_, (q, pr) in p["itens"].items()])
+        cur.execute("""insert into pedido (semana_rota_id, cliente_id, tipo, forma_pagamento, cidade_distribuicao_id, reposicao, total, status, observacao, criado_em)
+                       select s.id, c.id, t.tipo, t.forma, cd.id, t.reposicao, t.total, t.status, t.observacao, t.criado_em
+                       from tmp_pedido t join rota r on r.nome=t.rota join semana_rota s on s.rota_id=r.id and s.data_entrega=t.data
+                       join cidade_distribuicao cd on cd.nome=t.distribuicao left join cliente c on c.codigo=t.codigo order by t.k""")
+        cur.execute(r"""create temp table tmp_map on commit drop as
+                       select p.id as pedido_id, (regexp_match(p.observacao, '^LEGADO#(\d+) '))[1]::int as k from pedido p where p.observacao like 'LEGADO#%'""")
+        cur.execute("create index on tmp_map (k)")
+        cur.execute("""insert into pedido_item (pedido_id, produto_id, quantidade, preco_unitario)
+                       select mp.pedido_id, pr.id, i.q, i.pr from tmp_item i join tmp_map mp on mp.k=i.k join produto pr on pr.sigla=i.sigla""")
+        cur.execute(r"update pedido set observacao = regexp_replace(observacao, '^LEGADO#\d+ ', 'LEGADO ') where observacao like 'LEGADO#%'")
+
+        print("6/8 contatos")
+        ev("""insert into contato_cliente (semana_rota_id, cliente_id, resultado, registrado_em)
+              select s.id, c.id, v.res, v.data + time '08:00' from (values %s) v(rota, data, codigo, res)
+              join rota r on r.nome=v.rota join semana_rota s on s.rota_id=r.id and s.data_entrega=v.data join cliente c on c.codigo=v.codigo
+              on conflict (semana_rota_id, cliente_id) do update set resultado=excluded.resultado""",
+           [(c["rota"], c["data"], c["codigo"], c["resultado"]) for c in m["contatos"]])
+
+        print("7/8 títulos")
+        cur.execute("create temp table tmp_titulo (k int, codigo int, data date, rota text, valor numeric, forma text, situacao text, data_baixa date, motivo text, criado_em timestamptz, email text) on commit drop")
+        ev("insert into tmp_titulo values %s",
+           [(k, t["codigo"], t["data"], t["rota"], t["valor"], t["forma"], t["situacao"], t["data_baixa"], t["motivo"], t["criado_em"], t["email"]) for k, t in enumerate(m["titulos"])])
+        cur.execute("""insert into titulo (pedido_id, cliente_id, data_referencia, valor, forma_pagamento, situacao, data_baixa, motivo, criado_em, criado_por)
+                       select (select p.id from pedido p join semana_rota s on s.id=p.semana_rota_id join rota r on r.id=s.rota_id
+                               where p.cliente_id=c.id and s.data_entrega=t.data and r.nome=t.rota and p.tipo='CLIENTE' limit 1),
+                              c.id, t.data, t.valor, t.forma, t.situacao, t.data_baixa, t.motivo, coalesce(t.criado_em, now()),
+                              (select id from usuario where email=t.email)
+                       from tmp_titulo t join cliente c on c.codigo=t.codigo order by t.k""")
         cur.execute("""update titulo t set cancelado_por_id = (select t2.id from titulo t2 where t2.cliente_id=t.cliente_id and t2.data_referencia=t.data_referencia
                        and t2.situacao<>'CANCELADO' and t2.criado_em>=t.criado_em order by t2.criado_em limit 1) where t.situacao='CANCELADO' and t.motivo like 'LEGADO%'""")
-        # pedidos fornecedor
+
+        print("8/8 pedidos à granja")
         for x in m["pf"]:
             cur.execute("""insert into pedido_fornecedor (data_entrega, cidade_distribuicao_id, fornecedor_id, status, registrado_em, observacao)
                            values (%s, (select id from cidade_distribuicao where nome=%s), (select id from fornecedor order by id limit 1), 'ENTREGUE', coalesce(%s, now()), 'LEGADO')
@@ -525,8 +540,8 @@ def carregar(m, dsn):
             cur.execute("delete from pedido_fornecedor_item where pedido_fornecedor_id=%s", (pfid,))
             siglas = set(x["qtd"]) | set(x["programado"])
             if siglas:
-                execute_values(cur, "insert into pedido_fornecedor_item (pedido_fornecedor_id, produto_id, qtd_programada, qtd_pedida) select %s, p.id, v.prog, v.ped from (values %%s) v(sigla, prog, ped) join produto p on p.sigla=v.sigla" % pfid,
-                               [(s, x["programado"].get(s, 0), x["qtd"].get(s, 0)) for s in siglas])
+                ev("insert into pedido_fornecedor_item (pedido_fornecedor_id, produto_id, qtd_programada, qtd_pedida) select %s, p.id, v.prog, v.ped from (values %%s) v(sigla, prog, ped) join produto p on p.sigla=v.sigla" % pfid,
+                   [(s_, x["programado"].get(s_, 0), x["qtd"].get(s_, 0)) for s_ in siglas])
         cn.commit()
         print("Carga concluída.")
         reconciliar(cur, m)
