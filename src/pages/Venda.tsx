@@ -1,6 +1,6 @@
 // Tela de venda semanal — mesmo padrão da aba "Venda Semana" da planilha:
 // cabeçalho (vendedor, semana, filtros, cliente) → financeiro + 4 últimos pedidos → grade 3 colunas × 9 produtos → interesse
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import React, { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '@/lib/auth'
 import { supabase, ok } from '@/lib/supabase'
 import { itensDoPedido, listarProdutos, listarRotasSemana, precosDoCliente, rpc } from '@/lib/dados'
@@ -20,6 +20,10 @@ function passaFiltro(c: ClienteRotaSemana, f: FiltroStatus) {
     case 'SEM_CONTATO': return !c.resultado || c.resultado === 'SEM_CONTATO'
     default: return true
   }
+}
+const soDigitos = (v: string) => v.replace(/\D/g, '')
+const bloqueiaNaoNumerico = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key.length === 1 && !/[0-9]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault()
 }
 const rotulo = (c: ClienteRotaSemana) =>
   [c.razao_social, c.nome_fantasia, c.cidade, c.contato, c.telefone].filter(Boolean).join('  __  ')
@@ -104,7 +108,8 @@ export default function Venda() {
           setQtd(Object.fromEntries(itens.map((i) => [i.produto_id, String(i.quantidade)])))
           setReposicao(data?.reposicao ? String(data.reposicao) : '')
         } else { setQtd({}); setReposicao('') }
-        setTimeout(() => primeiroInput.current?.focus(), 50)
+        // foca na primeira quantidade só se o usuário não estiver digitando em outro campo (ex.: Filtrar)
+        setTimeout(() => { const el = document.activeElement as HTMLElement | null; if (!el || el.tagName === 'BODY' || el.tagName === 'BUTTON' || el.tagName === 'SELECT') primeiroInput.current?.focus() }, 50)
       } catch (e: any) { toast(e.message, 'erro') }
     })()
     return () => { vivo = false }
@@ -174,7 +179,7 @@ export default function Venda() {
             <select className="input py-1 px-2 text-xs bg-yellow-50 font-bold" value={rotaId ?? ''} onChange={(e) => setRotaId(Number(e.target.value))}>
               {rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}
             </select></div>
-          <div className="flex items-center gap-1.5 flex-1 min-w-[180px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Texto</span>
+          <div className="flex items-center gap-1.5 flex-1 min-w-[180px]"><span className="font-bold text-slate-500 uppercase text-[10px]">Filtrar</span>
             <input className="input py-1 px-2 text-xs bg-yellow-50" placeholder="buscar cliente, cidade, contato…" value={texto} onChange={(e) => setTexto(e.target.value)} /></div>
           <div className="flex items-center gap-1.5 min-w-[200px]"><span className="font-bold text-slate-500 uppercase text-[10px] whitespace-nowrap">Pedido na semana</span>
             <select className="input py-1 px-2 text-xs bg-yellow-50 italic" value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroStatus)}>
@@ -251,7 +256,7 @@ export default function Venda() {
                 {cliente.pedido_id && <button className="btn-danger py-1 text-xs" onClick={() => setConfirmaExcluir(true)}>Excluir</button>}
                 <div className="flex-1 text-center font-extrabold text-xs">Pedido da Semana</div>
                 <label className="flex items-center gap-1 text-xs font-bold text-red-700">Reposição
-                  <input type="number" inputMode="numeric" min={0} className="input w-16 px-1 py-0.5 text-xs text-center bg-yellow-50 font-bold text-slate-800" value={reposicao} onChange={(e) => setReposicao(e.target.value)} /></label>
+                  <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6} className="input w-16 px-1 py-0.5 text-xs text-center bg-yellow-50 font-bold text-slate-800" value={reposicao} onChange={(e) => setReposicao(soDigitos(e.target.value))} /></label>
                 <div className="flex items-center gap-2 rounded bg-slate-200 px-2 py-0.5"><span className="text-xs font-bold">Total</span><span className="text-sm font-extrabold min-w-[90px] text-right">{fmtMoeda(total)}</span></div>
               </div>
               <div className="grid gap-x-3 md:grid-cols-3">
@@ -264,8 +269,8 @@ export default function Venda() {
                         return (
                           <tr key={p.id} className={tem ? '' : 'opacity-40'}>
                             <td className="border border-slate-300 p-0">
-                              <input ref={ci === 0 && i === 0 ? primeiroInput : undefined} type="number" inputMode="numeric" min={0} disabled={!tem} value={qtd[p.id] ?? ''}
-                                onChange={(e) => setQtd({ ...qtd, [p.id]: e.target.value })}
+                              <input ref={ci === 0 && i === 0 ? primeiroInput : undefined} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6} disabled={!tem} value={qtd[p.id] ?? ''}
+                                onChange={(e) => setQtd({ ...qtd, [p.id]: soDigitos(e.target.value) })} onKeyDown={bloqueiaNaoNumerico}
                                 className="w-full h-[22px] bg-yellow-50 text-center text-xs font-bold outline-none focus:bg-yellow-200 disabled:bg-slate-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" />
                             </td>
                             <td className="border border-slate-300 px-1.5 py-0 text-[11px] font-semibold whitespace-nowrap leading-none">{p.nome}</td>
