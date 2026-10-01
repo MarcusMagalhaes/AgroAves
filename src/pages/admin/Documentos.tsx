@@ -1,5 +1,6 @@
 // Documentos de entrega: mapa da rota, recibos, GTA e controle de NF (impressão pelo navegador → PDF)
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { imprimirHtml } from '@/lib/imprimir'
 import { useParams } from 'react-router-dom'
 import { supabase, ok } from '@/lib/supabase'
 import { listarProdutos, listarRotasSemana } from '@/lib/dados'
@@ -53,7 +54,14 @@ export default function Documentos() {
       }).catch((e) => toast(e.message, 'erro')).finally(() => setCarregando(false))
   }, [doc, rotasGta, produtos])
 
-  const imprimir = () => window.print()
+  const areaRef = useRef<HTMLDivElement>(null)
+  const imprimir = () => {
+    const el = areaRef.current
+    if (!el) return
+    const paisagem = doc !== 'recibos'
+    const titulo = { mapa: 'Mapa de entrega', recibos: 'Recibos', gta: 'GTA', nf: 'Controle de NF' }[doc]
+    imprimirHtml(titulo, el.innerHTML, paisagem ? 'landscape' : 'portrait')
+  }
 
   return (
     <div>
@@ -74,11 +82,11 @@ export default function Documentos() {
           )}
           <button className="btn-accent ml-auto" onClick={imprimir}>🖨️ Imprimir / salvar PDF</button>
         </div>
-        <p className="text-[10px] text-slate-400 mb-1.5">Na janela de impressão escolha "Salvar como PDF". Mapa e GTA em paisagem; recibos em retrato.</p>
+        <p className="text-[10px] text-slate-400 mb-1.5">O botão abre o documento já ajustado à página (mapa e GTA em paisagem, recibos em retrato), com as cores. Na janela de impressão escolha a impressora ou "Salvar como PDF".</p>
       </div>
 
       {carregando ? <Carregando /> : (
-        <div className="bg-white print:bg-white">
+        <div className="bg-white print:bg-white" ref={areaRef}>
           {doc === 'mapa' && rota && (mapa && mapa.linhas.length ? <DocMapa rota={rota} mapa={mapa} /> : <Vazio texto="Sem pedidos nesta semana" />)}
           {doc === 'recibos' && rota && (mapa && mapa.linhas.length ? <DocRecibos rota={rota} mapa={mapa} produtos={produtos} /> : <Vazio texto="Sem pedidos nesta semana" />)}
           {doc === 'gta' && <DocGta mapas={mapas} produtos={produtos} clientes={clientesDoc} />}

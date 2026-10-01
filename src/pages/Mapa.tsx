@@ -47,16 +47,25 @@ export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean
       </tbody>
       <tfoot>
         <tr className="bg-slate-100 font-bold">
-          <td className={`${cls} border`} colSpan={6}>SUB-TOTAL · {mapa.linhas.length} entregas</td>
-          {mapa.produtosUsados.map((p) => <td key={p.id} className={`${cls} border text-center`}>{fmtNum(mapa.subtotal[p.id])}</td>)}
+          <td className={`${cls} border text-right`} colSpan={6}>SUB-TOTAL</td>
+          {mapa.produtosUsados.map((p) => <td key={p.id} className={`${cls} border text-center`} style={{ background: tom(corProduto(p), 0.25) }}>{fmtNum(mapa.subtotal[p.id])}</td>)}
           {mapa.totalR > 0 && <td className={`${cls} border text-center`}>{fmtNum(mapa.totalR)}</td>}
           <td className={`${cls} border text-right whitespace-nowrap`}>{fmtMoeda(mapa.totalValor)}</td>
         </tr>
-        <tr className="bg-slate-50 text-slate-700">
-          <td className={`${cls} border`} colSpan={6}>
-            {Object.entries(mapa.porGrupo).map(([g, n]) => `${g}: ${fmtNum(n)}`).join(' · ')} · <b>TOTAL AVES: {fmtNum(mapa.totalAves)}</b>
-          </td>
-          <td className={`${cls} border`} colSpan={mapa.produtosUsados.length + (mapa.totalR > 0 ? 2 : 1)}></td>
+        <tr className="bg-slate-50 font-bold">
+          <td className={`${cls} border text-right`} colSpan={6}>Nº DE ENTREGAS: {mapa.linhas.filter((l) => l.pedido.tipo === 'CLIENTE').length}</td>
+          {gruposDeProdutos(mapa.produtosUsados).map((g) => (
+            <td key={g.grupo} colSpan={g.itens.length} className={`${cls} border text-center uppercase`} style={{ background: tom(corProduto(g.itens[0]), 0.5) }}>
+              {g.grupo}: {fmtNum(g.itens.reduce((s, p) => s + (mapa.subtotal[p.id] ?? 0), 0))}
+            </td>
+          ))}
+          {mapa.totalR > 0 && <td className={`${cls} border text-center`}>R: {fmtNum(mapa.totalR)}</td>}
+          <td className={`${cls} border`} />
+        </tr>
+        <tr className="bg-slate-100 font-extrabold">
+          <td className={`${cls} border text-right`} colSpan={6}>TOTAL GERAL DE AVES</td>
+          <td className={`${cls} border text-center`} colSpan={mapa.produtosUsados.length + (mapa.totalR > 0 ? 1 : 0)}>{fmtNum(mapa.totalAves)}</td>
+          <td className={`${cls} border`} />
         </tr>
       </tfoot>
     </table>
