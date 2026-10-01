@@ -11,7 +11,8 @@
 html, body, #root { height: 100%; }
 body { -webkit-tap-highlight-color: transparent; }
 
-/* Inputs grandes para uso no celular */
+@layer components {
+/* Inputs grandes para uso no celular; utilitários (ex.: bg-yellow-50) sobrescrevem */
 .input {
   @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 shadow-sm
          focus:border-leaf-500 focus:outline-none focus:ring-2 focus:ring-leaf-200 disabled:bg-slate-100 disabled:text-slate-500;
@@ -27,6 +28,8 @@ body { -webkit-tap-highlight-color: transparent; }
 .card { @apply rounded-xl bg-white shadow-sm border border-slate-200; }
 .label { @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1; }
 .chip { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+
+}
 
 /* Grade tipo planilha */
 .rdg { block-size: 100%; border-radius: 0.75rem; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }
