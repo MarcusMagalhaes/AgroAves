@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  --rdg-font-size: 11px;
+  --rdg-font-size: 12px;
 }
 
 html, body, #root { height: 100%; }
@@ -32,7 +32,7 @@ body { -webkit-tap-highlight-color: transparent; }
 }
 
 /* Grade tipo planilha */
-.rdg { block-size: 100%; border-radius: 0.75rem; --rdg-cell-padding-inline: 4px; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }
+.rdg { block-size: 100%; border-radius: 0.75rem; --rdg-cell-padding-inline: 4px; --rdg-font-size: 12px; font-size: 12px; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }
 .rdg-cell.cell-num { text-align: right; font-variant-numeric: tabular-nums; }
 .rdg-cell.cell-edit { background: #fffdf5; }
 .rdg-cell.cell-dirty { background: #fde68a; }
