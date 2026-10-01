@@ -22,6 +22,8 @@ export function imprimirHtml(titulo: string, html: string, orientacao: 'landscap
   th.p-0 img { height: 28px !important; width: auto !important; }
   th { white-space: normal !important; }
   td.whitespace-nowrap { white-space: normal !important; }
+  .col-larga { min-width: 38mm !important; width: 38mm; }
+  td.col-pagto { white-space: nowrap !important; }
   .no-print { display: none !important; }
   .print-page { page-break-after: always; }
   .barra-impressao { position: fixed; top: 8px; right: 8px; display: flex; gap: 6px; }

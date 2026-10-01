@@ -25,8 +25,8 @@ export function TabelaMapa({ mapa, compacto, cabecalho }: { mapa: MapaT; compact
           <th className={`${cls} border text-left`}>Cliente</th>
           <th className={`${cls} border text-left`}>Nome (contato)</th>
           <th className={`${cls} border text-left`}>Cidade</th>
-          <th className={`${cls} border text-left`}>Local de entrega</th>
-          <th className={`${cls} border text-left`}>Pagto</th>
+          <th className={`${cls} border text-left col-larga`}>Local de entrega</th>
+          <th className={`${cls} border text-left col-larga`}>Pagto</th>
           {mapa.produtosUsados.map((p) => <th key={p.id} className={`${cls} border text-center align-bottom leading-tight`} style={{ maxWidth: 60, background: tom(corProduto(p), 0.4) }}>{p.nome}</th>)}
           {mapa.totalR > 0 && <th className={`${cls} border text-center align-bottom`}>Reposição</th>}
           <th className={`${cls} border text-right`}>Total R$</th>
@@ -39,8 +39,8 @@ export function TabelaMapa({ mapa, compacto, cabecalho }: { mapa: MapaT; compact
             <td className={`${cls} border font-semibold`}>{l.pedido.tipo !== 'CLIENTE' ? l.pedido.tipo : l.pedido.razao_social}</td>
             <td className={`${cls} border`}>{l.pedido.nome_fantasia}{l.pedido.contato ? ` (${l.pedido.contato})` : ''}</td>
             <td className={`${cls} border`}>{l.pedido.cidade}</td>
-            <td className={`${cls} border`}>{l.pedido.local_entrega}</td>
-            <td className={`${cls} border whitespace-nowrap`}>{l.pedido.forma_pagamento === 'A_VISTA' ? 'Pago: Sim (  ) Não (  )' : l.pedido.forma_pagamento === 'ANTECIPADO' ? 'Pago' : l.pedido.forma_pagamento ? FORMAS[l.pedido.forma_pagamento] : ''}</td>
+            <td className={`${cls} border col-larga`}>{l.pedido.local_entrega}</td>
+            <td className={`${cls} border whitespace-nowrap col-larga col-pagto`}>{l.pedido.forma_pagamento === 'A_VISTA' ? 'Pago: Sim (  ) Não (  )' : l.pedido.forma_pagamento === 'ANTECIPADO' ? 'Pago' : l.pedido.forma_pagamento ? FORMAS[l.pedido.forma_pagamento] : ''}</td>
             {mapa.produtosUsados.map((p) => <td key={p.id} className={`${cls} border text-center font-semibold`} style={{ background: corProduto(p) + '24' }}>{l.qtd[p.id] || ''}</td>)}
             {mapa.totalR > 0 && <td className={`${cls} border text-center`}>{l.pedido.reposicao || ''}</td>}
             <td className={`${cls} border text-right font-semibold whitespace-nowrap`}>{l.pedido.tipo === 'CLIENTE' ? fmtMoeda(Number(l.pedido.total)) : ''}</td>
