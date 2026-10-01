@@ -125,15 +125,13 @@ function DocRecibos({ rota, mapa, produtos }: { rota: RotaSemana; mapa: MapaT; p
     <div>
       <style>{`@media print { @page { size: A4 portrait; } }`}</style>
       {pares.map((par, i) => (
-        <div key={i} className="print-page grid grid-cols-2 gap-4 mb-6">
+        <div key={i} className={`grid grid-cols-2 gap-3 mb-3 ${(i + 1) % 3 === 0 ? 'print-page' : ''}`} style={{ breakInside: 'avoid' }}>
           {par.map((l) => (
-            <div key={l.pedido.id} className="border border-slate-400 p-3 text-xs">
-              <div className="flex items-center justify-between border-b border-slate-300 pb-1 mb-1">
-                <Logo size={26} />
-                <div className="text-right"><div className="font-bold">{rota.rota}</div><div>{fmtData(rota.data_entrega)}</div></div>
+            <div key={l.pedido.id} className="border border-slate-400 p-2 text-xs">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-300 pb-1 mb-1">
+                <Logo size={24} />
+                <div className="text-[10px] text-slate-600 text-right leading-tight"><div>{rota.vendedor} - {rota.vendedor_telefone} (WHATSAPP)</div><div>Ipatinga, {dataExtenso(rota.data_entrega!)}</div></div>
               </div>
-              <div className="text-[10px] text-slate-600">{rota.vendedor} - {rota.vendedor_telefone} (WHATSAPP)</div>
-              <div className="text-[10px] text-slate-600">Ipatinga, {dataExtenso(rota.data_entrega!)}</div>
               <div className="mt-1 font-bold text-sm">{l.pedido.nome_fantasia || l.pedido.razao_social}</div>
               <div>{l.pedido.cidade} · {l.pedido.telefone}</div>
               <div className="flex justify-between"><span>Item: <b>{l.item}</b> · Contato: {l.pedido.contato}</span><span>Cond. pg: <b>{l.pedido.forma_pagamento === 'ANTECIPADO' ? 'Pago' : l.pedido.forma_pagamento ? FORMAS[l.pedido.forma_pagamento] : ''}</b></span></div>
@@ -147,7 +145,7 @@ function DocRecibos({ rota, mapa, produtos }: { rota: RotaSemana; mapa: MapaT; p
                 </tbody>
                 <tfoot><tr className="border-t border-slate-400 font-bold"><td colSpan={3} className="text-right pr-2">TOTAL</td><td className="text-right">{fmtMoeda(Number(l.pedido.total))}</td></tr></tfoot>
               </table>
-              <div className="mt-6 border-t border-slate-400 pt-1 text-center text-[10px]">ASSINATURA</div>
+              <div className="mt-4 border-t border-slate-400 pt-0.5 text-center text-[10px]">ASSINATURA</div>
               <div className="text-center text-[9px] text-slate-500">{EMAIL_EMPRESA}</div>
             </div>
           ))}
