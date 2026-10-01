@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import 'react-data-grid/lib/styles.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --rdg-font-size: 13px;
+}
+
+html, body, #root { height: 100%; }
+body { -webkit-tap-highlight-color: transparent; }
+
+/* Inputs grandes para uso no celular */
+.input {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 shadow-sm
+         focus:border-leaf-500 focus:outline-none focus:ring-2 focus:ring-leaf-200 disabled:bg-slate-100 disabled:text-slate-500;
+}
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition
+         focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 select-none;
+}
+.btn-primary { @apply btn bg-leaf-600 text-white hover:bg-leaf-700 focus:ring-leaf-300; }
+.btn-accent { @apply btn bg-brand-500 text-slate-900 hover:bg-brand-400 focus:ring-brand-300; }
+.btn-secondary { @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-200; }
+.btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-300; }
+.card { @apply rounded-xl bg-white shadow-sm border border-slate-200; }
+.label { @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1; }
+.chip { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+
+/* Grade tipo planilha */
+.rdg { block-size: 100%; border-radius: 0.75rem; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #fff8e6; }
+.rdg-cell.cell-num { text-align: right; font-variant-numeric: tabular-nums; }
+.rdg-cell.cell-edit { background: #fffdf5; }
+.rdg-cell.cell-dirty { background: #fde68a; }
+.rdg-cell.cell-saved { background: #d4f2da; transition: background 1.5s; }
+.rdg-cell.cell-error { background: #fecaca; }
+
+/* Impressão de documentos */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .print-page { page-break-after: always; }
+  .print-landscape { size: A4 landscape; }
+  @page { margin: 10mm; }
+}
