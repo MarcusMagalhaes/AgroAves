@@ -115,7 +115,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
     })),
     { key: 'R', name: 'Reposição', width: 40, minWidth: 40, editable: !historico, summaryCellClass: 'cell-centro', renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: EditorNumero, cellClass: (row) => `cell-centro ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
-    { key: 'total', name: 'Total R$', width: 95, minWidth: 95, frozen: 'end', cellClass: 'cell-num font-semibold', summaryCellClass: 'cell-num', headerCellClass: 'cab-direita', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
+    { key: 'total', name: 'Total R$', width: 85, minWidth: 85, frozen: 'end', cellClass: 'cell-num font-semibold', summaryCellClass: 'cell-num', headerCellClass: 'cab-direita', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: () => null },
     ...(historico ? [] : [{ key: 'acoes', name: '', width: 30, frozen: 'end' as const, renderCell: ({ row }: { row: Linha }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> }]),
   ], [colsProd, estado, detalhes, historico])
 
@@ -198,7 +198,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
                 <div style={{ width: 40, flex: 'none' }} />
               </div>
             </div>
-            <div style={{ width: 90 + (historico ? 0 : 30), flex: 'none' }} />
+            <div style={{ width: 85 + (historico ? 0 : 30), flex: 'none' }} />
           </div>
           <div className="flex-1 min-h-0">
             <DataGrid ref={gridRef} className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
