@@ -75,21 +75,21 @@ export default function Programacao() {
   }, [visiveis, colsProd])
 
   const colunas: Column<Linha, Resumo>[] = useMemo(() => [
-    { key: 'rota', name: 'Rota', width: 118, frozen: true, renderSummaryCell: ({ row }) => <b>{row.cliente}</b> },
-    { key: 'cliente', name: 'Cliente', width: 200, frozen: true, renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
+    { key: 'rota', name: 'Rota', width: 110, frozen: 'start', renderSummaryCell: ({ row }) => <b>{row.cliente}</b> },
+    { key: 'cliente', name: 'Cliente', width: 190, frozen: 'start', renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
     ...(detalhes ? [{ key: 'nome', name: 'Nome', width: 130 }, { key: 'contato', name: 'Contato', width: 110 }, { key: 'pagto', name: 'Pagto', width: 80 }] as Column<Linha, Resumo>[] : []),
     ...colsProd.map((p): Column<Linha, Resumo> => ({
-      key: p.sigla, name: p.nome, width: 46, editable: true, renderEditCell: renderTextEditor,
+      key: p.sigla, name: p.nome, width: 42, editable: true, renderEditCell: renderTextEditor,
       renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
       cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
       renderSummaryCell: ({ row }) => <b>{row[p.sigla] ? fmtNum(row[p.sigla]) : ''}</b>,
       headerCellClass: 'text-center',
     })),
-    { key: 'R', name: 'Reposição', width: 46, editable: true, renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
+    { key: 'R', name: 'Reposição', width: 42, editable: true, renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-num cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
-    { key: 'total', name: 'Total R$', width: 96, cellClass: 'cell-num font-semibold', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
-    { key: 'acoes', name: '', width: 32, renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
+    { key: 'total', name: 'Total R$', width: 90, frozen: 'end', cellClass: 'cell-num font-semibold', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
+    { key: 'acoes', name: '', width: 30, frozen: 'end', renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
   ], [colsProd, estado, detalhes])
 
   async function onRowsChange(rows: Linha[], { indexes, column }: RowsChangeData<Linha, Resumo>) {
@@ -157,7 +157,7 @@ export default function Programacao() {
       {linhas === null ? <Carregando /> : (
         <div className="card flex-1 min-h-0 overflow-hidden">
           <DataGrid className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
-            onRowsChange={onRowsChange} rowHeight={26} headerRowHeight={96} summaryRowHeight={28} />
+            onRowsChange={onRowsChange} rowHeight={24} headerRowHeight={92} summaryRowHeight={26} />
         </div>
       )}
       <div className="text-[10px] text-slate-400 mt-0.5">Enter ou duplo clique edita a célula; salva ao sair. Amarelo = salvando · verde = salvo · vermelho = erro.</div>
