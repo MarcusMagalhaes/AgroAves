@@ -50,9 +50,12 @@ body { -webkit-tap-highlight-color: transparent; }
 .rdg-cell.cell-centro { text-align: center; font-variant-numeric: tabular-nums; }
 .rdg-cell.cell-centro input { text-align: center; }
 .rdg-cell.cell-edit { background: #fffdf5; }
-.rdg-cell.cell-dirty { background: #fde68a; }
-.rdg-cell.cell-saved { background: #d9e3f5; transition: background 1.5s; }
-.rdg-cell.cell-error { background: #fecaca; }
+/* linhas alternadas (zebra) como no mapa de entrega; a cor do produto fica mais forte nas linhas pares */
+.rdg-row.linha-par .rdg-cell { background-color: #eef2f7; }
+.rdg-row.linha-impar .rdg-cell { background-color: #ffffff; }
+.rdg .rdg-cell.cell-dirty { background-color: #fde68a; }
+.rdg .rdg-cell.cell-saved { background-color: #bbf7d0; transition: background-color 1.5s; }
+.rdg .rdg-cell.cell-error { background-color: #fecaca; }
 .cab-vertical { writing-mode: vertical-rl; transform: rotate(180deg); display: block; font-size: 10.5px; line-height: 1.05; white-space: normal; overflow-wrap: anywhere; margin: 0 auto; max-height: 86px; padding: 3px 0; text-align: left; }
 .rdg-cell[aria-selected] { outline-width: 1px; }
 .rdg-cell.rdg-cell-frozen { box-shadow: 2px 0 4px -2px rgba(0,0,0,.25); }

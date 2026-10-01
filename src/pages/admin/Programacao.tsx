@@ -94,13 +94,13 @@ export default function Programacao({ historico = false }: { historico?: boolean
     ...colsProd.map((p): Column<Linha, Resumo> => ({
       key: p.sigla, name: p.nome, width: 40, minWidth: 40, editable: !historico, renderEditCell: renderTextEditor,
       renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
-      cellClass: (row) => `cell-centro cell-edit cor-p${p.id} ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
+      cellClass: (row) => `cell-centro cor-p${p.id} ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
       renderSummaryCell: ({ row }) => <b>{row[p.sigla] ? fmtNum(row[p.sigla]) : ''}</b>,
       summaryCellClass: `cell-centro cor-p${p.id}`,
       headerCellClass: `text-center cor-p${p.id}`,
     })),
-    { key: 'R', name: 'Reposição', width: 40, minWidth: 40, editable: !historico, summaryCellClass: 'cell-centro', renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-centro cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
+    { key: 'R', name: 'Reposição', width: 40, minWidth: 40, editable: !historico, summaryCellClass: 'cell-centro', renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-centro ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
     { key: 'total', name: 'Total R$', width: 95, minWidth: 95, frozen: 'end', cellClass: 'cell-num font-semibold', summaryCellClass: 'cell-num', headerCellClass: 'cab-direita', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
     ...(historico ? [] : [{ key: 'acoes', name: '', width: 30, frozen: 'end' as const, renderCell: ({ row }: { row: Linha }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> }]),
@@ -171,7 +171,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
       {linhas === null ? <Carregando /> : (
         <div className="card flex-1 min-h-0 overflow-hidden flex flex-col">
           {/* estilos de cor por produto (coluna inteira) */}
-          <style>{colsProd.map((p) => `.cor-p${p.id}{background-color:${corProduto(p)}24}.rdg-header-row .cor-p${p.id}{background-color:${corProduto(p)}66}`).join('\n')}</style>
+          <style>{colsProd.map((p) => `.cor-p${p.id}{background-color:${corProduto(p)}1c}.linha-par .cor-p${p.id}{background-color:${corProduto(p)}40}.rdg-header-row .cor-p${p.id}{background-color:${corProduto(p)}66}.rdg-summary-row .cor-p${p.id}{background-color:${corProduto(p)}55}`).join('\n')}</style>
           {/* faixa de categorias, alinhada às colunas e sincronizada com a rolagem horizontal */}
           <div className="flex h-5 shrink-0 border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide overflow-hidden">
             <div style={{ width: LARG_FIXA_ESQ + (historico ? 78 : 0), flex: 'none' }} className="px-2 leading-5 text-slate-500">Categorias</div>
@@ -189,7 +189,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
           </div>
           <div className="flex-1 min-h-0">
             <DataGrid ref={gridRef} className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
-              onRowsChange={onRowsChange} rowHeight={24} headerRowHeight={92} summaryRowHeight={26}
+              onRowsChange={onRowsChange} rowHeight={24} headerRowHeight={92} summaryRowHeight={26} rowClass={(_, i) => (i % 2 ? 'linha-par' : 'linha-impar')}
               onScroll={(e) => { if (faixaRef.current) faixaRef.current.style.transform = `translateX(-${(e.currentTarget as HTMLDivElement).scrollLeft}px)` }} />
           </div>
         </div>
