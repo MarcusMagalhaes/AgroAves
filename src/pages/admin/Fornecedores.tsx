@@ -26,9 +26,9 @@ export default function Fornecedores() {
           </div>
         ))}
       </div>
-      <Modal aberto={!!edit} titulo="Fornecedor" onFechar={() => setEdit(null)} largura="max-w-md">
+      <Modal aberto={!!edit} titulo="Fornecedor" onFechar={() => setEdit(null)}>
         {edit && (
-          <div className="grid gap-3">
+          <div className="grid gap-2 sm:grid-cols-3">
             <Campo label="Nome"><input className="input" value={edit.nome ?? ''} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></Campo>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked })} /> Ativo</label>
             <div className="flex justify-end gap-2"><button className="btn-secondary" onClick={() => setEdit(null)}>Cancelar</button><button className="btn-primary" onClick={salvar}>Salvar</button></div>

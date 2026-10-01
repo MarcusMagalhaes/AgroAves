@@ -123,7 +123,7 @@ export default function Clientes() {
         </table>
       </div>
 
-      <Modal aberto={!!edit} titulo={edit?.id ? `Cliente ${edit.codigo} — ${edit.razao_social}` : 'Novo cliente'} onFechar={() => setEdit(null)} largura="max-w-4xl">
+      <Modal aberto={!!edit} titulo={edit?.id ? `Cliente ${edit.codigo} — ${edit.razao_social}` : 'Novo cliente'} onFechar={() => setEdit(null)}>
         {edit && (
           <div>
             <div className="mb-4 flex gap-2 border-b border-slate-200">
@@ -134,7 +134,7 @@ export default function Clientes() {
               ))}
             </div>
             {aba === 'dados' ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 <Campo label="Código (ITEM)"><input className="input" type="number" value={edit.codigo ?? ''} placeholder="automático" onChange={(e) => setEdit({ ...edit, codigo: e.target.value ? Number(e.target.value) : undefined })} /></Campo>
                 <Campo label="Código externo (ID)"><input className="input" value={edit.codigo_externo ?? ''} onChange={(e) => setEdit({ ...edit, codigo_externo: e.target.value })} /></Campo>
                 <Campo label="CNPJ/CPF"><input className="input" value={edit.cnpj_cpf ?? ''} onChange={(e) => setEdit({ ...edit, cnpj_cpf: e.target.value })} /></Campo>
@@ -155,7 +155,7 @@ export default function Clientes() {
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!edit.exige_gta} onChange={(e) => setEdit({ ...edit, exige_gta: e.target.checked })} /> Exige GTA</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked })} /> Ativo</label>
                 </div>
-                <Campo label="Rotas" className="sm:col-span-2 lg:col-span-3">
+                <Campo label="Rotas" className="sm:col-span-3 lg:col-span-5">
                   <div className="flex flex-wrap gap-2">
                     {rotas.filter((r) => r.ativa).map((r) => (
                       <label key={r.id} className={`chip cursor-pointer border ${editRotas.includes(r.id) ? 'bg-leaf-600 text-white border-leaf-600' : 'bg-white border-slate-300 text-slate-600'}`}>
@@ -165,7 +165,7 @@ export default function Clientes() {
                   </div>
                   <p className="text-xs text-slate-500 mt-1">Cliente novo na rota entra no fim da ordem de visita (ajuste em Rotas › Clientes e ordem).</p>
                 </Campo>
-                <Campo label="Observação" className="sm:col-span-2 lg:col-span-3"><textarea className="input" rows={2} value={edit.observacao ?? ''} onChange={(e) => setEdit({ ...edit, observacao: e.target.value })} /></Campo>
+                <Campo label="Observação" className="sm:col-span-3 lg:col-span-5"><textarea className="input" rows={2} value={edit.observacao ?? ''} onChange={(e) => setEdit({ ...edit, observacao: e.target.value })} /></Campo>
               </div>
             ) : (
               <div>
@@ -173,7 +173,7 @@ export default function Clientes() {
                   <Campo label="Copiar preços do cliente (código)"><input className="input w-40" type="number" onKeyDown={(e) => { if (e.key === 'Enter') copiarPrecosDe(Number((e.target as HTMLInputElement).value)) }} placeholder="código + Enter" /></Campo>
                   <div className="text-xs text-slate-500 pb-2">Deixe em branco os produtos que o cliente não compra. Preços em R$.</div>
                 </div>
-                <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-x-6 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-5">
                   {produtos.filter((p) => p.tem_preco).map((p) => (
                     <div key={p.id} className="flex items-center gap-2 py-0.5">
                       <div className="w-12 text-xs font-bold text-slate-500">{p.sigla}</div>

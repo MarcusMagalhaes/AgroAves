@@ -51,9 +51,9 @@ export default function Produtos() {
         </table>
       </div>
 
-      <Modal aberto={!!edit} titulo={edit?.id ? 'Editar produto' : 'Novo produto'} onFechar={() => setEdit(null)} largura="max-w-lg">
+      <Modal aberto={!!edit} titulo={edit?.id ? 'Editar produto' : 'Novo produto'} onFechar={() => setEdit(null)}>
         {edit && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
             <Campo label="Sigla"><input className="input" value={edit.sigla ?? ''} onChange={(e) => setEdit({ ...edit, sigla: e.target.value })} /></Campo>
             <Campo label="Ordem"><input className="input" type="number" value={edit.ordem ?? ''} onChange={(e) => setEdit({ ...edit, ordem: Number(e.target.value) })} /></Campo>
             <Campo label="Nome" className="sm:col-span-2"><input className="input" value={edit.nome ?? ''} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></Campo>

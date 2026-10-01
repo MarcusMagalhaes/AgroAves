@@ -61,9 +61,9 @@ export default function Usuarios() {
           </tbody>
         </table>
       </div>
-      <Modal aberto={!!edit} titulo="Usuário" onFechar={() => setEdit(null)} largura="max-w-md">
+      <Modal aberto={!!edit} titulo="Usuário" onFechar={() => setEdit(null)}>
         {edit && (
-          <div className="grid gap-3">
+          <div className="grid gap-2 sm:grid-cols-3">
             <Campo label="Nome"><input className="input" value={edit.nome ?? ''} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></Campo>
             <Campo label="E-mail"><input className="input" value={edit.email ?? ''} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></Campo>
             <Campo label="Papel">

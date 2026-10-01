@@ -43,9 +43,9 @@ export default function Vendedores() {
           </tbody>
         </table>
       </div>
-      <Modal aberto={!!edit} titulo={edit?.id ? 'Editar vendedor' : 'Novo vendedor'} onFechar={() => setEdit(null)} largura="max-w-md">
+      <Modal aberto={!!edit} titulo={edit?.id ? 'Editar vendedor' : 'Novo vendedor'} onFechar={() => setEdit(null)}>
         {edit && (
-          <div className="grid gap-3">
+          <div className="grid gap-2 sm:grid-cols-3">
             <Campo label="Nome"><input className="input" value={edit.nome ?? ''} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></Campo>
             <Campo label="Telefone (sai nos recibos)"><input className="input" value={edit.telefone ?? ''} onChange={(e) => setEdit({ ...edit, telefone: e.target.value })} /></Campo>
             <Campo label="Usuário de login">

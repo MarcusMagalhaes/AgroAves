@@ -237,8 +237,8 @@ function IncluirPedido({ data, rotas, onFechar }: { data: string; rotas: RotaSem
   }
   const t = normalizar(busca)
   return (
-    <Modal aberto titulo={`Incluir pedido — semana ${fmtData(data)}`} onFechar={() => onFechar(false)} largura="max-w-lg">
-      <div className="grid gap-3">
+    <Modal aberto titulo={`Incluir pedido — semana ${fmtData(data)}`} onFechar={() => onFechar(false)}>
+      <div className="grid gap-2 sm:grid-cols-3">
         <Campo label="Rota"><select className="input" value={rotaId} onChange={(e) => setRotaId(Number(e.target.value))}>{rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota}</option>)}</select></Campo>
         <Campo label="Tipo">
           <select className="input" value={tipo} onChange={(e) => setTipo(e.target.value as any)}>

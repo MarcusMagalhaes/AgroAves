@@ -1,4 +1,4 @@
-// Rotas: cadastro + semana aberta + ordem de visita dos clientes (substitui as 9 abas de rota)
+// Rotas: cadastro + semana aberta + ordem de entrega dos clientes (substitui as 9 abas de rota)
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarCidades, listarClientes, listarRotas, listarRotasSemana, listarVendedores } from '@/lib/dados'
@@ -69,9 +69,9 @@ export default function Rotas() {
         </table>
       </div>
 
-      <Modal aberto={!!edit} titulo={edit?.id ? 'Editar rota' : 'Nova rota'} onFechar={() => setEdit(null)} largura="max-w-lg">
+      <Modal aberto={!!edit} titulo={edit?.id ? 'Editar rota' : 'Nova rota'} onFechar={() => setEdit(null)}>
         {edit && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
             <Campo label="Nome" className="sm:col-span-2"><input className="input" value={edit.nome ?? ''} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></Campo>
             <Campo label="Vendedor">
               <select className="input" value={edit.vendedor_id ?? ''} onChange={(e) => setEdit({ ...edit, vendedor_id: e.target.value ? Number(e.target.value) : null })}>
@@ -96,7 +96,7 @@ export default function Rotas() {
   )
 }
 
-// ---------- Ordem de visita ----------
+// ---------- Ordem de entrega ----------
 function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
   const { toast } = useToast()
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -133,12 +133,12 @@ function OrdemVisita({ rota, onFechar }: { rota: Rota; onFechar: () => void }) {
     try {
       ok(await supabase.from('rota_cliente').delete().eq('rota_id', rota.id))
       if (lista?.length) ok(await supabase.from('rota_cliente').insert(lista.map((l) => ({ rota_id: rota.id, ...l }))))
-      toast('Ordem de visita salva'); setSujo(false)
+      toast('Ordem de entrega salva'); setSujo(false)
     } catch (e: any) { toast(e.message, 'erro') }
   }
 
   return (
-    <Modal aberto titulo={`Clientes da rota ${rota.nome} — ordem de visita`} onFechar={onFechar} largura="max-w-[96vw]">
+    <Modal aberto titulo={`Clientes da rota ${rota.nome} — ordem de entrega`} onFechar={onFechar}>
       {!lista ? <Carregando /> : (
         <div className="flex flex-col text-[11px]" style={{ height: 'calc(95vh - 110px)' }}>
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
