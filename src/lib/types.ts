@@ -10,6 +10,18 @@ export const RESULTADOS: Record<Resultado, string> = {
   SEM_CONTATO: 'Sem sucesso no contato',
 }
 export const GRUPOS = ['CORTE', 'CAIPIRA', 'POSTURA', 'EXOTICOS', 'ACESSORIOS'] as const
+export const COR_GRUPO: Record<string, string> = { CORTE: '#f5a623', CAIPIRA: '#3fb663', POSTURA: '#4a7fd6', EXOTICOS: '#a855f7', ACESSORIOS: '#94a3b8' }
+export const corProduto = (p: { cor?: string | null; grupo?: string | null }) => p.cor || COR_GRUPO[p.grupo ?? ''] || '#cbd5e1'
+/** Agrupa produtos consecutivos pela categoria (ordem do cadastro) */
+export function gruposDeProdutos<T extends { grupo: string | null }>(produtos: T[]) {
+  const out: { grupo: string; itens: T[] }[] = []
+  for (const p of produtos) {
+    const g = p.grupo ?? 'OUTROS'
+    if (out.length && out[out.length - 1].grupo === g) out[out.length - 1].itens.push(p)
+    else out.push({ grupo: g, itens: [p] })
+  }
+  return out
+}
 
 export interface Usuario { id: string; nome: string; email: string; papel: Papel; ativo: boolean }
 export interface Vendedor { id: number; usuario_id: string | null; nome: string; telefone: string | null; ativo: boolean }
@@ -31,7 +43,7 @@ export interface Cliente {
 }
 export interface Produto {
   id: number; sigla: string; nome: string; grupo: string | null; ordem: number; preco_compra: number | null
-  tem_preco: boolean; conta_como_ave: boolean; eh_codorna: boolean; ativo: boolean
+  tem_preco: boolean; conta_como_ave: boolean; eh_codorna: boolean; ativo: boolean; cor: string | null
 }
 export interface PrecoCliente { cliente_id: number; produto_id: number; preco: number }
 export interface ClienteRotaSemana {

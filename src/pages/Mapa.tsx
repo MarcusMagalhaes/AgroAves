@@ -5,7 +5,7 @@ import { montarMapa, type Mapa as MapaT } from '@/lib/mapa'
 import { fmtData, fmtMoeda, fmtNum } from '@/lib/format'
 import type { Produto, RotaSemana } from '@/lib/types'
 import { Campo, Carregando, Titulo, Vazio, useToast } from '@/components/ui'
-import { FORMAS } from '@/lib/types'
+import { FORMAS, corProduto, gruposDeProdutos } from '@/lib/types'
 
 export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean }) {
   const cls = compacto ? 'px-1 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'
@@ -13,13 +13,19 @@ export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean
     <table className="w-full border-collapse">
       <thead>
         <tr className="bg-slate-100">
+          <th className={`${cls} border`} colSpan={6}></th>
+          {gruposDeProdutos(mapa.produtosUsados).map((g) => <th key={g.grupo} colSpan={g.itens.length} className={`${cls} border text-center font-bold uppercase`} style={{ background: corProduto(g.itens[0]) + 'aa' }}>{g.grupo}</th>)}
+          {mapa.totalR > 0 && <th className={`${cls} border`}></th>}
+          <th className={`${cls} border`}></th>
+        </tr>
+        <tr className="bg-slate-100">
           <th className={`${cls} border text-left`}>#</th>
           <th className={`${cls} border text-left`}>Cliente</th>
           <th className={`${cls} border text-left`}>Nome (contato)</th>
           <th className={`${cls} border text-left`}>Cidade</th>
           <th className={`${cls} border text-left`}>Local de entrega</th>
           <th className={`${cls} border text-left`}>Pagto</th>
-          {mapa.produtosUsados.map((p) => <th key={p.id} className={`${cls} border text-center align-bottom leading-tight`} style={{ maxWidth: 60 }}>{p.nome}</th>)}
+          {mapa.produtosUsados.map((p) => <th key={p.id} className={`${cls} border text-center align-bottom leading-tight`} style={{ maxWidth: 60, background: corProduto(p) + '66' }}>{p.nome}</th>)}
           {mapa.totalR > 0 && <th className={`${cls} border text-center align-bottom`}>Reposição</th>}
           <th className={`${cls} border text-right`}>Total R$</th>
         </tr>
@@ -33,7 +39,7 @@ export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean
             <td className={`${cls} border`}>{l.pedido.cidade}</td>
             <td className={`${cls} border`}>{l.pedido.local_entrega}</td>
             <td className={`${cls} border whitespace-nowrap`}>{l.pedido.forma_pagamento === 'A_VISTA' ? 'Pago: Sim (  ) Não (  )' : l.pedido.forma_pagamento === 'ANTECIPADO' ? 'Pago' : l.pedido.forma_pagamento ? FORMAS[l.pedido.forma_pagamento] : ''}</td>
-            {mapa.produtosUsados.map((p) => <td key={p.id} className={`${cls} border text-center font-semibold`}>{l.qtd[p.id] || ''}</td>)}
+            {mapa.produtosUsados.map((p) => <td key={p.id} className={`${cls} border text-center font-semibold`} style={{ background: corProduto(p) + '24' }}>{l.qtd[p.id] || ''}</td>)}
             {mapa.totalR > 0 && <td className={`${cls} border text-center`}>{l.pedido.reposicao || ''}</td>}
             <td className={`${cls} border text-right font-semibold whitespace-nowrap`}>{l.pedido.tipo === 'CLIENTE' ? fmtMoeda(Number(l.pedido.total)) : ''}</td>
           </tr>

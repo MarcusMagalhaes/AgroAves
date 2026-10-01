@@ -1,10 +1,10 @@
 // Programação da semana em formato de planilha (RF-20): célula a célula, filtros, salvamento automático
-import { useEffect, useMemo, useState } from 'react'
-import { DataGrid, renderTextEditor, type Column, type RowsChangeData } from 'react-data-grid'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { DataGrid, renderTextEditor, type Column, type DataGridHandle, type RowsChangeData } from 'react-data-grid'
 import { supabase, ok } from '@/lib/supabase'
 import { listarProdutos, listarRotasSemana, rpc } from '@/lib/dados'
 import { fmtData, fmtMoeda, fmtNum, normalizar } from '@/lib/format'
-import { FORMAS, type PedidoItem, type PedidoView, type Produto, type RotaSemana } from '@/lib/types'
+import { FORMAS, corProduto, gruposDeProdutos, type PedidoItem, type PedidoView, type Produto, type RotaSemana } from '@/lib/types'
 import { Campo, Carregando, Confirmar, Modal, Titulo, useToast } from '@/components/ui'
 
 interface Linha {
@@ -13,6 +13,7 @@ interface Linha {
   [sigla: string]: any  // quantidades por sigla
 }
 type Resumo = { id: string; cliente: string; [k: string]: any }
+const LARG_FIXA_ESQ = 110 + 190  // rota + cliente (congeladas)
 
 export default function Programacao() {
   const { toast } = useToast()
@@ -28,6 +29,8 @@ export default function Programacao() {
   const [excluir, setExcluir] = useState<Linha | null>(null)
   const [detalhes, setDetalhes] = useState(false)
   const [prodAberto, setProdAberto] = useState(false)
+  const gridRef = useRef<DataGridHandle>(null)
+  const faixaRef = useRef<HTMLDivElement>(null)
 
   const datas = useMemo(() => [...new Set(rotas.map((r) => r.data_entrega).filter(Boolean))].sort() as string[], [rotas])
 
@@ -81,15 +84,15 @@ export default function Programacao() {
     ...colsProd.map((p): Column<Linha, Resumo> => ({
       key: p.sigla, name: p.nome, width: 40, minWidth: 40, editable: true, renderEditCell: renderTextEditor,
       renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
-      cellClass: (row) => `cell-centro cell-edit ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
+      cellClass: (row) => `cell-centro cell-edit cor-p${p.id} ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
       renderSummaryCell: ({ row }) => <b>{row[p.sigla] ? fmtNum(row[p.sigla]) : ''}</b>,
-      summaryCellClass: 'cell-centro',
-      headerCellClass: 'text-center',
+      summaryCellClass: `cell-centro cor-p${p.id}`,
+      headerCellClass: `text-center cor-p${p.id}`,
     })),
     { key: 'R', name: 'Reposição', width: 40, minWidth: 40, editable: true, summaryCellClass: 'cell-centro', renderHeaderCell: () => <span className="cab-vertical">Reposição</span>, renderEditCell: renderTextEditor, cellClass: (row) => `cell-centro cell-edit ${estado[`${row.id}:R`] === 'ok' ? 'cell-saved' : estado[`${row.id}:R`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row.R || ''}</>, renderSummaryCell: ({ row }) => <b>{row.R ? fmtNum(row.R) : ''}</b> },
-    { key: 'total', name: 'Total R$', width: 93, minWidth: 93, frozen: 'end', cellClass: 'cell-num font-semibold', summaryCellClass: 'cell-num', headerCellClass: 'cab-direita', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
+    { key: 'total', name: 'Total R$', width: 95, minWidth: 95, frozen: 'end', cellClass: 'cell-num font-semibold', summaryCellClass: 'cell-num', headerCellClass: 'cab-direita', renderCell: ({ row }) => <>{row.tipo === 'CLIENTE' ? fmtMoeda(row.total) : ''}</>, renderSummaryCell: ({ row }) => <b>{fmtMoeda(row.total)}</b> },
     { key: 'acoes', name: '', width: 30, frozen: 'end', renderCell: ({ row }) => <button className="text-red-600 font-bold" title="Excluir pedido" onClick={() => setExcluir(row)}>✕</button> },
   ], [colsProd, estado, detalhes])
 
@@ -156,9 +159,29 @@ export default function Programacao() {
         <button className="btn-primary py-1 text-xs ml-auto" onClick={() => setIncluir(true)}>+ Incluir pedido</button>
       </div>
       {linhas === null ? <Carregando /> : (
-        <div className="card flex-1 min-h-0 overflow-hidden">
-          <DataGrid className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
-            onRowsChange={onRowsChange} rowHeight={24} headerRowHeight={92} summaryRowHeight={26} />
+        <div className="card flex-1 min-h-0 overflow-hidden flex flex-col">
+          {/* estilos de cor por produto (coluna inteira) */}
+          <style>{colsProd.map((p) => `.cor-p${p.id}{background-color:${corProduto(p)}24}.rdg-header-row .cor-p${p.id}{background-color:${corProduto(p)}66}`).join('\n')}</style>
+          {/* faixa de categorias, alinhada às colunas e sincronizada com a rolagem horizontal */}
+          <div className="flex h-5 shrink-0 border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide overflow-hidden">
+            <div style={{ width: LARG_FIXA_ESQ, flex: 'none' }} className="px-2 leading-5 text-slate-500">Categorias</div>
+            <div className="flex-1 overflow-hidden">
+              <div ref={faixaRef} className="flex h-full will-change-transform">
+                {detalhes && <div style={{ width: 130 + 110 + 80, flex: 'none' }} />}
+                {gruposDeProdutos(colsProd).map((g) => (
+                  <div key={g.grupo} style={{ width: g.itens.length * 40, flex: 'none', backgroundColor: corProduto(g.itens[0]) + 'aa' }}
+                    className="leading-5 text-center text-slate-900 border-r border-white overflow-hidden whitespace-nowrap text-ellipsis px-0.5" title={g.grupo}>{g.grupo}</div>
+                ))}
+                <div style={{ width: 40, flex: 'none' }} />
+              </div>
+            </div>
+            <div style={{ width: 90 + 30, flex: 'none' }} />
+          </div>
+          <div className="flex-1 min-h-0">
+            <DataGrid ref={gridRef} className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
+              onRowsChange={onRowsChange} rowHeight={24} headerRowHeight={92} summaryRowHeight={26}
+              onScroll={(e) => { if (faixaRef.current) faixaRef.current.style.transform = `translateX(-${(e.currentTarget as HTMLDivElement).scrollLeft}px)` }} />
+          </div>
         </div>
       )}
       <div className="text-[10px] text-slate-400 mt-0.5">Enter ou duplo clique edita a célula; salva ao sair. Amarelo = salvando · verde = salvo · vermelho = erro.</div>

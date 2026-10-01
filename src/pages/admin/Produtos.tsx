@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarProdutos } from '@/lib/dados'
-import { GRUPOS, type Produto } from '@/lib/types'
+import { GRUPOS, corProduto, type Produto } from '@/lib/types'
 import { fmtMoeda } from '@/lib/format'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
 
-const vazio: Partial<Produto> = { sigla: '', nome: '', grupo: 'CAIPIRA', ordem: 99, preco_compra: null, tem_preco: true, conta_como_ave: true, eh_codorna: false, ativo: true }
+const vazio: Partial<Produto> = { sigla: '', nome: '', grupo: 'CAIPIRA', ordem: 99, preco_compra: null, tem_preco: true, conta_como_ave: true, eh_codorna: false, ativo: true, cor: null }
 
 export default function Produtos() {
   const { toast } = useToast()
@@ -37,7 +37,7 @@ export default function Produtos() {
             {lista.map((p) => (
               <tr key={p.id} className={`border-t border-slate-100 ${p.ativo ? '' : 'opacity-50'}`}>
                 <td className="text-slate-400">{p.ordem}</td>
-                <td className="font-bold">{p.sigla}</td>
+                <td className="font-bold"><span className="inline-block w-3 h-3 rounded-sm mr-1.5 align-middle border border-black/10" style={{ background: corProduto(p) }} />{p.sigla}</td>
                 <td className="px-2">{p.nome}</td>
                 <td className="px-2">{p.grupo}</td>
                 <td className="text-right">{p.preco_compra != null ? fmtMoeda(p.preco_compra) : '—'}</td>
@@ -64,6 +64,9 @@ export default function Produtos() {
               <select className="input" value={edit.grupo ?? ''} onChange={(e) => setEdit({ ...edit, grupo: e.target.value || null })}>
                 <option value="">—</option>{GRUPOS.map((g) => <option key={g}>{g}</option>)}
               </select>
+            </Campo>
+            <Campo label="Cor da coluna (programação, mapa, impressões)">
+              <div className="flex items-center gap-2"><input type="color" className="h-8 w-12 rounded border border-slate-300 p-0.5" value={corProduto(edit)} onChange={(e) => setEdit({ ...edit, cor: e.target.value })} /><span className="text-xs text-slate-500">{edit.cor ? edit.cor : 'padrão da categoria'}</span>{edit.cor && <button className="btn-secondary py-0.5 text-xs" onClick={() => setEdit({ ...edit, cor: null })}>usar padrão</button>}</div>
             </Campo>
             <Campo label="Preço de compra (R$)"><input className="input" type="number" step="0.01" value={edit.preco_compra ?? ''} onChange={(e) => setEdit({ ...edit, preco_compra: e.target.value === '' ? null : Number(e.target.value) })} /></Campo>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!edit.tem_preco} onChange={(e) => setEdit({ ...edit, tem_preco: e.target.checked })} /> Tem preço de venda</label>
