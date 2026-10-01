@@ -55,7 +55,7 @@ export default function Layout() {
   const menu = usuario?.papel === 'ADMIN' ? menuAdmin : menuVendedor
 
   const link = (m: Item, sub = false) => (
-    <NavLink key={m.to} to={m.to} onClick={() => setAberto(false)}
+    <NavLink key={m.to} to={m.to} onClick={() => { setAberto(false); setGruposFechados({}) }}
       className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 ${sub ? 'py-1.5 ml-4 text-[13px]' : 'py-2 text-sm'} font-medium transition ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>
       <span className="text-base leading-none">{m.icone}</span>{m.label}
     </NavLink>
