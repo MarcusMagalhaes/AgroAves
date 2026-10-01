@@ -41,6 +41,8 @@ export default function Layout() {
   const [recolhido, setRecolhido] = useState(() => { try { return localStorage.getItem('menuRecolhido') === '1' } catch { return false } })
   const { pathname } = useLocation()
   const [gruposFechados, setGruposFechados] = useState<Record<string, boolean>>({})
+  // ao navegar, os submenus voltam ao padrão: aberto só o grupo da página atual
+  useEffect(() => { setGruposFechados({}) }, [pathname])
   const [grupoTopo, setGrupoTopo] = useState<string | null>(null)
   const refTopo = useRef<HTMLElement>(null)
   useEffect(() => {
