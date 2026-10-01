@@ -189,23 +189,25 @@ export default function Venda() {
             {filtrados.map((c) => <option key={c.cliente_id} value={c.cliente_id}>{c.ordem_visita}. {rotulo(c)}{c.pedido_id ? '  ✔' : c.resultado === 'SEM_INTERESSE' ? '  ✖' : ''}</option>)}
           </select>
           <button className="btn-secondary px-2 py-0.5 text-xs" onClick={() => navegar(1)} disabled={idx < 0 || idx >= filtrados.length - 1} title="Próximo cliente">▶</button>
-          <span className="text-[11px] text-slate-500 shrink-0 hidden md:block">{idx + 1}/{filtrados.length} · {rota?.cidade_distribuicao} · {FORMAS[cliente?.forma_pagamento ?? 'BOLETO']}</span>
+          <span className="text-[11px] text-slate-500 shrink-0 hidden md:block">{idx + 1}/{filtrados.length}</span>
         </div>
       </div>
 
       {!cliente ? <div className="card"><Vazio texto="Nenhum cliente selecionado" /></div> : (
         <>
           {/* ===== Financeiro + últimos pedidos (altura só do conteúdo) ===== */}
-          <div className="grid gap-1.5 lg:grid-cols-[170px_1fr] mb-1.5 items-start">
-            <div className="card px-2 py-1.5 bg-emerald-50/50">
-              <div className="flex items-baseline justify-between"><span className="label mb-0">Financeiro</span><span className="text-[10px] font-bold text-slate-500 uppercase">Pendência</span></div>
-              {pendencia && Number(pendencia.valor_pendente) > 0 ? (
-                <>
-                  <div className="text-base font-extrabold text-red-700 leading-tight">{fmtMoeda(Number(pendencia.valor_pendente))}</div>
-                  <div className="text-[10px] text-slate-600 leading-tight">{pendencia.semanas.map(fmtData).join(' | ')}</div>
-                </>
-              ) : <div className="text-base font-extrabold text-emerald-700 leading-tight">R$ 0,00</div>}
-              <div className="mt-1 text-[10px] text-slate-500 leading-tight truncate" title={cliente.local_entrega ?? ''}>{cliente.local_entrega}</div>
+          {/* altura da linha = bloco de últimos pedidos; o financeiro rola por dentro se precisar */}
+          <div className="grid gap-1.5 lg:grid-cols-[170px_1fr] mb-1.5 items-stretch">
+            <div className="card bg-emerald-50/50 relative min-h-[64px]">
+              <div className="lg:absolute lg:inset-0 overflow-auto px-2 py-1.5">
+                <div className="flex items-baseline justify-between"><span className="label mb-0">Financeiro</span><span className="text-[10px] font-bold text-slate-500 uppercase">Pendência</span></div>
+                {pendencia && Number(pendencia.valor_pendente) > 0 ? (
+                  <>
+                    <div className="text-base font-extrabold text-red-700 leading-tight">{fmtMoeda(Number(pendencia.valor_pendente))}</div>
+                    <div className="text-[10px] text-slate-600 leading-tight">{pendencia.semanas.map(fmtData).join(' | ')}</div>
+                  </>
+                ) : <div className="text-base font-extrabold text-emerald-700 leading-tight">R$ 0,00</div>}
+              </div>
             </div>
             <div className="card px-2 py-1.5 overflow-auto">
               <div className="text-center text-[11px] font-bold bg-emerald-100 rounded py-0 mb-1">4 Últimos pedidos</div>
