@@ -80,7 +80,7 @@ export default function Mapa() {
   return (
     <div>
       <Titulo>Mapa da rota</Titulo>
-      <div className="card p-3 mb-3 grid sm:grid-cols-2 gap-3 items-end">
+      <div className="barra">
         <Campo label="Rota">
           <select className="input" value={rotaId ?? ''} onChange={(e) => setRotaId(Number(e.target.value))}>
             {rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota} — {fmtData(r.data_entrega)}</option>)}

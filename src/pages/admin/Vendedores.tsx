@@ -29,15 +29,15 @@ export default function Vendedores() {
     <div className="mx-auto max-w-3xl">
       <Titulo acoes={<button className="btn-primary" onClick={() => setEdit({ nome: '', telefone: '', ativo: true, usuario_id: null })}>+ Novo vendedor</button>}>Vendedores</Titulo>
       <div className="card overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="p-2">Nome</th><th className="p-2">Telefone</th><th className="p-2">Usuário (login)</th><th className="p-2"></th></tr></thead>
+        <table className="tabela">
+          <thead><tr><th className="px-2">Nome</th><th className="px-2">Telefone</th><th className="px-2">Usuário (login)</th><th className="px-2"></th></tr></thead>
           <tbody>
             {lista.map((v) => (
               <tr key={v.id} className={`border-t border-slate-100 ${v.ativo ? '' : 'opacity-50'}`}>
-                <td className="p-2 font-semibold">{v.nome} {!v.ativo && <Chip cor="vermelho">inativo</Chip>}</td>
-                <td className="p-2">{v.telefone}</td>
-                <td className="p-2 text-slate-600">{usuarios.find((u) => u.id === v.usuario_id)?.email ?? <span className="text-amber-600">sem login</span>}</td>
-                <td className="p-2 text-right"><button className="btn-secondary py-1" onClick={() => setEdit(v)}>Editar</button></td>
+                <td className="font-semibold">{v.nome} {!v.ativo && <Chip cor="vermelho">inativo</Chip>}</td>
+                <td className="px-2">{v.telefone}</td>
+                <td className="text-slate-600">{usuarios.find((u) => u.id === v.usuario_id)?.email ?? <span className="text-amber-600">sem login</span>}</td>
+                <td className="text-right"><button className="btn-secondary py-1" onClick={() => setEdit(v)}>Editar</button></td>
               </tr>
             ))}
           </tbody>

@@ -57,7 +57,7 @@ export default function Documentos() {
     <div>
       <div className="no-print">
         <Titulo acoes={<button className="btn-accent" onClick={imprimir}>🖨️ Imprimir / salvar PDF</button>}>Documentos</Titulo>
-        <div className="card p-3 mb-3 grid gap-3 sm:grid-cols-3">
+        <div className="barra">
           <Campo label="Documento">
             <select className="input" value={doc} onChange={(e) => setDoc(e.target.value as Doc)}>
               <option value="mapa">Mapa de entrega da rota</option><option value="recibos">Recibos (2 por página)</option><option value="gta">GTA — Guia de Trânsito Animal</option><option value="nf">Controle de Nota Fiscal</option>
@@ -76,7 +76,7 @@ export default function Documentos() {
             </Campo>
           )}
         </div>
-        <p className="text-xs text-slate-500 mb-3">Na janela de impressão escolha "Salvar como PDF". Mapa e GTA em paisagem; recibos em retrato.</p>
+        <p className="text-[10px] text-slate-400 mb-1.5">Na janela de impressão escolha "Salvar como PDF". Mapa e GTA em paisagem; recibos em retrato.</p>
       </div>
 
       {carregando ? <Carregando /> : (

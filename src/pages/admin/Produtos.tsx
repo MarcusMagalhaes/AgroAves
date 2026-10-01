@@ -29,25 +29,25 @@ export default function Produtos() {
     <div className="mx-auto max-w-5xl">
       <Titulo acoes={<button className="btn-primary" onClick={() => setEdit({ ...vazio, ordem: lista.length + 1 })}>+ Novo produto</button>}>Produtos</Titulo>
       <div className="card overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500">
-            <tr><th className="p-2">#</th><th className="p-2">Sigla</th><th className="p-2">Nome</th><th className="p-2">Grupo</th><th className="p-2 text-right">Preço compra</th><th className="p-2">Flags</th><th className="p-2"></th></tr>
+        <table className="tabela">
+          <thead>
+            <tr><th className="px-2">#</th><th className="px-2">Sigla</th><th className="px-2">Nome</th><th className="px-2">Grupo</th><th className="text-right">Preço compra</th><th className="px-2">Flags</th><th className="px-2"></th></tr>
           </thead>
           <tbody>
             {lista.map((p) => (
               <tr key={p.id} className={`border-t border-slate-100 ${p.ativo ? '' : 'opacity-50'}`}>
-                <td className="p-2 text-slate-400">{p.ordem}</td>
-                <td className="p-2 font-bold">{p.sigla}</td>
-                <td className="p-2">{p.nome}</td>
-                <td className="p-2">{p.grupo}</td>
-                <td className="p-2 text-right">{p.preco_compra != null ? fmtMoeda(p.preco_compra) : '—'}</td>
-                <td className="p-2 space-x-1">
+                <td className="text-slate-400">{p.ordem}</td>
+                <td className="font-bold">{p.sigla}</td>
+                <td className="px-2">{p.nome}</td>
+                <td className="px-2">{p.grupo}</td>
+                <td className="text-right">{p.preco_compra != null ? fmtMoeda(p.preco_compra) : '—'}</td>
+                <td className="space-x-1">
                   {!p.tem_preco && <Chip cor="cinza">sem preço</Chip>}
                   {!p.conta_como_ave && <Chip cor="amarelo">não é ave</Chip>}
                   {p.eh_codorna && <Chip cor="azul">codorna</Chip>}
                   {!p.ativo && <Chip cor="vermelho">inativo</Chip>}
                 </td>
-                <td className="p-2 text-right"><button className="btn-secondary py-1" onClick={() => setEdit(p)}>Editar</button></td>
+                <td className="text-right"><button className="btn-secondary py-1" onClick={() => setEdit(p)}>Editar</button></td>
               </tr>
             ))}
           </tbody>

@@ -14,11 +14,11 @@ body { -webkit-tap-highlight-color: transparent; }
 @layer components {
 /* Inputs grandes para uso no celular; utilitários (ex.: bg-yellow-50) sobrescrevem */
 .input {
-  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 shadow-sm
+  @apply w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 shadow-sm
          focus:border-leaf-500 focus:outline-none focus:ring-2 focus:ring-leaf-200 disabled:bg-slate-100 disabled:text-slate-500;
 }
 .btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition
+  @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition
          focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 select-none;
 }
 .btn-primary { @apply btn bg-leaf-900 text-white hover:bg-leaf-700 focus:ring-leaf-300; }
@@ -26,10 +26,23 @@ body { -webkit-tap-highlight-color: transparent; }
 .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-200; }
 .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-300; }
 .card { @apply rounded-xl bg-white shadow-sm border border-slate-200; }
-.label { @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1; }
+.label { @apply block text-[10px] font-bold uppercase tracking-wide text-slate-500 mb-0.5; }
 .chip { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
 
 }
+
+/* Barra de filtros fina (padrão da tela de venda): campos em linha, fundo amarelo nos editáveis */
+.barra { @apply card px-3 py-1.5 mb-1.5 bg-rose-50/60 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs; }
+.barra .campo { @apply flex-row items-center gap-1.5; }
+.barra .campo > .label { @apply mb-0 whitespace-nowrap; }
+.barra .input { @apply py-1 px-2 text-xs bg-yellow-50 w-auto min-w-[120px]; }
+.barra .campo:has(input[type="text"]), .barra .campo:has(input:not([type])) { @apply flex-1 min-w-[160px]; }
+.barra .campo:has(input[type="text"]) .input, .barra .campo:has(input:not([type])) .input { @apply w-full; }
+.barra h1 { @apply text-sm font-extrabold text-leaf-900 mr-1; }
+/* Tabelas densas */
+.tabela { @apply w-full text-xs; }
+.tabela thead th { @apply bg-slate-100 text-left text-[10px] uppercase text-slate-500 px-2 py-1 font-bold sticky top-0; }
+.tabela td { @apply px-2 py-0.5 border-t border-slate-100; }
 
 /* Grade tipo planilha */
 .rdg { block-size: 100%; border-radius: 0.75rem; --rdg-cell-padding-inline: 4px; --rdg-font-size: 12px; font-size: 12px; --rdg-header-background-color: #f1f5f9; --rdg-row-hover-background-color: #eef3fb; }

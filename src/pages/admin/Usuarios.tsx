@@ -28,7 +28,7 @@ export default function Usuarios() {
   return (
     <div className="mx-auto max-w-3xl">
       <Titulo acoes={<button className="btn-secondary" onClick={() => setEdit({ id: '', nome: '', email: '', papel: 'VENDEDOR', ativo: true })}>Vincular por UUID</button>}>Usuários</Titulo>
-      <div className="card p-3 mb-3 text-sm text-slate-600">
+      <div className="card px-3 py-1.5 mb-1.5 text-xs text-slate-600">
         Peça à pessoa para abrir o site e clicar em <b>Entrar com Google</b>. Ela aparece abaixo como "aguardando liberação"; escolha o papel para liberar.
         Para vendedor, depois vincule em <b>Vendedores</b>.
       </div>
@@ -47,15 +47,15 @@ export default function Usuarios() {
         </div>
       )}
       <div className="card overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="p-2">Nome</th><th className="p-2">E-mail</th><th className="p-2">Papel</th><th className="p-2"></th></tr></thead>
+        <table className="tabela">
+          <thead><tr><th className="px-2">Nome</th><th className="px-2">E-mail</th><th className="px-2">Papel</th><th className="px-2"></th></tr></thead>
           <tbody>
             {lista.filter((u) => u.ativo).map((u) => (
               <tr key={u.id} className="border-t border-slate-100">
-                <td className="p-2 font-semibold">{u.nome}</td>
-                <td className="p-2">{u.email}</td>
-                <td className="p-2"><Chip cor={u.papel === 'ADMIN' ? 'azul' : 'verde'}>{u.papel === 'ADMIN' ? 'Administrador' : 'Vendedor'}</Chip></td>
-                <td className="p-2 text-right"><button className="btn-secondary py-1" onClick={() => setEdit(u)}>Editar</button></td>
+                <td className="font-semibold">{u.nome}</td>
+                <td className="px-2">{u.email}</td>
+                <td className="px-2"><Chip cor={u.papel === 'ADMIN' ? 'azul' : 'verde'}>{u.papel === 'ADMIN' ? 'Administrador' : 'Vendedor'}</Chip></td>
+                <td className="text-right"><button className="btn-secondary py-1" onClick={() => setEdit(u)}>Editar</button></td>
               </tr>
             ))}
           </tbody>

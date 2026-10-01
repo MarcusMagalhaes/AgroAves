@@ -75,7 +75,7 @@ export default function PedidoFornecedor() {
   return (
     <div className="mx-auto max-w-4xl">
       <Titulo>Pedido à granja</Titulo>
-      <div className="card p-3 mb-3 grid gap-3 sm:grid-cols-3">
+      <div className="barra">
         <Campo label="Semana (data de entrega)"><select className="input" value={data} onChange={(e) => setData(e.target.value)}>{datas.map((d) => <option key={d} value={d}>{fmtData(d)}</option>)}</select></Campo>
         <Campo label="Cidade de distribuição"><select className="input" value={cidadeId} onChange={(e) => setCidadeId(Number(e.target.value))}>{cidades.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select></Campo>
         <Campo label="Fornecedor (granja)">
@@ -97,9 +97,9 @@ export default function PedidoFornecedor() {
 
       {carregando ? <Carregando /> : (
         <div className="card overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-100 text-xs uppercase text-slate-500">
-              <tr><th className="p-2 text-left">Produto</th><th className="p-2 text-right">Programado</th><th className="p-2 text-right">A pedir</th>{pf && <th className="p-2 text-right">Confirmado granja</th>}</tr>
+          <table className="tabela">
+            <thead>
+              <tr><th className="text-left">Produto</th><th className="text-right">Programado</th><th className="text-right">A pedir</th>{pf && <th className="text-right">Confirmado granja</th>}</tr>
             </thead>
             <tbody>
               {linhas.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-slate-400">Nenhum pedido programado para esta data e cidade</td></tr>}
@@ -107,26 +107,26 @@ export default function PedidoFornecedor() {
                 const prog = programado[p.id] ?? 0; const ped = Number(aPedir[p.id]) || 0
                 return (
                   <tr key={p.id} className="border-t border-slate-100">
-                    <td className="p-2 font-semibold">{p.nome}</td>
-                    <td className="p-2 text-right font-semibold">{fmtNum(prog)}</td>
-                    <td className="p-2 text-right">
+                    <td className="font-semibold">{p.nome}</td>
+                    <td className="text-right font-semibold">{fmtNum(prog)}</td>
+                    <td className="text-right">
                       <input type="number" inputMode="numeric" className={`input w-28 text-right py-1 ${ped !== prog ? 'border-amber-400 bg-amber-50' : ''}`} value={aPedir[p.id] ?? ''}
                         onChange={(e) => setAPedir({ ...aPedir, [p.id]: e.target.value })} />
                     </td>
-                    {pf && <td className="p-2 text-right">{itens[p.id]?.qtd_confirmada ?? <span className="text-slate-400">—</span>}</td>}
+                    {pf && <td className="text-right">{itens[p.id]?.qtd_confirmada ?? <span className="text-slate-400">—</span>}</td>}
                   </tr>
                 )
               })}
             </tbody>
-            <tfoot className="bg-slate-50 font-bold"><tr><td className="p-2">TOTAL</td><td className="p-2 text-right">{fmtNum(totProg)}</td><td className="p-2 text-right">{fmtNum(totPed)}</td>{pf && <td />}</tr></tfoot>
+            <tfoot className="bg-slate-50 font-bold"><tr><td className="px-2">TOTAL</td><td className="text-right">{fmtNum(totProg)}</td><td className="text-right">{fmtNum(totPed)}</td>{pf && <td />}</tr></tfoot>
           </table>
         </div>
       )}
-      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] items-end">
+      <div className="mt-1.5 grid gap-2 sm:grid-cols-[1fr_auto] items-end">
         <Campo label="Observação"><input className="input" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="ex.: ajustado para lotes de 500" /></Campo>
-        <button className="btn-primary px-6 py-3" disabled={linhas.length === 0} onClick={() => (pf ? setConfirma(true) : registrar())}>{pf ? 'Registrar novamente' : 'Registrar pedido à granja'}</button>
+        <button className="btn-primary px-5 py-2" disabled={linhas.length === 0} onClick={() => (pf ? setConfirma(true) : registrar())}>{pf ? 'Registrar novamente' : 'Registrar pedido à granja'}</button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">Ajuste "A pedir" para os lotes da granja (ex.: múltiplos de 500). Células em amarelo diferem do programado. Depois do registro, confirme o que a granja vai mandar em "Ajuste da entrega".</p>
+      <p className="mt-1 text-[10px] text-slate-400">Ajuste "A pedir" para os lotes da granja (ex.: múltiplos de 500). Células em amarelo diferem do programado. Depois do registro, confirme o que a granja vai mandar em "Ajuste da entrega".</p>
       <Confirmar aberto={confirma} titulo="Registrar novamente" texto={`Já existe pedido registrado para ${fmtData(data)} / ${cidades.find((c) => c.id === cidadeId)?.nome}. Substituir as quantidades?`} onSim={registrar} onNao={() => setConfirma(false)} />
     </div>
   )

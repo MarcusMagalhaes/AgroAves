@@ -42,22 +42,22 @@ export default function Fechamento() {
   return (
     <div className="mx-auto max-w-4xl">
       <Titulo>Fechamento semanal</Titulo>
-      <p className="text-sm text-slate-600 mb-3">Fechar a semana arquiva os pedidos (viram histórico, não podem mais ser editados) e avança a data da rota para o próximo ciclo. Só é permitido quando a data de entrega já passou e o pedido à granja foi registrado. <b>Semana fechada não reabre.</b></p>
+      <p className="text-[11px] text-slate-600 mb-1.5">Fechar a semana arquiva os pedidos (viram histórico, não podem mais ser editados) e avança a data da rota para o próximo ciclo. Só é permitido quando a data de entrega já passou e o pedido à granja foi registrado. <b>Semana fechada não reabre.</b></p>
       <div className="card overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="p-2">Rota</th><th className="p-2">Semana atual</th><th className="p-2">Próxima</th><th className="p-2 text-right">Pedidos</th><th className="p-2">Granja</th><th className="p-2"></th></tr></thead>
+        <table className="tabela">
+          <thead><tr><th className="px-2">Rota</th><th className="px-2">Semana atual</th><th className="px-2">Próxima</th><th className="text-right">Pedidos</th><th className="px-2">Granja</th><th className="px-2"></th></tr></thead>
           <tbody>
             {rotas.map((r) => {
               const vencida = !!r.data_entrega && r.data_entrega < hoje
               const pode = vencida && (r.pedidos === 0 || !!r.pf_status)
               return (
                 <tr key={r.rota_id} className="border-t border-slate-100">
-                  <td className="p-2 font-bold">{r.rota}<div className="text-xs font-normal text-slate-500">{r.cidade_distribuicao}</div></td>
-                  <td className="p-2">{r.data_entrega ? <>{fmtData(r.data_entrega)} {vencida ? <Chip cor="amarelo">vencida</Chip> : <Chip cor="verde">em aberto</Chip>}</> : <Chip cor="vermelho">sem semana</Chip>}</td>
-                  <td className="p-2 text-slate-500">{fmtData(r.proxima_semana)}</td>
-                  <td className="p-2 text-right">{r.pedidos}</td>
-                  <td className="p-2">{r.pf_status ? <Chip cor={r.pf_status === 'REGISTRADO' ? 'amarelo' : 'verde'}>{r.pf_status}</Chip> : r.pedidos > 0 ? <Chip cor="vermelho">não registrado</Chip> : <span className="text-slate-400">—</span>}</td>
-                  <td className="p-2 text-right">
+                  <td className="font-bold">{r.rota}<div className="text-xs font-normal text-slate-500">{r.cidade_distribuicao}</div></td>
+                  <td className="px-2">{r.data_entrega ? <>{fmtData(r.data_entrega)} {vencida ? <Chip cor="amarelo">vencida</Chip> : <Chip cor="verde">em aberto</Chip>}</> : <Chip cor="vermelho">sem semana</Chip>}</td>
+                  <td className="text-slate-500">{fmtData(r.proxima_semana)}</td>
+                  <td className="text-right">{r.pedidos}</td>
+                  <td className="px-2">{r.pf_status ? <Chip cor={r.pf_status === 'REGISTRADO' ? 'amarelo' : 'verde'}>{r.pf_status}</Chip> : r.pedidos > 0 ? <Chip cor="vermelho">não registrado</Chip> : <span className="text-slate-400">—</span>}</td>
+                  <td className="text-right">
                     <button className={pode ? 'btn-primary py-1.5' : 'btn-secondary py-1.5'} disabled={!r.data_entrega} onClick={() => { setFechar(r); setForcar(!pode) }}>Fechar semana</button>
                   </td>
                 </tr>

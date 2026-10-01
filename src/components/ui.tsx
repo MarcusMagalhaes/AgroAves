@@ -67,7 +67,7 @@ export function Confirmar({ aberto, titulo, texto, onSim, onNao, perigo }:
 // ---------- Campos ----------
 export function Campo({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className={className}>
+    <div className={`campo flex flex-col ${className}`}>
       <label className="label">{label}</label>
       {children}
     </div>
@@ -88,9 +88,9 @@ export function Vazio({ texto }: { texto: string }) {
 
 export function Titulo({ children, acoes }: { children: ReactNode; acoes?: ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-xl sm:text-2xl font-extrabold text-leaf-900">{children}</h1>
-      {acoes && <div className="flex flex-wrap gap-2">{acoes}</div>}
+    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+      <h1 className="text-sm font-extrabold text-leaf-900">{children}</h1>
+      {acoes && <div className="flex flex-wrap gap-1.5">{acoes}</div>}
     </div>
   )
 }

@@ -43,21 +43,21 @@ export default function Rotas() {
     <div className="mx-auto max-w-5xl">
       <Titulo acoes={<button className="btn-primary" onClick={() => setEdit({ nome: '', intervalo_dias: 14, ativa: true, cidade_distribuicao_id: cidades[0]?.id })}>+ Nova rota</button>}>Rotas</Titulo>
       <div className="card overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500">
-            <tr><th className="p-2">Rota</th><th className="p-2">Vendedor</th><th className="p-2">Distribuição</th><th className="p-2">Semana atual</th><th className="p-2">Próxima</th><th className="p-2"></th></tr>
+        <table className="tabela">
+          <thead>
+            <tr><th className="px-2">Rota</th><th className="px-2">Vendedor</th><th className="px-2">Distribuição</th><th className="px-2">Semana atual</th><th className="px-2">Próxima</th><th className="px-2"></th></tr>
           </thead>
           <tbody>
             {rotas.map((r) => {
               const s = semanas.find((x) => x.rota_id === r.id)
               return (
                 <tr key={r.id} className={`border-t border-slate-100 ${r.ativa ? '' : 'opacity-50'}`}>
-                  <td className="p-2 font-bold">{r.nome} {!r.ativa && <Chip cor="vermelho">inativa</Chip>}</td>
-                  <td className="p-2">{vendedores.find((v) => v.id === r.vendedor_id)?.nome ?? <span className="text-amber-600">sem vendedor</span>}</td>
-                  <td className="p-2">{cidades.find((c) => c.id === r.cidade_distribuicao_id)?.nome}</td>
-                  <td className="p-2 font-semibold">{s?.data_entrega ? fmtData(s.data_entrega) : <span className="text-amber-600">sem semana aberta</span>}</td>
-                  <td className="p-2 text-slate-500">{s?.proxima_semana ? fmtData(s.proxima_semana) : ''}</td>
-                  <td className="p-2 text-right whitespace-nowrap space-x-1">
+                  <td className="font-bold">{r.nome} {!r.ativa && <Chip cor="vermelho">inativa</Chip>}</td>
+                  <td className="px-2">{vendedores.find((v) => v.id === r.vendedor_id)?.nome ?? <span className="text-amber-600">sem vendedor</span>}</td>
+                  <td className="px-2">{cidades.find((c) => c.id === r.cidade_distribuicao_id)?.nome}</td>
+                  <td className="font-semibold">{s?.data_entrega ? fmtData(s.data_entrega) : <span className="text-amber-600">sem semana aberta</span>}</td>
+                  <td className="text-slate-500">{s?.proxima_semana ? fmtData(s.proxima_semana) : ''}</td>
+                  <td className="text-right whitespace-nowrap space-x-1">
                     <button className="btn-secondary py-1" onClick={() => setOrdemRota(r)}>Clientes e ordem</button>
                     <button className="btn-secondary py-1" onClick={() => setEdit({ ...r, data_entrega: s?.data_entrega ?? '' })}>Editar</button>
                   </td>

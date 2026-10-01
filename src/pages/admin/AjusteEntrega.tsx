@@ -82,7 +82,7 @@ export default function AjusteEntrega() {
   return (
     <div className="mx-auto max-w-6xl">
       <Titulo>Ajuste da entrega</Titulo>
-      <div className="card p-3 mb-3 grid gap-3 sm:grid-cols-[1fr_auto] items-end">
+      <div className="barra">
         <Campo label="Pedido à granja (data / cidade)">
           <select className="input" value={pfId} onChange={(e) => { setPfId(Number(e.target.value)); setProdSel(null); setClientes([]) }}>
             {pedidos.map((p) => <option key={p.id} value={p.id}>{fmtData(p.data_entrega)} — {cidades.find((c) => c.id === p.cidade_distribuicao_id)?.nome} — {p.status}</option>)}
@@ -96,18 +96,18 @@ export default function AjusteEntrega() {
           <div className="card p-3">
             <div className="font-bold text-leaf-900 mb-1">1. O que a granja vai mandar</div>
             <p className="text-xs text-slate-500 mb-2">Informe por produto a quantidade confirmada no carregamento e substituições. Ao salvar, os títulos financeiros desta data/cidade são gerados.</p>
-            <table className="w-full text-sm">
-              <thead className="bg-slate-100 text-xs uppercase text-slate-500"><tr><th className="p-1.5 text-left">Produto</th><th className="p-1.5 text-right">Pedido</th><th className="p-1.5 text-right">Confirmado</th><th className="p-1.5 text-left">Obs.</th></tr></thead>
+            <table className="tabela">
+              <thead><tr><th className="text-left">Produto</th><th className="text-right">Pedido</th><th className="text-right">Confirmado</th><th className="text-left">Obs.</th></tr></thead>
               <tbody>
                 {linhas.map((p) => {
                   const it = item(p.id); const c = conf[p.id] ?? { q: '', obs: '' }
                   const dif = (Number(c.q) || 0) - (it?.qtd_pedida ?? 0)
                   return (
                     <tr key={p.id} className="border-t border-slate-100">
-                      <td className="p-1.5 font-semibold">{p.nome}</td>
-                      <td className="p-1.5 text-right">{fmtNum(it?.qtd_pedida ?? 0)}</td>
-                      <td className="p-1.5 text-right"><input type="number" className={`input w-24 py-1 text-right ${dif !== 0 ? 'border-amber-400 bg-amber-50' : ''}`} value={c.q} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, q: e.target.value } })} /></td>
-                      <td className="p-1.5"><input className="input py-1" placeholder="substituição…" value={c.obs} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, obs: e.target.value } })} /></td>
+                      <td className="font-semibold">{p.nome}</td>
+                      <td className="text-right">{fmtNum(it?.qtd_pedida ?? 0)}</td>
+                      <td className="text-right"><input type="number" className={`input w-24 py-1 text-right ${dif !== 0 ? 'border-amber-400 bg-amber-50' : ''}`} value={c.q} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, q: e.target.value } })} /></td>
+                      <td className="px-2"><input className="input py-1" placeholder="substituição…" value={c.obs} onChange={(e) => setConf({ ...conf, [p.id]: { ...c, obs: e.target.value } })} /></td>
                     </tr>
                   )
                 })}
@@ -123,16 +123,16 @@ export default function AjusteEntrega() {
           <div className="card p-3">
             <div className="font-bold text-leaf-900 mb-1">2. Ajustar pedidos dos clientes</div>
             <p className="text-xs text-slate-500 mb-2">Previsto = soma atual dos pedidos. Clique num produto para ver quem pediu e alterar as quantidades. O sistema só mostra a diferença, não distribui.</p>
-            <table className="w-full text-sm">
-              <thead className="bg-slate-100 text-xs uppercase text-slate-500"><tr><th className="p-1.5 text-left">Produto</th><th className="p-1.5 text-right">Previsto</th><th className="p-1.5 text-right">Confirmado</th><th className="p-1.5 text-right">Diferença</th></tr></thead>
+            <table className="tabela">
+              <thead><tr><th className="text-left">Produto</th><th className="text-right">Previsto</th><th className="text-right">Confirmado</th><th className="text-right">Diferença</th></tr></thead>
               <tbody>
                 {linhas.map((p) => {
                   const prev = programado[p.id] ?? 0; const confQ = item(p.id)?.qtd_confirmada; const dif = confQ == null ? null : confQ - prev
                   return (
                     <tr key={p.id} onClick={() => { setProdSel(p.id); carregarClientes(p.id) }} className={`border-t border-slate-100 cursor-pointer hover:bg-leaf-50 ${prodSel === p.id ? 'bg-leaf-100' : ''}`}>
-                      <td className="p-1.5 font-semibold">{p.nome}</td>
-                      <td className="p-1.5 text-right">{fmtNum(prev)}</td>
-                      <td className="p-1.5 text-right">{confQ ?? '—'}</td>
+                      <td className="font-semibold">{p.nome}</td>
+                      <td className="text-right">{fmtNum(prev)}</td>
+                      <td className="text-right">{confQ ?? '—'}</td>
                       <td className={`p-1.5 text-right font-bold ${dif == null ? '' : dif < 0 ? 'text-red-600' : dif > 0 ? 'text-leaf-700' : 'text-slate-400'}`}>{dif == null ? '' : dif > 0 ? `+${dif}` : dif}</td>
                     </tr>
                   )

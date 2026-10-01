@@ -91,7 +91,7 @@ export default function Clientes() {
   return (
     <div className="mx-auto max-w-6xl">
       <Titulo acoes={<button className="btn-primary" onClick={() => abrir(novoCliente())}>+ Novo cliente</button>}>Clientes e preços</Titulo>
-      <div className="card p-3 mb-3 grid gap-3 sm:grid-cols-[1fr_220px_auto] items-end">
+      <div className="barra">
         <Campo label="Buscar"><input className="input" placeholder="código, nome, cidade, contato, CNPJ…" value={busca} onChange={(e) => setBusca(e.target.value)} /></Campo>
         <Campo label="Rota">
           <select className="input" value={rotaF} onChange={(e) => setRotaF(e.target.value ? Number(e.target.value) : '')}>
@@ -100,23 +100,23 @@ export default function Clientes() {
         </Campo>
         <label className="flex items-center gap-2 text-sm pb-2"><input type="checkbox" checked={inativos} onChange={(e) => setInativos(e.target.checked)} /> mostrar inativos</label>
       </div>
-      <div className="text-xs text-slate-500 mb-1">{filtrados.length} clientes</div>
-      <div className="card overflow-auto max-h-[70vh]">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500 sticky top-0">
-            <tr><th className="p-2">Cód</th><th className="p-2">Cliente</th><th className="p-2">Fantasia</th><th className="p-2">Cidade</th><th className="p-2">Rotas</th><th className="p-2">Pagto</th><th className="p-2">NF/GTA</th><th className="p-2"></th></tr>
+      <div className="text-[10px] text-slate-400 mb-1">{filtrados.length} clientes</div>
+      <div className="card overflow-auto max-h-[calc(100vh-140px)]">
+        <table className="tabela">
+          <thead>
+            <tr><th className="px-2">Cód</th><th className="px-2">Cliente</th><th className="px-2">Fantasia</th><th className="px-2">Cidade</th><th className="px-2">Rotas</th><th className="px-2">Pagto</th><th className="px-2">NF/GTA</th><th className="px-2"></th></tr>
           </thead>
           <tbody>
             {filtrados.map((c) => (
               <tr key={c.id} className={`border-t border-slate-100 hover:bg-leaf-50 cursor-pointer ${c.ativo ? '' : 'opacity-50'}`} onClick={() => abrir(c)}>
-                <td className="p-2 text-slate-500">{c.codigo}</td>
-                <td className="p-2 font-semibold">{c.razao_social}</td>
-                <td className="p-2">{c.nome_fantasia}</td>
-                <td className="p-2">{c.cidade}</td>
-                <td className="p-2 text-xs">{(rotasCliente[c.id] ?? []).map((r) => rotas.find((x) => x.id === r)?.nome).join(', ')}</td>
-                <td className="p-2 text-xs">{FORMAS[c.forma_pagamento]}</td>
-                <td className="p-2 space-x-1">{c.exige_nf && <Chip cor="azul">NF</Chip>}{c.exige_gta && <Chip cor="amarelo">GTA</Chip>}</td>
-                <td className="p-2 text-right"><button className="btn-secondary py-1">Abrir</button></td>
+                <td className="text-slate-500">{c.codigo}</td>
+                <td className="font-semibold">{c.razao_social}</td>
+                <td className="px-2">{c.nome_fantasia}</td>
+                <td className="px-2">{c.cidade}</td>
+                <td className="text-xs">{(rotasCliente[c.id] ?? []).map((r) => rotas.find((x) => x.id === r)?.nome).join(', ')}</td>
+                <td className="text-xs">{FORMAS[c.forma_pagamento]}</td>
+                <td className="space-x-1">{c.exige_nf && <Chip cor="azul">NF</Chip>}{c.exige_gta && <Chip cor="amarelo">GTA</Chip>}</td>
+                <td className="text-right"><button className="btn-secondary py-1">Abrir</button></td>
               </tr>
             ))}
           </tbody>
