@@ -272,7 +272,7 @@ export default function Venda() {
                                 onChange={(e) => setQtd({ ...qtd, [p.id]: soDigitos(e.target.value) })} onKeyDown={bloqueiaNaoNumerico}
                                 className="w-full h-[22px] bg-yellow-50 text-center text-xs font-bold outline-none focus:bg-yellow-200 disabled:bg-slate-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" />
                             </td>
-                            <td className="border border-slate-300 px-1.5 py-0 text-[11px] font-semibold whitespace-nowrap leading-none" style={{ background: corProduto(p) + '33' }}>{p.nome}</td>
+                            <td className="border border-slate-300 px-1.5 py-0 text-[11px] font-semibold whitespace-nowrap leading-none" style={{ background: corProduto(p) + '26' }}>{p.nome}</td>
                             <td className="border border-slate-300 px-1 py-0 text-right text-[10px]">{tem ? fmtMoeda(preco).replace('R$', '').trim() : '-'}</td>
                           </tr>
                         )

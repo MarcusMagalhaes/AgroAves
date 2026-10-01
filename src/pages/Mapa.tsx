@@ -14,7 +14,7 @@ export function TabelaMapa({ mapa, compacto }: { mapa: MapaT; compacto?: boolean
       <thead>
         <tr className="bg-slate-100">
           <th className={`${cls} border`} colSpan={6}></th>
-          {gruposDeProdutos(mapa.produtosUsados).map((g) => <th key={g.grupo} colSpan={g.itens.length} className={`${cls} border text-center font-bold uppercase`} style={{ background: corProduto(g.itens[0]) + 'aa' }}>{g.grupo}</th>)}
+          {gruposDeProdutos(mapa.produtosUsados).map((g) => <th key={g.grupo} colSpan={g.itens.length} className={`${cls} border text-center font-bold uppercase`} style={{ background: corProduto(g.itens[0]) + '80' }}>{g.grupo}</th>)}
           {mapa.totalR > 0 && <th className={`${cls} border`}></th>}
           <th className={`${cls} border`}></th>
         </tr>

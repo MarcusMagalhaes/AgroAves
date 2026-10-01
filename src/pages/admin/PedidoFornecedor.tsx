@@ -106,11 +106,11 @@ export default function PedidoFornecedor() {
               {linhas.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-slate-400">Nenhum pedido programado para esta data e cidade</td></tr>}
               {linhas.map((p, idx) => {
                 const novoGrupo = idx === 0 || linhas[idx - 1].grupo !== p.grupo
-                const linhaGrupo = novoGrupo ? <tr key={`g${p.id}`} className="grupo-prod"><td colSpan={9} style={{ background: corProduto(p) + '80' }}>{p.grupo ?? 'OUTROS'}</td></tr> : null
+                const linhaGrupo = novoGrupo ? <tr key={`g${p.id}`} className="grupo-prod"><td colSpan={9} style={{ background: corProduto(p) + '66' }}>{p.grupo ?? 'OUTROS'}</td></tr> : null
                 const prog = programado[p.id] ?? 0; const ped = Number(aPedir[p.id]) || 0
                 return (<>{linhaGrupo}
                   <tr key={p.id} className="border-t border-slate-100">
-                    <td className="font-semibold" style={{ background: corProduto(p) + '33' }}>{p.nome}</td>
+                    <td className="font-semibold" style={{ background: corProduto(p) + '26' }}>{p.nome}</td>
                     <td className="text-right font-semibold">{fmtNum(prog)}</td>
                     <td className="text-right">
                       <input type="number" inputMode="numeric" className={`input w-28 text-right py-1 ${ped !== prog ? 'border-amber-400 bg-amber-50' : ''}`} value={aPedir[p.id] ?? ''}
