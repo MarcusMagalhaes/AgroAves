@@ -12,6 +12,13 @@ export const RESULTADOS: Record<Resultado, string> = {
 export const GRUPOS = ['CORTE', 'CAIPIRA', 'POSTURA', 'EXOTICOS', 'ACESSORIOS'] as const
 export const COR_GRUPO: Record<string, string> = { CORTE: '#f5a623', CAIPIRA: '#3fb663', POSTURA: '#4a7fd6', EXOTICOS: '#a855f7', ACESSORIOS: '#94a3b8' }
 export const corProduto = (p: { cor?: string | null; grupo?: string | null }) => p.cor || COR_GRUPO[p.grupo ?? ''] || '#cbd5e1'
+/** Cor opaca: mistura `cor` com `base` na proporção `pct` (0–1). Evita transparência em cabeçalhos fixos. */
+export function tom(cor: string, pct: number, base = '#ffffff') {
+  const h = (x: string) => [1, 3, 5].map((i) => parseInt(x.slice(i, i + 2), 16))
+  const [r1, g1, b1] = h(cor); const [r2, g2, b2] = h(base)
+  const m = (a: number, b: number) => Math.round(a * pct + b * (1 - pct)).toString(16).padStart(2, '0')
+  return `#${m(r1, r2)}${m(g1, g2)}${m(b1, b2)}`
+}
 /** Agrupa produtos consecutivos pela categoria (ordem do cadastro) */
 export function gruposDeProdutos<T extends { grupo: string | null }>(produtos: T[]) {
   const out: { grupo: string; itens: T[] }[] = []

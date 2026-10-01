@@ -4,7 +4,7 @@ import { DataGrid, type Column, type DataGridHandle, type RenderEditCellProps, t
 import { supabase, ok } from '@/lib/supabase'
 import { listarProdutos, listarRotasSemana, rpc } from '@/lib/dados'
 import { fmtData, fmtMoeda, fmtNum, normalizar } from '@/lib/format'
-import { FORMAS, corProduto, gruposDeProdutos, type PedidoItem, type PedidoView, type Produto, type RotaSemana } from '@/lib/types'
+import { FORMAS, corProduto, gruposDeProdutos, tom, type PedidoItem, type PedidoView, type Produto, type RotaSemana } from '@/lib/types'
 import { Campo, Carregando, Confirmar, Modal, Titulo, useToast } from '@/components/ui'
 
 interface Linha {
@@ -184,7 +184,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
       {linhas === null ? <Carregando /> : (
         <div className="card flex-1 min-h-0 overflow-hidden flex flex-col">
           {/* estilos de cor por produto (coluna inteira) */}
-          <style>{colsProd.map((p) => { const c = corProduto(p); return `.rdg-row.linha-impar .rdg-cell.cor-p${p.id}{background-color:${c}1a}.rdg-row.linha-par .rdg-cell.cor-p${p.id}{background-color:${c}30}.rdg-header-row .rdg-cell.cor-p${p.id}{background-color:${c}66}.rdg-summary-row .rdg-cell.cor-p${p.id}{background-color:${c}40}` }).join('\n')}</style>
+          <style>{colsProd.map((p) => { const c = corProduto(p); return `.rdg-row.linha-impar .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.10)}}.rdg-row.linha-par .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.19, '#eef2f7')}}.rdg-header-row .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.40)}}.rdg-summary-row .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.25)}}` }).join('\n')}</style>
           {/* faixa de categorias, alinhada às colunas e sincronizada com a rolagem horizontal */}
           <div className="flex h-5 shrink-0 border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide overflow-hidden">
             <div style={{ width: LARG_FIXA_ESQ + (historico ? 78 : 0), flex: 'none' }} className="px-2 leading-5 text-slate-500">Categorias</div>
@@ -192,7 +192,7 @@ export default function Programacao({ historico = false }: { historico?: boolean
               <div ref={faixaRef} className="flex h-full will-change-transform">
                 {detalhes && <div style={{ width: 130 + 110 + 80, flex: 'none' }} />}
                 {gruposDeProdutos(colsProd).map((g) => (
-                  <div key={g.grupo} style={{ width: g.itens.length * 40, flex: 'none', backgroundColor: corProduto(g.itens[0]) + '80' }}
+                  <div key={g.grupo} style={{ width: g.itens.length * 40, flex: 'none', backgroundColor: tom(corProduto(g.itens[0]), 0.5) }}
                     className="leading-5 text-center text-slate-900 border-r border-white overflow-hidden whitespace-nowrap text-ellipsis px-0.5" title={g.grupo}>{g.grupo}</div>
                 ))}
                 <div style={{ width: 40, flex: 'none' }} />
