@@ -20,6 +20,8 @@ export function imprimirHtml(titulo: string, html: string, orientacao: 'landscap
   th.p-0 .text-base { font-size: 12pt !important; }
   th.p-0 .text-\\[11px\\] { font-size: 8pt !important; }
   th.p-0 img { height: 28px !important; width: auto !important; }
+  .recibo-logo img { height: 40px !important; width: auto !important; }
+  .grid.grid-cols-2 > div { min-height: 80mm; }
   th { white-space: normal !important; }
   td.whitespace-nowrap { white-space: normal !important; }
   .col-larga { min-width: 38mm !important; width: 38mm; }
