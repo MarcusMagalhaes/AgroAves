@@ -28,7 +28,10 @@ const menuAdmin: Entrada[] = [
     { to: '/documentos/gta', label: 'GTA', icone: '📄' },
     { to: '/documentos/nf', label: 'Nota fiscal', icone: '🧮' },
   ] },
-  { to: '/financeiro', label: 'Financeiro', icone: '💰' },
+  { grupo: 'Financeiro', icone: '💰', itens: [
+    { to: '/financeiro', label: 'Contas a receber', icone: '📥' },
+    { to: '/contas-pagar', label: 'Contas a pagar', icone: '📤', ti: true },
+  ] },
   { to: '/fechamento-geral', label: 'Fechamento geral', icone: '📚' },
   { to: '/auditoria', label: 'Auditoria', icone: '🔍' },
 ]
@@ -58,6 +61,8 @@ export default function Layout() {
   const menu = (ehAdmin(usuario) ? menuAdmin : menuVendedor)
     .map((e) => ehGrupo(e) ? { ...e, itens: e.itens.filter((i) => !i.ti || ehAdminTI(usuario)) } : e)
     .filter((e) => ehGrupo(e) ? e.itens.length > 0 : !e.ti || ehAdminTI(usuario))
+    // grupo que ficou com um item só (ex.: Financeiro para quem não é TI) volta a ser um link simples
+    .map((e): Entrada => ehGrupo(e) && e.itens.length === 1 ? { ...e.itens[0], label: e.grupo, icone: e.icone } : e)
 
   const link = (m: Item, sub = false) => (
     <NavLink key={m.to} to={m.to} onClick={() => { setAberto(false); setGruposFechados({}) }}

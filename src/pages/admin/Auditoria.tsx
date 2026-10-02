@@ -8,7 +8,7 @@ const NOME_TABELA: Record<string, string> = {
   usuario: 'Usuários', vendedor: 'Vendedores', cidade_distribuicao: 'Cidades de distribuição', fornecedor: 'Fornecedores', rota: 'Rotas',
   cliente: 'Clientes', rota_cliente: 'Clientes da rota (ordem de entrega)', produto: 'Produtos', preco_cliente: 'Preços por cliente',
   semana_rota: 'Semanas das rotas', pedido: 'Pedidos (programação)', pedido_item: 'Itens do pedido', contato_cliente: 'Contatos (interesse)',
-  pedido_fornecedor: 'Pedidos à granja', pedido_fornecedor_item: 'Itens do pedido à granja', titulo: 'Financeiro (títulos)', carga_planilhas: 'Carga das planilhas',
+  pedido_fornecedor: 'Pedidos à granja', pedido_fornecedor_item: 'Itens do pedido à granja', titulo: 'Contas a receber (títulos)', conta_pagar: 'Contas a pagar', centro_custo: 'Centros de custo', carga_planilhas: 'Carga das planilhas',
 }
 const NOME_OP: Record<string, string> = { INSERT: 'Inclusão', UPDATE: 'Alteração', DELETE: 'Exclusão' }
 const COR_OP: Record<string, 'verde' | 'amarelo' | 'vermelho'> = { INSERT: 'verde', UPDATE: 'amarelo', DELETE: 'vermelho' }

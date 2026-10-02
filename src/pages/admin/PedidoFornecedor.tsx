@@ -29,10 +29,12 @@ export default function PedidoFornecedor() {
 
   useEffect(() => {
     Promise.all([listarRotasSemana(), listarProdutos(), listarCidades(), listarFornecedores()]).then(([r, p, c, f]) => {
-      setRotas(r); setProdutos(p); setCidades(c); setFornecedores(f.filter((x) => x.ativo))
+      // pedido só a fornecedor de produto para venda (granja)
+      const fv = f.filter((x) => x.ativo && (x.tipo ?? 'PRODUTO_VENDA') === 'PRODUTO_VENDA')  // sem tipo = banco antes da 0008
+      setRotas(r); setProdutos(p); setCidades(c); setFornecedores(fv)
       const d = [...new Set(r.map((x) => x.data_entrega))].filter(Boolean).sort(); if (d[0]) setData(d[0] as string)
       if (c[0]) setCidadeId(c[0].id)
-      if (f.length === 1) setFornecedorId(f[0].id)
+      if (fv.length === 1) setFornecedorId(fv[0].id)
     }).catch((e) => toast(e.message, 'erro'))
   }, [])
 

@@ -38,7 +38,10 @@ export function gruposDeProdutos<T extends { grupo: string | null }>(produtos: T
 export interface Usuario { id: string; nome: string; email: string; papel: Papel; ativo: boolean }
 export interface Vendedor { id: number; usuario_id: string | null; nome: string; telefone: string | null; ativo: boolean }
 export interface Cidade { id: number; nome: string }
-export interface Fornecedor { id: number; nome: string; ativo: boolean }
+export type TipoFornecedor = 'PRODUTO_VENDA' | 'MATERIAL' | 'CONSUMO'
+/** PRODUTO_VENDA: granja (aparece no pedido à granja); os demais só no contas a pagar */
+export const TIPOS_FORNECEDOR: Record<TipoFornecedor, string> = { PRODUTO_VENDA: 'Produto para venda', MATERIAL: 'Material', CONSUMO: 'Consumo' }
+export interface Fornecedor { id: number; nome: string; tipo: TipoFornecedor; ativo: boolean }
 export type TipoCentroCusto = 'PAGAR' | 'RECEBER'
 export const TIPOS_CENTRO_CUSTO: Record<TipoCentroCusto, string> = { PAGAR: 'A pagar', RECEBER: 'A receber' }
 /** Centro de custo: código falante gerado pelo banco (1000 › 1100 › 1110 › 1111); código, pai e tipo não mudam */
@@ -89,4 +92,9 @@ export interface PedidoFornecedor {
 }
 export interface PedidoFornecedorItem {
   pedido_fornecedor_id: number; produto_id: number; qtd_programada: number; qtd_pedida: number; qtd_confirmada: number | null; observacao: string | null
+}
+export type SituacaoContaPagar = 'PENDENTE' | 'PAGO' | 'CANCELADO'
+export interface ContaPagar {
+  id: number; descricao: string; fornecedor_id: number; data_vencimento: string; valor: number; centro_custo_codigo: number
+  situacao: SituacaoContaPagar; data_pagamento: string | null; motivo: string | null; observacao: string | null; criado_em: string
 }
