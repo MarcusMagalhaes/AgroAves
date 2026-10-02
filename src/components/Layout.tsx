@@ -56,7 +56,7 @@ export default function Layout() {
 
   const link = (m: Item, sub = false) => (
     <NavLink key={m.to} to={m.to} onClick={() => { setAberto(false); setGruposFechados({}) }}
-      className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 ${sub ? 'py-1.5 ml-4 text-[13px]' : 'py-2 text-sm'} font-medium transition ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>
+      className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2.5 whitespace-nowrap ${sub ? 'py-1 ml-3 text-xs' : 'py-1.5 text-[13px]'} font-medium transition ${isActive ? 'bg-leaf-900 text-white' : 'text-slate-700 hover:bg-leaf-50'}`}>
       <span className="text-base leading-none">{m.icone}</span>{m.label}
     </NavLink>
   )
@@ -69,7 +69,7 @@ export default function Layout() {
         return (
           <div key={m.grupo}>
             <button onClick={() => setGruposFechados({ ...gruposFechados, [m.grupo]: abertoG })}
-              className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${ativo ? 'text-leaf-900 font-bold' : 'text-slate-700'} hover:bg-leaf-50`}>
+              className={`w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition whitespace-nowrap ${ativo ? 'text-leaf-900 font-bold' : 'text-slate-700'} hover:bg-leaf-50`}>
               <span className="text-base leading-none">{m.icone}</span>{m.grupo}<span className="ml-auto text-xs">{abertoG ? '▾' : '▸'}</span>
             </button>
             {abertoG && <div className="flex flex-col gap-0.5 mt-0.5">{m.itens.map((i) => link(i, true))}</div>}
@@ -89,9 +89,9 @@ export default function Layout() {
   return (
     <div className="flex h-full">
       {/* Sidebar desktop (recolhível) */}
-      <aside className={`hidden md:flex flex-col bg-white border-r border-slate-200 no-print transition-all ${recolhido ? 'w-0 overflow-hidden border-r-0' : 'w-64'}`}>
-        <div className="p-4 border-b-4 border-brand-600 flex items-center justify-between gap-2">
-          <Logo size={40} />
+      <aside className={`hidden md:flex flex-col bg-white border-r border-slate-200 no-print transition-all ${recolhido ? 'w-0 overflow-hidden border-r-0' : 'w-52'}`}>
+        <div className="p-3 border-b-4 border-brand-600 flex items-center justify-between gap-2">
+          <Logo size={34} />
           <button className="rounded p-1 text-slate-500 hover:bg-slate-100" title="Esconder menu" onClick={() => setRecolhido(true)}>«</button>
         </div>
         <div className="flex-1 overflow-auto">{nav}</div>

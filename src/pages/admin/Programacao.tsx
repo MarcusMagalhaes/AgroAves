@@ -26,7 +26,6 @@ function EditorNumero({ row, column, onRowChange, onClose }: RenderEditCellProps
       onFocus={(e) => e.target.select()} />
   )
 }
-const LARG_FIXA_ESQ = 110 + 190  // rota + cliente (congeladas); +78 da Data no histórico
 
 export interface FiltroFixo { data: string; cidadeId: number; produtoId: number }
 export default function Programacao({ historico = false, fixo, aoMudar }: { historico?: boolean; fixo?: FiltroFixo; aoMudar?: () => void }) {
@@ -44,7 +43,6 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
   const [detalhes, setDetalhes] = useState(false)
   const [prodAberto, setProdAberto] = useState(false)
   const gridRef = useRef<DataGridHandle>(null)
-  const faixaRef = useRef<HTMLDivElement>(null)
 
   const [datasFechadas, setDatasFechadas] = useState<string[]>([])
   const datas = useMemo(() => historico ? datasFechadas : [...new Set(rotas.map((r) => r.data_entrega).filter(Boolean))].sort() as string[], [rotas, datasFechadas, historico])
@@ -96,28 +94,44 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
 
   const colsProd = prodF.length ? produtos.filter((p) => prodF.includes(p.sigla)) : produtos
 
-  const [larguras, setLarguras] = useState<number[]>([])
-  useEffect(() => {
-    const el = gridRef.current?.element
-    if (!el) return
-    const medir = () => {
-      const arr: number[] = []
-      el.querySelectorAll<HTMLElement>('[role="columnheader"]').forEach((c) => {
-        const i = Number(c.getAttribute('aria-colindex')) - 1
-        if (i >= 0) arr[i] = c.getBoundingClientRect().width
-      })
-      setLarguras((old) => (old.length === arr.length && old.every((v, i) => Math.abs(v - arr[i]) < 0.5) ? old : arr))
-    }
-    medir()
-    const ro = new ResizeObserver(medir)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [colsProd, detalhes, historico, linhas])
   // posições das colunas na grade: [data?] rota cliente [nome contato pagto?] produtos… R total [acoes?]
   const nFixEsq = (historico ? 1 : 0) + 2
   const nDet = detalhes ? 3 : 0
-  const larg = (i: number, padrao: number) => larguras[i] ?? padrao
-  const soma = (de: number, ate: number, padrao: number) => { let t = 0; for (let i = de; i < ate; i++) t += larg(i, padrao); return t }
+  // Faixa de categorias posicionada pela geometria REAL das células do cabeçalho (funciona com zoom, redimensionamento e rolagem)
+  type Bloco = { grupo: string; left: number; width: number; cor: string }
+  const [blocos, setBlocos] = useState<Bloco[]>([])
+  const [fixos, setFixos] = useState<{ esq: number; dir: number }>({ esq: 0, dir: 0 })
+  const posicionar = () => {
+    const el = gridRef.current?.element
+    if (!el) return
+    const g = el.getBoundingClientRect()
+    const cel: Record<number, DOMRect> = {}
+    el.querySelectorAll<HTMLElement>('[role="columnheader"]').forEach((c) => {
+      const i = Number(c.getAttribute('aria-colindex')) - 1
+      if (i >= 0) cel[i] = c.getBoundingClientRect()
+    })
+    const ini = nFixEsq + nDet
+    const novos: Bloco[] = []
+    let pos = ini
+    for (const gr of gruposDeProdutos(colsProd)) {
+      let l = Infinity, r = -Infinity
+      for (let k = 0; k < gr.itens.length; k++) { const c = cel[pos + k]; if (c) { l = Math.min(l, c.left); r = Math.max(r, c.right) } }
+      if (l < r) novos.push({ grupo: gr.grupo, left: l - g.left, width: r - l, cor: corProduto(gr.itens[0]) })
+      pos += gr.itens.length
+    }
+    // áreas congeladas: cobrem a faixa para a categoria não "passar por baixo"
+    let esq = 0; for (let i = 0; i < nFixEsq; i++) if (cel[i]) esq = Math.max(esq, cel[i].right - g.left)
+    let dir = 0; for (let i = ini + colsProd.length + 1; i < colunas.length; i++) if (cel[i]) dir = Math.max(dir, g.right - cel[i].left)
+    setBlocos(novos); setFixos({ esq, dir })
+  }
+  useEffect(() => {
+    const el = gridRef.current?.element
+    if (!el) return
+    const id = requestAnimationFrame(posicionar)
+    const ro = new ResizeObserver(() => requestAnimationFrame(posicionar))
+    ro.observe(el)
+    return () => { cancelAnimationFrame(id); ro.disconnect() }
+  }, [colsProd, detalhes, historico, linhas])
 
   const resumo: Resumo[] = useMemo(() => {
     const r: Resumo = { id: 'tot', cliente: 'TOTAL' }
@@ -214,25 +228,19 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
         <div className="card flex-1 min-h-0 overflow-hidden flex flex-col">
           {/* estilos de cor por produto (coluna inteira) */}
           <style>{colsProd.map((p) => { const c = corProduto(p); return `.rdg-row.linha-impar .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.10)}}.rdg-row.linha-par .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.19, '#eef2f7')}}.rdg-header-row .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.40)}}.rdg-summary-row .rdg-cell.cor-p${p.id}{background-color:${tom(c, 0.25)}}` }).join('\n')}</style>
-          {/* faixa de categorias, alinhada às colunas e sincronizada com a rolagem horizontal */}
-          <div className="flex h-5 shrink-0 border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide overflow-hidden">
-            <div style={{ width: soma(0, nFixEsq, 150), flex: 'none' }} className="px-2 leading-5 text-slate-500">Categorias</div>
-            <div className="flex-1 overflow-hidden">
-              <div ref={faixaRef} className="flex h-full will-change-transform">
-                {detalhes && <div style={{ width: soma(nFixEsq, nFixEsq + nDet, 107), flex: 'none' }} />}
-                {(() => { let pos = nFixEsq + nDet; return gruposDeProdutos(colsProd).map((g) => { const w = soma(pos, pos + g.itens.length, 40); pos += g.itens.length; return (
-                  <div key={g.grupo} style={{ width: w, flex: 'none', backgroundColor: tom(corProduto(g.itens[0]), 0.5) }}
-                    className="leading-5 text-center text-slate-900 border-r border-white overflow-hidden whitespace-nowrap text-ellipsis px-0.5" title={g.grupo}>{g.grupo}</div>
-                ) }) })()}
-                <div style={{ width: larg(nFixEsq + nDet + colsProd.length, 40), flex: 'none' }} />
-              </div>
-            </div>
-            <div style={{ width: soma(nFixEsq + nDet + colsProd.length + 1, colunas.length, 50), flex: 'none' }} />
+          {/* faixa de categorias, posicionada sobre as colunas reais da grade */}
+          <div className="relative h-5 shrink-0 border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide overflow-hidden">
+            {blocos.map((bl) => (
+              <div key={bl.grupo + bl.left} style={{ position: 'absolute', left: bl.left, width: bl.width, top: 0, bottom: 0, backgroundColor: tom(bl.cor, 0.5) }}
+                className="leading-5 text-center text-slate-900 border-r border-white overflow-hidden whitespace-nowrap text-ellipsis px-0.5" title={bl.grupo}>{bl.grupo}</div>
+            ))}
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: fixos.esq }} className="bg-slate-50 px-2 leading-5 text-slate-500 border-r border-slate-200">Categorias</div>
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: fixos.dir }} className="bg-slate-50 border-l border-slate-200" />
           </div>
           <div className="flex-1 min-h-0">
             <DataGrid ref={gridRef} className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
               onRowsChange={onRowsChange} rowHeight={24} headerRowHeight={92} summaryRowHeight={26} rowClass={(_, i) => (i % 2 ? 'linha-par' : 'linha-impar')}
-              onScroll={(e) => { if (faixaRef.current) faixaRef.current.style.transform = `translateX(-${(e.currentTarget as HTMLDivElement).scrollLeft}px)` }} />
+              onScroll={() => requestAnimationFrame(posicionar)} />
           </div>
         </div>
       )}
