@@ -1,7 +1,7 @@
 # AgroAves 2.0
 
 Sistema web de gestão de vendas semanais de aves por rotas — substitui as planilhas Google Sheets + Apps Script.
-Especificação em `../docs/08`–`11`.
+Documentação do sistema em `../docs/sistema-2.0/`; especificação original em `../docs/sistema-1.0/08`–`11`.
 
 **Stack**: React 19 + TypeScript + Vite 5 + Tailwind 3 · Supabase (PostgreSQL, Auth, RLS) · GitHub Pages.
 
@@ -51,7 +51,7 @@ python migracao/migrar.py --admin ../Admin.xlsx --vendas "../VENDAS - Agro Aves 
 ```
 
 Depois da carga: em **Rotas**, confira vendedor e semana atual; em **Vendedores**, vincule os logins; em **Fornecedores**, confira o fornecedor "Granja".
-Revise `migracao/saida/rejeicoes.csv` (decisões D-11…D-17 em `docs/11`).
+Revise `migracao/saida/rejeicoes.csv` (decisões D-11…D-17 em `docs/sistema-1.0/11`). Opção `--limpar-tudo` apaga pedidos, contatos, granja e títulos antes de recarregar.
 
 ## 4. Publicar no GitHub Pages
 
