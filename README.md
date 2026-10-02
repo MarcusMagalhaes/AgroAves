@@ -9,19 +9,20 @@ Documentação do sistema em `../docs/sistema-2.0/`; especificação original em
 
 ```
 app/
-  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar · 0010 dashboards
+  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar · 0010 dashboards · 0011 boletos Sicoob
   src/
-    lib/                 supabase.ts, auth.tsx (login e papel), dados.ts (consultas), mapa.ts (mapa de entrega), format.ts, types.ts
+    lib/                 boleto.ts (validação do pagador), cobranca.ts (API de boletos), supabase.ts, auth.tsx (login e papel), dados.ts (consultas), mapa.ts (mapa de entrega), format.ts, types.ts
     components/          Layout (menu responsivo), Logo (marca nova), ui (modal, toast, campos)
     pages/               Login, Venda (tela do vendedor), Mapa
     pages/admin/         Programacao (planilha), PedidoFornecedor, AjusteEntrega, Documentos (mapa/recibos/GTA/NF), Financeiro, Fechamento,
                          Clientes, Rotas (ordem de entrega), Produtos, Vendedores, Fornecedores, Usuarios, CentrosCusto (só TI), ContasPagar
+  worker/                index.ts (Worker do Cloudflare: site + /api/boletos/*), sicoob.ts (API Cobrança Bancária v3) e testes
   migracao/migrar.py     extrai os .xlsx, limpa, gera CSVs + rejeições e (opcional) carrega no banco com reconciliação
 ```
 
 ## 1. Banco (Supabase)
 
-1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0010_dashboards.sql` (base já existente: só as que ainda não rodaram).
+1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0011_boletos.sql` (base já existente: só as que ainda não rodaram).
 2. **Login com Google** (Authentication › Providers › Google): ative e cole Client ID + Secret de um cliente OAuth do Google Cloud
    (pode reutilizar o do Controle Metanoia, acrescentando as origens/redirecionamentos abaixo):
    - Origens JavaScript autorizadas: `https://qqpavhptvptgktnzoawi.supabase.co` e o endereço do Cloudflare (`https://agroaves.<sua-conta>.workers.dev` ou domínio próprio)
@@ -96,6 +97,38 @@ Contas a pagar (Financeiro › Contas a pagar): fornecedor (qualquer tipo), venc
 (qualquer nível da árvore) e observação. Anexos (conta/boleto, comprovante, outros; PDF, imagem ou XML até 10 MB) ficam no
 bucket privado `contas-pagar` do Supabase Storage, criado pela `0009`. Pendente → Pago (com data; pode ser estornado) ou Cancelado (com motivo); não se exclui.
 
+## Boletos Sicoob (contas a receber)
+
+Integração com a **API Cobrança Bancária v3** do Sicoob, feita pelo Worker do Cloudflare (`worker/`). O navegador nunca vê
+as credenciais do banco: chama `/api/boletos/*` com o login do Supabase, e o Worker confere se é administrador (`eh_admin()`)
+e grava com as mesmas regras RLS da tela.
+
+- **Emitir**: Financeiro › linha do título › *Emitir boleto* (ou selecione vários › *Emitir boletos*). O boleto sai com PDF,
+  linha digitável e QR Code Pix (boleto híbrido), vence na `data_vencimento` do título (entrega + prazo da configuração;
+  ajustável na emissão) e tem multa/juros da configuração. O PDF fica no bucket privado `boletos`.
+- **Cadastro do cliente**: o banco exige CNPJ/CPF válido, endereço, bairro, cidade, CEP e UF (Clientes avisa o que falta).
+- **Conferir pagamentos**: consulta no Sicoob os boletos em aberto; os pagos baixam o título na data do pagamento.
+- **Baixar no banco**: título cancelado (recálculo/exclusão) ou baixado à mão deixa o boleto como *Baixar no banco*, para
+  cancelá-lo no Sicoob e o cliente não pagar em dobro.
+- **Cobrança** (botão no Financeiro): nº do cliente/beneficiário, conta, modalidade, prazo, multa, juros, Pix e instruções.
+  Só o ADMIN_TI altera.
+
+### Configuração no Cloudflare (Workers › agroaves › Settings › Variables and secrets, tipo **Secret**)
+
+| Variável | Sandbox | Produção |
+| --- | --- | --- |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | iguais às `VITE_*` | iguais às `VITE_*` |
+| `SICOOB_CLIENT_ID` | Client ID do portal (sandbox) | Client ID liberado pela cooperativa |
+| `SICOOB_TOKEN` | "Access token (Bearer)" do portal | — (o Worker obtém token OAuth) |
+| `SICOOB_AMBIENTE` | `SANDBOX` (em `wrangler.jsonc`) | `PRODUCAO` |
+
+Produção também exige o certificado ICP-Brasil (A1) do Sicoob como binding mTLS `SICOOB_CERT` (instruções em `wrangler.jsonc`).
+O sandbox devolve **dados simulados**: serve para validar a integração, não as regras do banco (homologue com a cooperativa).
+Boletos emitidos no sandbox aparecem marcados como *teste*. A API só funciona no site publicado no Cloudflare (não no GitHub Pages).
+
+Desenvolvimento: `npm run dev:api` (Worker na porta 8787, com as variáveis em `.dev.vars`) e `npm run dev` em outro terminal
+(o Vite repassa `/api` para o Worker). Testes: `npm test`.
+
 ## Dashboards
 
 - **Dashboard de vendas** (página inicial de ADMIN e ADMIN_TI): semana atual por padrão, com troca de semana; pedidos, valor,
@@ -110,4 +143,4 @@ Os números são calculados no banco (a API devolve no máximo ~1.000 linhas por
 
 Venda (vendedor) → Programação em planilha (admin revisa/ajusta) → Pedido à granja (ajuste a lotes, fornecedor obrigatório) →
 Ajuste da entrega (o que a granja confirmou; redistribuição manual entre clientes; gera títulos) → Documentos (mapa, recibos, GTA, NF) →
-Financeiro (baixas) → Fechamento semanal (arquiva e avança a rota 14 dias).
+Financeiro (boletos, baixas) → Fechamento semanal (arquiva e avança a rota 14 dias).

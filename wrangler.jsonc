@@ -1,14 +1,30 @@
-// Cloudflare Workers (somente arquivos estáticos). O GitHub é só o repositório: o Cloudflare
-// compila (build.command) e publica a pasta dist a cada push na main.
+// Cloudflare Workers: arquivos estáticos (dist/) + API dos boletos Sicoob (worker/index.ts, só em /api/*).
+// O GitHub é só o repositório: o Cloudflare compila (build.command) e publica a cada push na main.
 // As variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY são de BUILD:
 // Cloudflare › Workers › agroaves › Settings › Build › Variables and secrets.
+// O Worker usa em tempo de execução (Settings › Variables and secrets, tipo Secret):
+// SUPABASE_URL, SUPABASE_ANON_KEY, SICOOB_CLIENT_ID e, no sandbox, SICOOB_TOKEN.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "agroaves",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
   "build": { "command": "npm run build" },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  // não apaga variáveis criadas no painel a cada deploy
+  "keep_vars": true,
+  "vars": {
+    // SANDBOX ou PRODUCAO
+    "SICOOB_AMBIENTE": "SANDBOX"
   }
+  // Produção: certificado ICP-Brasil do Sicoob (A1) enviado com
+  //   npx wrangler mtls-certificate upload --cert certificado.pem --key chave.pem --name sicoob
+  // e ligado ao Worker com:
+  // "mtls_certificates": [{ "binding": "SICOOB_CERT", "certificate_id": "<id devolvido no upload>" }]
 }
