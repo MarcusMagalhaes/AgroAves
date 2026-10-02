@@ -437,7 +437,7 @@ def gravar_csv(m, pasta):
 
 
 # ---------- carga no banco (em lote: tabelas temporárias + insert ... select) ----------
-def carregar(m, dsn):
+def carregar(m, dsn, limpar_tudo=False):
     import psycopg2
     from psycopg2.extras import execute_values
 
@@ -476,7 +476,15 @@ def carregar(m, dsn):
               select r.id, c.id, v.ordem from (values %s) v(rota, codigo, ordem) join rota r on r.nome=v.rota join cliente c on c.codigo=v.codigo""",
            [(x["rota"], x["codigo"], x["ordem_visita"]) for x in m["rota_cliente"]])
 
-        print("3/8 limpando carga legada anterior")
+        print("3/8 limpando carga legada anterior" + (" (TUDO: inclusive registros criados no sistema)" if limpar_tudo else ""))
+        if limpar_tudo:
+            # recarga completa: programação (pedidos), pedido à granja e financeiro voltam a ser exatamente o das planilhas
+            cur.execute("delete from titulo")
+            cur.execute("delete from pedido_fornecedor_item")
+            cur.execute("delete from pedido_fornecedor")
+            cur.execute("delete from pedido_item")
+            cur.execute("delete from pedido")
+            cur.execute("delete from contato_cliente")
         cur.execute("delete from titulo where motivo like 'LEGADO%'")
         # títulos gerados no sistema para pedidos legados: desvincula (preserva o título)
         cur.execute("update titulo set pedido_id = null where pedido_id in (select id from pedido where observacao like 'LEGADO%')")
@@ -584,10 +592,11 @@ if __name__ == "__main__":
     ap.add_argument("--vendas", default="../VENDAS - Agro Aves Distribuidora.xlsx")
     ap.add_argument("--dsn", help="postgresql://... (Supabase > Settings > Database). Sem ele só gera CSVs")
     ap.add_argument("--saida", default=os.path.join(os.path.dirname(__file__), "saida"))
+    ap.add_argument("--limpar-tudo", action="store_true", help="apaga TODOS os pedidos, contatos, pedidos à granja e títulos (inclusive os criados no sistema) antes de recarregar")
     a = ap.parse_args()
     bruto = extrair(a.admin, a.vendas)
     modelo = transformar(bruto)
     print(f"clientes={len(modelo['clientes'])} precos={len(modelo['precos'])} rota_cliente={len(modelo['rota_cliente'])} pedidos={len(modelo['pedidos'])} contatos={len(modelo['contatos'])} titulos={len(modelo['titulos'])} pf={len(modelo['pf'])} semanas={len(modelo['semanas'])}")
     gravar_csv(modelo, a.saida)
     if a.dsn:
-        carregar(modelo, a.dsn)
+        carregar(modelo, a.dsn, a.limpar_tudo)
