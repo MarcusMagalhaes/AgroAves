@@ -75,8 +75,9 @@ A versão do Node vem de `.nvmrc`. Cabeçalhos de segurança e cache em `public/
 Push em `main` publica em produção; push em outra branch gera uma pré-visualização (`<branch>.agroaves.pages.dev`).
 A chave *anon* é pública por desenho; a segurança está nas políticas RLS.
 
-Depois da primeira publicação: atualize as URLs no Supabase e no Google (seção 1) e desative o site antigo em
-GitHub › Settings › Pages (o workflow `deploy.yml` foi removido).
+Transição: enquanto o Cloudflare não estiver no ar, `.github/workflows/deploy.yml` continua publicando em
+`marcusmagalhaes.github.io/AgroAves/` (com `VITE_BASE=/AgroAves/`). Quando o Cloudflare estiver funcionando: atualize as URLs
+no Supabase e no Google (seção 1), apague o `deploy.yml` e desative GitHub › Settings › Pages.
 
 ```bash
 git add -A && git commit -m "..." && git push      # publica automaticamente
