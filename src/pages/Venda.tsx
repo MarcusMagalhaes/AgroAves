@@ -309,9 +309,9 @@ export default function Venda() {
                   ))}
                 </tbody>
               </table>
-              <button className="btn-primary w-full mt-auto py-1 text-xs" onClick={registrarInteresse}>Registrar interesse</button>
-              <div className="mt-0.5 h-3.5 text-[10px] text-center text-slate-500 truncate" title={resultado ? RESULTADOS[resultado] : ''}>{resultado ? `Registrado: ${RESULTADOS[resultado]}` : ''}</div>
-              <button className="btn-secondary w-full mt-1 py-1 text-xs" onClick={reciboIndividual} disabled={!cliente.pedido_id} title={cliente.pedido_id ? 'Imprimir o recibo deste pedido' : 'Salve o pedido primeiro'}>🧾 Recibo individual</button>
+              <button className="btn-primary w-full mt-1.5 py-1 text-xs" onClick={registrarInteresse}>Registrar interesse</button>
+              <div className="mt-1 h-7 text-[10px] leading-[14px] text-center text-slate-500 overflow-hidden">{resultado ? <>Registrado:<br />{RESULTADOS[resultado]}</> : ''}</div>
+              <button className="btn-secondary w-full mt-auto py-1 text-xs" onClick={reciboIndividual} disabled={!cliente.pedido_id} title={cliente.pedido_id ? 'Imprimir o recibo deste pedido' : 'Salve o pedido primeiro'}>🧾 Recibo individual</button>
             </div>
           </div>
         </>
