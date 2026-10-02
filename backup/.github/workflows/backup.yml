@@ -1,0 +1,61 @@
+name: Backup diário do banco (7 dias, por dia da semana)
+
+on:
+  schedule:
+    - cron: "30 3 * * *"   # 00:30 em Brasília (UTC-3) todos os dias
+  workflow_dispatch:        # permite rodar à mão em Actions → Run workflow
+
+permissions:
+  actions: write            # para apagar o backup antigo do mesmo dia da semana
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Instalar cliente PostgreSQL 17 (mesma versão do Supabase)
+        run: |
+          sudo apt-get install -y postgresql-common >/dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+          sudo apt-get install -y postgresql-client-17 >/dev/null
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      - name: Nome do backup = dia da semana da base copiada (dia anterior, horário de Brasília)
+        id: dia
+        run: |
+          n=$(TZ=America/Sao_Paulo date -d "yesterday" +%u)
+          nomes=(x segunda terca quarta quinta sexta sabado domingo)
+          echo "nome=backup-$n-${nomes[$n]}" >> "$GITHUB_OUTPUT"
+          echo "data=$(TZ=America/Sao_Paulo date -d yesterday +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: pg_dump (schema public, sem os dados de auditoria)
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          mkdir -p saida
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" \
+            --format=custom --compress=6 --no-owner --no-privileges \
+            --schema=public \
+            --exclude-table-data='public.auditoria' \
+            --exclude-table-data='public.auditoria_login' \
+            --file="saida/agroaves-${{ steps.dia.outputs.data }}.dump"
+          ls -la saida
+          /usr/lib/postgresql/17/bin/pg_restore --list "saida/agroaves-${{ steps.dia.outputs.data }}.dump" | grep -c "TABLE DATA" | xargs -I{} echo "tabelas com dados: {}"
+
+      - name: Apagar o backup anterior deste mesmo dia da semana
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/artifacts?name=${{ steps.dia.outputs.nome }}&per_page=50" \
+            --jq '.artifacts[].id' | while read id; do
+              echo "apagando artefato $id"; gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id"; done
+
+      - name: Guardar o backup (fica 8 dias; é substituído na próxima semana)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dia.outputs.nome }}
+          path: saida/*.dump
+          retention-days: 8
+          compression-level: 0
+          if-no-files-found: error
