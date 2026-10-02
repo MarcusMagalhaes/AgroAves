@@ -7,12 +7,13 @@ import type { Produto, RotaSemana } from '@/lib/types'
 import { Campo, Carregando, Titulo, Vazio, useToast } from '@/components/ui'
 import { FORMAS, corProduto, gruposDeProdutos, tom } from '@/lib/types'
 
-export function TabelaMapa({ mapa, compacto, cabecalho }: { mapa: MapaT; compacto?: boolean; cabecalho?: React.ReactNode }) {
+export function TabelaMapa({ mapa, compacto, cabecalho, fixo }: { mapa: MapaT; compacto?: boolean; cabecalho?: React.ReactNode; fixo?: boolean }) {
+  // fixo: cabeçalho e rodapé presos ao rolar (só na tela; a impressão desfaz em imprimir.ts)
   const cls = compacto ? 'px-1 py-0.5 text-[10px]' : 'px-1.5 py-0.5 text-[11px]'
   const totalCols = 6 + mapa.produtosUsados.length + (mapa.totalR > 0 ? 1 : 0) + 1
   return (
     <table className="w-full border-collapse">
-      <thead>
+      <thead className={fixo ? 'sticky top-0 z-10 bg-white' : ''}>
         {cabecalho && <tr><th colSpan={totalCols} className="p-0 font-normal text-left">{cabecalho}</th></tr>}
         <tr className="bg-slate-100">
           <th className={`${cls} border`} colSpan={6}></th>
@@ -47,7 +48,7 @@ export function TabelaMapa({ mapa, compacto, cabecalho }: { mapa: MapaT; compact
           </tr>
         ))}
       </tbody>
-      <tfoot>
+      <tfoot className={fixo ? 'sticky bottom-0 z-10 bg-white' : ''}>
         <tr className="bg-slate-100 font-bold">
           <td className={`${cls} border text-right`} colSpan={6}>SUB-TOTAL</td>
           {mapa.produtosUsados.map((p) => <td key={p.id} className={`${cls} border text-center`} style={{ background: tom(corProduto(p), 0.25) }}>{fmtNum(mapa.subtotal[p.id])}</td>)}
@@ -106,7 +107,7 @@ export default function Mapa() {
         {rota && <div className="text-sm text-slate-600">Distribuição <b>{rota.cidade_distribuicao}</b> · {rota.vendedor} {rota.vendedor_telefone}</div>}
       </div>
       {carregando ? <Carregando /> : !mapa || mapa.linhas.length === 0 ? <div className="card"><Vazio texto="Nenhum pedido nesta semana" /></div> : (
-        <div className="card overflow-auto p-2"><TabelaMapa mapa={mapa} /></div>
+        <div className="card overflow-auto p-2 max-h-[calc(100vh-120px)]"><TabelaMapa mapa={mapa} fixo /></div>
       )}
     </div>
   )

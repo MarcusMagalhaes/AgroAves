@@ -34,13 +34,13 @@ export default function Documentos() {
 
   const rota = rotas.find((r) => r.rota_id === rotaId)
   useEffect(() => {
-    if (!rota?.semana_rota_id || !produtos.length) { setMapa(null); return }
+    if (doc !== 'recibos' || !rota?.semana_rota_id || !produtos.length) { setMapa(null); return }
     setCarregando(true)
     montarMapa(rota.semana_rota_id, produtos).then(setMapa).catch((e) => toast(e.message, 'erro')).finally(() => setCarregando(false))
-  }, [rotaId, produtos])
+  }, [doc, rotaId, produtos])
 
   useEffect(() => {
-    if (doc !== 'gta' && doc !== 'nf') return
+    if (doc === 'recibos') return
     const sel = rotas.filter((r) => rotasGta.includes(r.rota_id) && r.semana_rota_id)
     setCarregando(true)
     Promise.all(sel.map(async (r) => ({ rota: r, mapa: await montarMapa(r.semana_rota_id!, produtos) })))
@@ -68,7 +68,7 @@ export default function Documentos() {
       <div className="no-print">
         <div className="barra">
           <h1>{{ mapa: 'Mapa de entrega', recibos: 'Recibos', gta: 'GTA — Guia de Trânsito Animal', nf: 'Controle de Nota Fiscal' }[doc]}</h1>
-          {doc === 'mapa' || doc === 'recibos' ? (
+          {doc === 'recibos' ? (
             <Campo label="Rota"><select className="input" value={rotaId} onChange={(e) => setRotaId(Number(e.target.value))}>{rotas.map((r) => <option key={r.rota_id} value={r.rota_id}>{r.rota} — {fmtData(r.data_entrega)}</option>)}</select></Campo>
           ) : (
             <Campo label="Rotas" className="sm:col-span-2">
@@ -82,12 +82,12 @@ export default function Documentos() {
           )}
           <button className="btn-accent ml-auto" onClick={imprimir}>🖨️ Imprimir / salvar PDF</button>
         </div>
-        <p className="text-[10px] text-slate-400 mb-1.5">O botão abre o documento já ajustado à página (mapa e GTA em paisagem, recibos em retrato), com as cores. Na janela de impressão escolha a impressora ou "Salvar como PDF".</p>
+        <p className="text-[10px] text-slate-400 mb-1.5">O botão abre o documento já ajustado à página (mapa e GTA em paisagem, recibos em retrato), com as cores. Na janela de impressão escolha a impressora ou "Salvar como PDF".{doc === 'mapa' ? ' Na tela, cabeçalho e rodapé ficam fixos; cada rota sai numa página.' : ''}</p>
       </div>
 
       {carregando ? <Carregando /> : (
-        <div className="bg-white print:bg-white" ref={areaRef}>
-          {doc === 'mapa' && rota && (mapa && mapa.linhas.length ? <DocMapa rota={rota} mapa={mapa} /> : <Vazio texto="Sem pedidos nesta semana" />)}
+        <div className="bg-white print:bg-white max-h-[calc(100vh-130px)] overflow-auto" ref={areaRef}>
+          {doc === 'mapa' && (mapas.some((m) => m.mapa.linhas.length) ? mapas.filter((m) => m.mapa.linhas.length).map((m, i, arr) => <DocMapa key={m.rota.rota_id} rota={m.rota} mapa={m.mapa} ultimo={i === arr.length - 1} />) : <Vazio texto={mapas.length ? 'Sem pedidos nesta semana' : 'Escolha ao menos uma rota'} />)}
           {doc === 'recibos' && rota && (mapa && mapa.linhas.length ? <DocRecibos rota={rota} mapa={mapa} produtos={produtos} /> : <Vazio texto="Sem pedidos nesta semana" />)}
           {doc === 'gta' && <DocGta mapas={mapas} produtos={produtos} clientes={clientesDoc} />}
           {doc === 'nf' && <DocNf mapas={mapas} clientes={clientesDoc} />}
@@ -108,11 +108,11 @@ function Cabecalho({ titulo, sub }: { titulo: string; sub?: string }) {
   )
 }
 
-function DocMapa({ rota, mapa }: { rota: RotaSemana; mapa: MapaT }) {
+function DocMapa({ rota, mapa, ultimo }: { rota: RotaSemana; mapa: MapaT; ultimo?: boolean }) {
   return (
-    <div className="print-landscape card p-4 print:border-0 print:shadow-none print:p-0 overflow-auto">
+    <div className={`print-landscape card p-4 print:border-0 print:shadow-none print:p-0 overflow-visible mb-3 ${ultimo ? '' : 'print-page'}`}>
       <style>{`@media print { @page { size: A4 landscape; } }`}</style>
-      <TabelaMapa mapa={mapa} compacto cabecalho={<Cabecalho titulo={`DISTRIBUIÇÃO — ${rota.rota} — ${fmtData(rota.data_entrega)}`} sub={`Cidade de distribuição: ${rota.cidade_distribuicao} · Vendedor: ${rota.vendedor ?? ''} ${rota.vendedor_telefone ?? ''}`} />} />
+      <TabelaMapa mapa={mapa} compacto fixo cabecalho={<Cabecalho titulo={`DISTRIBUIÇÃO — ${rota.rota} — ${fmtData(rota.data_entrega)}`} sub={`Cidade de distribuição: ${rota.cidade_distribuicao} · Vendedor: ${rota.vendedor ?? ''} ${rota.vendedor_telefone ?? ''}`} />} />
     </div>
   )
 }

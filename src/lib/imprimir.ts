@@ -12,8 +12,8 @@ export function imprimirHtml(titulo: string, html: string, orientacao: 'landscap
   body { font-family: Inter, system-ui, sans-serif; color: #0f172a; }
   .card { border: 0 !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; overflow: visible !important; }
   table { width: 100% !important; table-layout: auto; border-collapse: collapse; page-break-inside: auto; }
-  thead { display: table-header-group; }
-  tfoot { display: table-footer-group; }
+  thead { display: table-header-group; position: static !important; }
+  tfoot { display: table-footer-group; position: static !important; }
   tr { page-break-inside: avoid; }
   th, td { font-size: 7.5pt !important; padding: 1px 3px !important; line-height: 1.15; }
   th.p-0 { padding: 0 0 2px 0 !important; }
