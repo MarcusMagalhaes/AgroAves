@@ -133,7 +133,7 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
     { key: 'cliente', name: 'Cliente', width: 190, frozen: 'start', renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
     ...(detalhes ? [{ key: 'nome', name: 'Nome', width: 130 }, { key: 'contato', name: 'Contato', width: 110 }, { key: 'pagto', name: 'Pagto', width: 80 }] as Column<Linha, Resumo>[] : []),
     ...colsProd.map((p): Column<Linha, Resumo> => ({
-      key: p.sigla, name: p.nome, width: 55, minWidth: 55, editable: !historico, renderEditCell: EditorNumero,
+      key: p.sigla, name: p.nome, width: 50, minWidth: 50, editable: !historico, renderEditCell: EditorNumero,
       renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
       cellClass: (row) => `cell-centro cor-p${p.id} ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
@@ -227,7 +227,7 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
                 <div style={{ width: larg(nFixEsq + nDet + colsProd.length, 40), flex: 'none' }} />
               </div>
             </div>
-            <div style={{ width: soma(nFixEsq + nDet + colsProd.length + 1, colunas.length, 60), flex: 'none' }} />
+            <div style={{ width: soma(nFixEsq + nDet + colsProd.length + 1, colunas.length, 50), flex: 'none' }} />
           </div>
           <div className="flex-1 min-h-0">
             <DataGrid ref={gridRef} className="rdg-light" columns={colunas} rows={visiveis} topSummaryRows={resumo} rowKeyGetter={(r) => r.id}
