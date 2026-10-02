@@ -21,6 +21,8 @@ import Financeiro from '@/pages/admin/Financeiro'
 import ContasPagar from '@/pages/admin/ContasPagar'
 import Fechamento from '@/pages/admin/Fechamento'
 import Auditoria from '@/pages/admin/Auditoria'
+import Dashboard from '@/pages/admin/Dashboard'
+import DashboardFinanceiro from '@/pages/admin/DashboardFinanceiro'
 import { ehAdmin, ehAdminTI } from '@/lib/types'
 
 /** admin: ADMIN ou ADMIN_TI · ti: somente ADMIN_TI (telas exclusivas da TI) */
@@ -37,11 +39,15 @@ function Rotas_() {
   if (carregando) return <Carregando texto="Iniciando…" />
   // sessão existe mas sem cadastro: mostra login com a mensagem de erro
   if (!usuario && session) return <Login />
+  // página inicial: administradores no dashboard de vendas; vendedor na venda semanal
+  const inicio = ehAdmin(usuario) ? '/dashboard' : '/venda'
   return (
     <Routes>
-      <Route path="/login" element={usuario ? <Navigate to="/venda" replace /> : <Login />} />
+      <Route path="/login" element={usuario ? <Navigate to={inicio} replace /> : <Login />} />
       <Route element={<Protegido><Layout /></Protegido>}>
-        <Route index element={<Navigate to="/venda" replace />} />
+        <Route index element={<Navigate to={inicio} replace />} />
+        <Route path="/dashboard" element={<Protegido admin><Dashboard /></Protegido>} />
+        <Route path="/dashboard-financeiro" element={<Protegido ti><DashboardFinanceiro /></Protegido>} />
         <Route path="/venda" element={<Venda />} />
         <Route path="/mapa" element={<Mapa />} />
         <Route path="/programacao" element={<Protegido admin><Programacao key="programacao" /></Protegido>} />

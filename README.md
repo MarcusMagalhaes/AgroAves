@@ -9,7 +9,7 @@ Documentação do sistema em `../docs/sistema-2.0/`; especificação original em
 
 ```
 app/
-  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar
+  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar · 0010 dashboards
   src/
     lib/                 supabase.ts, auth.tsx (login e papel), dados.ts (consultas), mapa.ts (mapa de entrega), format.ts, types.ts
     components/          Layout (menu responsivo), Logo (marca nova), ui (modal, toast, campos)
@@ -21,7 +21,7 @@ app/
 
 ## 1. Banco (Supabase)
 
-1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0009_conta_pagar_anexos.sql` (base já existente: só as que ainda não rodaram).
+1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0010_dashboards.sql` (base já existente: só as que ainda não rodaram).
 2. **Login com Google** (Authentication › Providers › Google): ative e cole Client ID + Secret de um cliente OAuth do Google Cloud
    (pode reutilizar o do Controle Metanoia, acrescentando as origens/redirecionamentos abaixo):
    - Origens JavaScript autorizadas: `https://qqpavhptvptgktnzoawi.supabase.co` e o endereço do Cloudflare (`https://agroaves.<sua-conta>.workers.dev` ou domínio próprio)
@@ -95,6 +95,16 @@ Fornecedor tem tipo: **Produto para venda** (granja — único que aparece no Pe
 Contas a pagar (Financeiro › Contas a pagar): fornecedor (qualquer tipo), vencimento, valor, centro de custo do tipo a pagar
 (qualquer nível da árvore) e observação. Anexos (conta/boleto, comprovante, outros; PDF, imagem ou XML até 10 MB) ficam no
 bucket privado `contas-pagar` do Supabase Storage, criado pela `0009`. Pendente → Pago (com data; pode ser estornado) ou Cancelado (com motivo); não se exclui.
+
+## Dashboards
+
+- **Dashboard de vendas** (página inicial de ADMIN e ADMIN_TI): semana atual por padrão, com troca de semana; pedidos, valor,
+  aves, ticket médio, cobertura da carteira, top 3 rotas, pedidos por produto e por rota, contatos e top 10 clientes
+  (quantidade e valor). Função `dashboard_vendas(data)`.
+- **Dashboard financeiro** (Financeiro › Dashboard, só ADMIN_TI): a receber × a pagar, saldo previsto, vencidas, a pagar
+  nas próximas 8 semanas e por centro de custo, clientes devendo e próximas contas. Função `dashboard_financeiro()`.
+
+Os números são calculados no banco (a API devolve no máximo ~1.000 linhas por consulta).
 
 ## Fluxo semanal no sistema
 
