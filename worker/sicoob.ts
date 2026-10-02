@@ -12,9 +12,7 @@ export const URL_BASE: Record<Ambiente, string> = {
   PRODUCAO: 'https://api.sicoob.com.br/cobranca-bancaria/v3',
 }
 const URL_TOKEN = 'https://auth.sicoob.com.br/auth/realms/cooperado/protocol/openid-connect/token'
-const ESCOPOS = [
-  'cobranca_boletos_consultar', 'cobranca_boletos_incluir', 'cobranca_boletos_segunda_via', 'cobranca_boletos_baixa',
-].join(' ')
+const ESCOPOS = ['boletos_inclusao', 'boletos_consulta', 'boletos_alteracao'].join(' ')
 
 export class ErroSicoob extends Error {
   constructor(message: string, public status: number, public corpo?: unknown) { super(message) }
@@ -59,12 +57,11 @@ export function montarInclusao(p: {
   return {
     numeroCliente: Number(config.numero_cliente),
     codigoModalidade: config.codigo_modalidade,
-    ...(config.numero_conta_corrente ? { numeroContaCorrente: Number(config.numero_conta_corrente) } : {}),
+    numeroContaCorrente: Number(config.numero_conta_corrente ?? 0),
     ...(config.numero_contrato_cobranca ? { numeroContratoCobranca: Number(config.numero_contrato_cobranca) } : {}),
     codigoEspecieDocumento: config.especie_documento,
     dataEmissao: hoje,
     seuNumero: String(titulo.id),
-    identificacaoBoletoEmpresa: `AGROAVES-T${titulo.id}`,
     identificacaoEmissaoBoleto: 1,        // banco emite
     identificacaoDistribuicaoBoleto: 2,   // empresa entrega ao cliente
     valor: Math.round(Number(titulo.valor) * 100) / 100,
@@ -75,7 +72,7 @@ export function montarInclusao(p: {
     numeroParcela: 1,
     aceite: true,
     pagador,
-    ...(mensagens.length ? { mensagensInstrucao: mensagens } : {}),
+    ...(mensagens.length ? { mensagensInstrucao: { mensagens } } : {}),
     gerarPdf: true,
     codigoCadastrarPIX: config.com_pix ? 1 : 2,
   }
@@ -113,11 +110,16 @@ export function lerSituacao(resultado: Record<string, any>): SituacaoNoBanco {
 }
 
 function mensagemErro(corpo: any, status: number) {
-  const msgs: string[] = Array.isArray(corpo?.mensagens) ? corpo.mensagens.map((m: any) => m?.mensagem).filter(Boolean) : []
-  if (msgs.length) return msgs.join(' · ')
-  if (typeof corpo?.message === 'string') return corpo.message
-  if (typeof corpo?.error_description === 'string') return corpo.error_description
-  return `Sicoob respondeu HTTP ${status}`
+  const msgs: string[] = Array.isArray(corpo?.mensagens)
+    ? corpo.mensagens.map((m: any) => [m?.codigo, m?.mensagem].filter((x) => x != null && x !== 'string').join(' ')).filter(Boolean)
+    : []
+  const texto = msgs.length ? msgs.join(' · ')
+    : typeof corpo?.message === 'string' ? corpo.message
+    : typeof corpo?.error_description === 'string' ? corpo.error_description
+    : ''
+  // o sandbox responde com o exemplo da documentação ("string"): mostra o retorno bruto para diagnóstico
+  const bruto = corpo == null ? '' : JSON.stringify(corpo).slice(0, 300)
+  return `HTTP ${status}: ${texto || bruto || 'sem detalhes'}`
 }
 
 export interface OpcoesSicoob {
@@ -169,7 +171,11 @@ export class Sicoob {
     const txt = await r.text()
     let json: any = null
     try { json = txt ? JSON.parse(txt) : null } catch { json = { message: txt.slice(0, 300) } }
-    if (!r.ok) throw new ErroSicoob(mensagemErro(json, r.status), r.status, json)
+    if (!r.ok) {
+      // aparece em Cloudflare › agroaves › Observability › Logs
+      console.log(JSON.stringify({ sicoob: { metodo, caminho: caminho.split('?')[0], status: r.status, enviado: corpo, resposta: json } }))
+      throw new ErroSicoob(mensagemErro(json, r.status), r.status, json)
+    }
     return json
   }
 
