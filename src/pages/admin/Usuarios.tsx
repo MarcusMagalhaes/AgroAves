@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
-import type { Usuario, Vendedor } from '@/lib/types'
+import { PAPEIS, type Usuario, type Vendedor } from '@/lib/types'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
 
 /**
@@ -107,11 +107,13 @@ export default function Usuarios() {
                 <tr key={u.id}>
                   <td className="font-semibold">{u.nome}</td>
                   <td>{u.email}</td>
-                  <td><Chip cor={u.papel === 'ADMIN' ? 'azul' : 'verde'}>{u.papel === 'ADMIN' ? 'Administrador' : 'Vendedor'}</Chip></td>
+                  <td><Chip cor={u.papel === 'VENDEDOR' ? 'verde' : 'azul'}>{PAPEIS[u.papel]}</Chip></td>
                   <td>{u.papel === 'VENDEDOR' ? (v ? v.nome : <span className="text-red-600 font-semibold">sem vínculo</span>) : <span className="text-slate-400">—</span>}</td>
                   <td className="text-right whitespace-nowrap">
                     {u.papel === 'VENDEDOR' && <button className="btn-secondary py-0.5 mr-1" onClick={() => setVinculo({ usuario: u, escolha: v ? String(v.id) : '', novoNome: u.nome, novoTel: '' })}>Vendedor…</button>}
-                    <button className="btn-secondary py-0.5" onClick={() => setEdit(u)}>Editar</button>
+                    {u.papel === 'ADMIN_TI'
+                      ? <span className="text-slate-400 text-[11px]" title="Conta exclusiva da TI: não pode ser alterada pela aplicação">🔒 protegido</span>
+                      : <button className="btn-secondary py-0.5" onClick={() => setEdit(u)}>Editar</button>}
                   </td>
                 </tr>
               )

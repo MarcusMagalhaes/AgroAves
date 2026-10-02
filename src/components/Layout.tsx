@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import Logo, { LogoMark } from './Logo'
 import { useAuth } from '@/lib/auth'
+import { PAPEIS, ehAdmin } from '@/lib/types'
 
 type Item = { to: string; label: string; icone: string }
 type Grupo = { grupo: string; icone: string; itens: Item[] }
@@ -52,7 +53,7 @@ export default function Layout() {
     return () => document.removeEventListener('mousedown', h)
   }, [grupoTopo])
   useEffect(() => { try { localStorage.setItem('menuRecolhido', recolhido ? '1' : '0') } catch { /* ignore */ } }, [recolhido])
-  const menu = usuario?.papel === 'ADMIN' ? menuAdmin : menuVendedor
+  const menu = ehAdmin(usuario) ? menuAdmin : menuVendedor
 
   const link = (m: Item, sub = false) => (
     <NavLink key={m.to} to={m.to} onClick={() => { setAberto(false); setGruposFechados({}) }}
@@ -81,7 +82,7 @@ export default function Layout() {
   const rodape = (
     <div className="p-3 border-t border-slate-200 text-xs">
       <div className="font-semibold truncate text-slate-800">{usuario?.nome}</div>
-      <div className="text-slate-500 truncate">{usuario?.papel === 'ADMIN' ? 'Administrador' : 'Vendedor'}</div>
+      <div className="text-slate-500 truncate">{usuario ? PAPEIS[usuario.papel] : ''}</div>
       <button className="mt-2 text-brand-600 font-semibold underline" onClick={sair}>Sair</button>
     </div>
   )
