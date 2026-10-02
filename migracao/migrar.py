@@ -478,6 +478,8 @@ def carregar(m, dsn):
 
         print("3/8 limpando carga legada anterior")
         cur.execute("delete from titulo where motivo like 'LEGADO%'")
+        # títulos gerados no sistema para pedidos legados: desvincula (preserva o título)
+        cur.execute("update titulo set pedido_id = null where pedido_id in (select id from pedido where observacao like 'LEGADO%')")
         cur.execute("delete from pedido where observacao like 'LEGADO%'")
         cur.execute("delete from contato_cliente where registrado_por is null")
         cur.execute("delete from pedido_fornecedor where observacao = 'LEGADO'")
