@@ -50,7 +50,7 @@ function Rotas_() {
         <Route path="/documentos" element={<Navigate to="/documentos/mapa" replace />} />
         <Route path="/documentos/:doc" element={<Protegido admin><Documentos /></Protegido>} />
         <Route path="/financeiro" element={<Protegido admin><Financeiro /></Protegido>} />
-        <Route path="/contas-pagar" element={<Protegido admin><ContasPagar /></Protegido>} />
+        <Route path="/contas-pagar" element={<Protegido ti><ContasPagar /></Protegido>} />
         <Route path="/fechamento-geral" element={<Protegido admin><Programacao key="fechamento-geral" historico /></Protegido>} />
         <Route path="/fechamento" element={<Protegido admin><Fechamento /></Protegido>} />
         <Route path="/auditoria" element={<Protegido admin><Auditoria /></Protegido>} />

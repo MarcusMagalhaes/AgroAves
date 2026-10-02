@@ -75,7 +75,7 @@ git add -A && git commit -m "..." && git push      # publica automaticamente
 
 | Papel | Acesso |
 | --- | --- |
-| ADMIN_TI | tudo do ADMIN + telas exclusivas da TI (Cadastros › Centros de custo). Exclusivo de markvpm@gmail.com: definido só pelo banco (`0006_admin_ti.sql`), não aparece como opção em Usuários e não pode ser atribuído, alterado, desativado ou excluído pela aplicação |
+| ADMIN_TI | tudo do ADMIN + telas exclusivas da TI (Centros de custo, Contas a pagar, tipo de fornecedor). Exclusivo de markvpm@gmail.com: definido só pelo banco (`0006_admin_ti.sql`), não aparece como opção em Usuários e não pode ser atribuído, alterado, desativado ou excluído pela aplicação |
 | ADMIN | tudo (exceto telas da TI) |
 | VENDEDOR | Venda semanal e Mapa, apenas das rotas em que é o vendedor cadastrado |
 
@@ -84,9 +84,12 @@ git add -A && git commit -m "..." && git push      # publica automaticamente
 Usados no contas a pagar e no contas a receber. Árvore de 4 níveis com código falante gerado pelo banco a partir do pai:
 `1000` (milhar, raiz) › `1100` (centena) › `1110` (dezena) › `1111` (unidade) — até 9 filhos por nível; o tipo (a pagar/a receber)
 é escolhido na raiz e herdado pelos filhos. Código, pai e tipo nunca mudam; não há exclusão: desativar um centro de custo
-desativa toda a descendência. Cadastro só para ADMIN_TI; administradores leem (para escolher no contas a pagar).
+desativa toda a descendência.
 
 ## Fornecedores e contas a pagar
+
+**Exclusivo do ADMIN_TI**: centros de custo, contas a pagar e fornecedores de Material/Consumo (telas, RLS e auditoria).
+Os demais administradores só veem e cadastram fornecedores de Produto para venda, sem o campo tipo.
 
 Fornecedor tem tipo: **Produto para venda** (granja — único que aparece no Pedido à granja), **Material** e **Consumo**.
 Contas a pagar (Financeiro › Contas a pagar): descrição, fornecedor (qualquer tipo), vencimento, valor e centro de custo

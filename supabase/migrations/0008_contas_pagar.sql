@@ -1,11 +1,12 @@
--- AgroAves 2.0 — Tipo de fornecedor e contas a pagar
+-- AgroAves 2.0 — Tipo de fornecedor e contas a pagar (funcionalidades exclusivas do administrador TI)
 -- 1. Fornecedor passa a ter tipo: PRODUTO_VENDA (granja: aparece no pedido), MATERIAL e CONSUMO.
 --    Os já cadastrados (a Granja) ficam como PRODUTO_VENDA.
+--    Fornecedores MATERIAL/CONSUMO só existem para o administrador TI: os demais usuários não os veem nem os criam.
 -- 2. Pedido à granja só aceita fornecedor PRODUTO_VENDA.
--- 3. Contas a pagar: descrição, fornecedor (qualquer tipo), vencimento, valor e centro de custo do tipo A PAGAR
---    (qualquer nível da árvore). Situação PENDENTE → PAGO (com data) ou CANCELADO (com motivo); sem exclusão.
--- 4. Administradores (ADMIN e ADMIN_TI) passam a LER os centros de custo, para escolher na conta a pagar.
---    O cadastro (inclusão/alteração) continua exclusivo do administrador TI.
+-- 3. Contas a pagar (só administrador TI): descrição, fornecedor (qualquer tipo), vencimento, valor e centro de custo
+--    do tipo A PAGAR (qualquer nível da árvore). Situação PENDENTE → PAGO (com data) ou CANCELADO (com motivo); sem exclusão.
+-- 4. Auditoria: registros de centro de custo, contas a pagar e fornecedores MATERIAL/CONSUMO só o administrador TI vê.
+-- O script pode ser executado mais de uma vez.
 
 -- 1. Tipo do fornecedor
 alter table fornecedor add column if not exists tipo text not null default 'PRODUTO_VENDA';
@@ -89,19 +90,41 @@ drop trigger if exists trg_aud_conta_pagar on conta_pagar;
 create trigger trg_aud_conta_pagar after insert or update or delete on conta_pagar
   for each row execute function fn_auditoria();
 
--- Segurança: administradores leem, incluem e alteram; não há exclusão (cancela-se)
+-- Segurança: somente o administrador TI lê, inclui e altera; não há exclusão (cancela-se)
 alter table conta_pagar enable row level security;
 drop policy if exists conta_pagar_admin_ler on conta_pagar;
-create policy conta_pagar_admin_ler on conta_pagar for select using (eh_admin());
 drop policy if exists conta_pagar_admin_incluir on conta_pagar;
-create policy conta_pagar_admin_incluir on conta_pagar for insert with check (eh_admin());
 drop policy if exists conta_pagar_admin_alterar on conta_pagar;
-create policy conta_pagar_admin_alterar on conta_pagar for update using (eh_admin()) with check (eh_admin());
+drop policy if exists conta_pagar_ti_ler on conta_pagar;
+create policy conta_pagar_ti_ler on conta_pagar for select using (eh_admin_ti());
+drop policy if exists conta_pagar_ti_incluir on conta_pagar;
+create policy conta_pagar_ti_incluir on conta_pagar for insert with check (eh_admin_ti());
+drop policy if exists conta_pagar_ti_alterar on conta_pagar;
+create policy conta_pagar_ti_alterar on conta_pagar for update using (eh_admin_ti()) with check (eh_admin_ti());
 
--- 4. Centro de custo: leitura para administradores (escrita segue só TI, políticas da 0007)
-drop policy if exists centro_custo_ti_ler on centro_custo;
+-- Centro de custo continua só do administrador TI (desfaz leitura por administradores, caso uma versão anterior deste script tenha rodado)
 drop policy if exists centro_custo_admin_ler on centro_custo;
-create policy centro_custo_admin_ler on centro_custo for select using (eh_admin());
+drop policy if exists centro_custo_ti_ler on centro_custo;
+create policy centro_custo_ti_ler on centro_custo for select using (eh_admin_ti());
+
+-- Fornecedor: demais usuários só enxergam e mantêm fornecedores PRODUTO_VENDA (substitui as políticas da 0002)
+drop policy if exists fornecedor_read on fornecedor;
+create policy fornecedor_read on fornecedor for select
+  using (auth.uid() is not null and (tipo = 'PRODUTO_VENDA' or eh_admin_ti()));
+drop policy if exists fornecedor_admin on fornecedor;
+create policy fornecedor_admin on fornecedor for all
+  using (eh_admin() and (tipo = 'PRODUTO_VENDA' or eh_admin_ti()))
+  with check (eh_admin() and (tipo = 'PRODUTO_VENDA' or eh_admin_ti()));
+
+-- Auditoria: o que é exclusivo do TI não aparece para os demais administradores (substitui a política da 0002)
+drop policy if exists aud_admin on auditoria;
+create policy aud_admin on auditoria for select using (
+  eh_admin_ti()
+  or (eh_admin()
+      and tabela not in ('centro_custo', 'conta_pagar')
+      and not (tabela = 'fornecedor' and (coalesce(antes->>'tipo', 'PRODUTO_VENDA') <> 'PRODUTO_VENDA'
+                                          or coalesce(depois->>'tipo', 'PRODUTO_VENDA') <> 'PRODUTO_VENDA')))
+);
 
 -- Atualiza o cache da API do Supabase para enxergar a tabela e a coluna novas
 notify pgrst, 'reload schema';
