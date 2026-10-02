@@ -104,3 +104,20 @@ export const TIPOS_ANEXO: Record<TipoAnexo, string> = { CONTA: 'Conta / boleto',
 export interface ContaPagarAnexo {
   id: number; conta_pagar_id: number; tipo: TipoAnexo; nome_arquivo: string; caminho: string; tamanho: number | null; mime: string | null; criado_em: string
 }
+
+/** Bancos mais comuns (código de compensação); "Outro" permite informar código e nome */
+export const BANCOS: { codigo: string; nome: string }[] = [
+  { codigo: '756', nome: 'Sicoob' }, { codigo: '403', nome: 'Cora' }, { codigo: '748', nome: 'Sicredi' },
+  { codigo: '001', nome: 'Banco do Brasil' }, { codigo: '104', nome: 'Caixa Econômica Federal' }, { codigo: '237', nome: 'Bradesco' },
+  { codigo: '341', nome: 'Itaú' }, { codigo: '033', nome: 'Santander' }, { codigo: '077', nome: 'Inter' }, { codigo: '260', nome: 'Nubank' },
+  { codigo: '336', nome: 'C6 Bank' }, { codigo: '208', nome: 'BTG Pactual' }, { codigo: '136', nome: 'Unicred' }, { codigo: '041', nome: 'Banrisul' },
+  { codigo: '323', nome: 'Mercado Pago' }, { codigo: '290', nome: 'PagBank' }, { codigo: '197', nome: 'Stone' },
+]
+export interface ContaBancaria {
+  id: number; banco_codigo: string; banco_nome: string; apelido: string; agencia: string | null; numero: string | null; ativo: boolean
+}
+/** Saldo mais recente de uma conta (função saldos_bancarios) */
+export interface SaldoConta {
+  conta_bancaria_id: number; apelido: string; banco_codigo: string; banco_nome: string; agencia: string | null; numero: string | null
+  saldo: number | null; data: string | null; origem: 'OFX' | 'MANUAL' | null; importado_em: string | null
+}

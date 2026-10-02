@@ -9,7 +9,7 @@ Documentação do sistema em `../docs/sistema-2.0/`; especificação original em
 
 ```
 app/
-  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar · 0010 dashboards
+  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar · 0010 dashboards · 0011 contas bancárias
   src/
     lib/                 supabase.ts, auth.tsx (login e papel), dados.ts (consultas), mapa.ts (mapa de entrega), format.ts, types.ts
     components/          Layout (menu responsivo), Logo (marca nova), ui (modal, toast, campos)
@@ -21,7 +21,7 @@ app/
 
 ## 1. Banco (Supabase)
 
-1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0010_dashboards.sql` (base já existente: só as que ainda não rodaram).
+1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0011_contas_bancarias.sql` (base já existente: só as que ainda não rodaram).
 2. **Login com Google** (Authentication › Providers › Google): ative e cole Client ID + Secret de um cliente OAuth do Google Cloud
    (pode reutilizar o do Controle Metanoia, acrescentando as origens/redirecionamentos abaixo):
    - Origens JavaScript autorizadas: `https://qqpavhptvptgktnzoawi.supabase.co` e o endereço do Cloudflare (`https://agroaves.<sua-conta>.workers.dev` ou domínio próprio)
@@ -95,6 +95,13 @@ Fornecedor tem tipo: **Produto para venda** (granja — único que aparece no Pe
 Contas a pagar (Financeiro › Contas a pagar): fornecedor (qualquer tipo), vencimento, valor, centro de custo do tipo a pagar
 (qualquer nível da árvore) e observação. Anexos (conta/boleto, comprovante, outros; PDF, imagem ou XML até 10 MB) ficam no
 bucket privado `contas-pagar` do Supabase Storage, criado pela `0009`. Pendente → Pago (com data; pode ser estornado) ou Cancelado (com motivo); não se exclui.
+
+## Contas bancárias e saldos (só ADMIN_TI)
+
+Somente leitura: o sistema não faz nenhuma movimentação bancária. Cadastros › Contas bancárias (banco, apelido, agência,
+conta). Financeiro › Saldos bancários: importação do extrato **OFX** de cada conta (o arquivo é lido no navegador; lançamentos
+já importados não se repetem pelo FITID; o saldo do dia vem do LEDGERBAL), saldo informado à mão quando o banco não exporta,
+e consulta do extrato. O saldo geral de todas as contas aparece no dashboard financeiro. Importar uma vez por dia.
 
 ## Dashboards
 

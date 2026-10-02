@@ -23,6 +23,8 @@ import Fechamento from '@/pages/admin/Fechamento'
 import Auditoria from '@/pages/admin/Auditoria'
 import Dashboard from '@/pages/admin/Dashboard'
 import DashboardFinanceiro from '@/pages/admin/DashboardFinanceiro'
+import ContasBancarias from '@/pages/admin/ContasBancarias'
+import SaldosBancarios from '@/pages/admin/SaldosBancarios'
 import { ehAdmin, ehAdminTI } from '@/lib/types'
 
 /** admin: ADMIN ou ADMIN_TI · ti: somente ADMIN_TI (telas exclusivas da TI) */
@@ -48,6 +50,8 @@ function Rotas_() {
         <Route index element={<Navigate to={inicio} replace />} />
         <Route path="/dashboard" element={<Protegido admin><Dashboard /></Protegido>} />
         <Route path="/dashboard-financeiro" element={<Protegido ti><DashboardFinanceiro /></Protegido>} />
+        <Route path="/contas-bancarias" element={<Protegido ti><ContasBancarias /></Protegido>} />
+        <Route path="/saldos-bancarios" element={<Protegido ti><SaldosBancarios /></Protegido>} />
         <Route path="/venda" element={<Venda />} />
         <Route path="/mapa" element={<Mapa />} />
         <Route path="/programacao" element={<Protegido admin><Programacao key="programacao" /></Protegido>} />

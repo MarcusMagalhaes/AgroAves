@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { rpc } from '@/lib/dados'
 import { fmtData, fmtMoeda, fmtNum } from '@/lib/format'
-import { FORMAS, type FormaPagamento } from '@/lib/types'
+import { FORMAS, type FormaPagamento, type SaldoConta } from '@/lib/types'
 import { Carregando, Titulo, useToast } from '@/components/ui'
 import { IconeDinheiro } from '@/components/Icones'
 import { Indicador, ListaBarras, Secao } from '@/components/Painel'
@@ -24,27 +24,50 @@ const dias = (de: string, ate: string) => Math.round((Date.parse(ate) - Date.par
 export default function DashboardFinanceiro() {
   const { toast } = useToast()
   const [d, setD] = useState<DashFin | null>(null)
-  useEffect(() => { rpc<DashFin>('dashboard_financeiro', {}).then(setD).catch((e) => toast(e.message, 'erro')) }, [])
+  const [bancos, setBancos] = useState<SaldoConta[]>([])
+  useEffect(() => {
+    rpc<DashFin>('dashboard_financeiro', {}).then(setD).catch((e) => toast(e.message, 'erro'))
+    rpc<SaldoConta[]>('saldos_bancarios', {}).then((b) => setBancos(b ?? [])).catch(() => setBancos([]))  // antes da 0011: sem bancos
+  }, [])
   if (!d) return <Carregando />
-  const saldo = Number(d.receber.pendente) - Number(d.pagar.pendente)
+  const emBancos = bancos.reduce((s, b) => s + Number(b.saldo ?? 0), 0)
+  // posição projetada: dinheiro em conta + o que falta receber − o que falta pagar
+  const saldo = emBancos + Number(d.receber.pendente) - Number(d.pagar.pendente)
+  const ontem = (() => { const x = new Date(Date.parse(d.hoje) - 86400000); return x.toISOString().slice(0, 10) })()
+  const desatualizadas = bancos.filter((b) => !b.data || b.data < ontem).length
   const maxSemana = Math.max(...d.semanas_pagar.map((s) => Number(s.valor)), 0) || 1
 
   return (
     <div className="mx-auto max-w-6xl space-y-3">
       <Titulo>Dashboard financeiro</Titulo>
 
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-6">
+        <Indicador tom={emBancos >= 0 ? 'neutro' : 'saida'} icone="🏦" rotulo="Saldo em bancos" valor={`${emBancos < 0 ? '−' : ''}${fmtMoeda(Math.abs(emBancos))}`}
+          apoio={bancos.length ? <Link to="/saldos-bancarios" className="underline">{bancos.length} conta(s){desatualizadas ? ` · ${desatualizadas} desatualizada(s)` : ''}</Link> : <Link to="/contas-bancarias" className="underline">cadastrar contas</Link>} />
         <Indicador tom="entrada" icone={<IconeDinheiro sentido="entrada" />} rotulo="A receber" valor={fmtMoeda(d.receber.pendente)}
           apoio={`${fmtNum(d.receber.qtd)} títulos · ${fmtNum(d.receber.clientes)} clientes`} />
         <Indicador tom="saida" icone={<IconeDinheiro sentido="saida" />} rotulo="A pagar" valor={fmtMoeda(d.pagar.pendente)}
           apoio={`${fmtNum(d.pagar.qtd)} contas pendentes`} />
-        <Indicador tom={saldo >= 0 ? 'entrada' : 'saida'} rotulo="Saldo previsto" valor={`${saldo < 0 ? '−' : ''}${fmtMoeda(Math.abs(saldo))}`}
-          apoio={saldo >= 0 ? 'a receber cobre o a pagar' : 'a pagar maior que o a receber'} />
+        <Indicador tom={saldo >= 0 ? 'entrada' : 'saida'} rotulo="Posição projetada" valor={`${saldo < 0 ? '−' : ''}${fmtMoeda(Math.abs(saldo))}`}
+          apoio="bancos + a receber − a pagar" />
         <Indicador tom="alerta" rotulo="Contas vencidas" valor={fmtMoeda(d.pagar.vencido)}
           apoio={`${fmtNum(d.pagar.qtd_vencido)} conta(s) · vencem em 7 dias: ${fmtMoeda(d.pagar.prox7)}`} />
-        <Indicador rotulo="No mês" valor={<span className="text-base">{fmtMoeda(d.receber.recebido_mes)} <span className="text-xs font-semibold text-slate-500">recebido</span></span>}
-          apoio={<>{fmtMoeda(d.pagar.pago_mes)} pago</>} />
+        <Indicador rotulo="Recebido no mês" valor={fmtMoeda(d.receber.recebido_mes)} apoio={`pago no mês: ${fmtMoeda(d.pagar.pago_mes)}`} />
       </div>
+
+      {bancos.length > 0 && (
+        <Secao titulo="Saldo por conta bancária" acao={<Link to="/saldos-bancarios" className="text-xs font-semibold text-leaf-700 underline">saldos e extratos</Link>}>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {bancos.map((b) => (
+              <div key={b.conta_bancaria_id} className="rounded-lg border border-slate-200 px-3 py-2">
+                <div className="truncate text-xs font-semibold text-slate-600">🏦 {b.apelido} <span className="font-normal text-slate-400">{b.banco_nome}</span></div>
+                <div className={`text-lg font-extrabold tabular-nums ${Number(b.saldo) < 0 ? 'text-red-700' : 'text-slate-900'}`}>{b.saldo == null ? '—' : fmtMoeda(b.saldo)}</div>
+                <div className={`text-[11px] ${!b.data || b.data < ontem ? 'font-semibold text-amber-700' : 'text-slate-500'}`}>{b.data ? `em ${fmtData(b.data)}${b.data < ontem ? ' · desatualizado' : ''}` : 'sem saldo importado'}</div>
+              </div>
+            ))}
+          </div>
+        </Secao>
+      )}
 
       <div className="grid gap-3 lg:grid-cols-2">
         <Secao titulo="A pagar nas próximas 8 semanas">
