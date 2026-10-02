@@ -1,5 +1,5 @@
 // Worker do Cloudflare: publica o site (dist/) e atende /api/boletos/* (integração com o Sicoob).
-// As chamadas usam o login do usuário (JWT do Supabase): RLS e eh_admin() valem aqui como na tela,
+// As chamadas usam o login do usuário (JWT do Supabase): RLS e eh_admin_ti() valem aqui como na tela,
 // e as credenciais do banco ficam só no Worker (Settings › Variables and secrets), nunca no navegador.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { ErroSicoob, Sicoob, montarInclusao, pdfDeBase64, type Ambiente, type ConfigCobranca, type Fetcher } from './sicoob'
@@ -52,8 +52,9 @@ async function cliente(req: Request, env: Env) {
     global: { headers: { Authorization: auth } },
     auth: { persistSession: false, autoRefreshToken: false },
   })
-  const { data, error } = await sb.rpc('eh_admin')
-  if (error || data !== true) throw new ErroHttp(403, 'Somente administrador.')
+  // boletos são exclusivos do administrador TI (as tabelas também: RLS com eh_admin_ti())
+  const { data, error } = await sb.rpc('eh_admin_ti')
+  if (error || data !== true) throw new ErroHttp(403, 'Boletos: somente administrador TI.')
   return sb
 }
 
@@ -84,12 +85,13 @@ async function emitir(sb: SupabaseClient, env: Env, corpo: any) {
   const tituloId = Number(corpo?.titulo_id)
   if (!tituloId) throw new ErroHttp(400, 'Informe o título.')
   const rt = await sb.from('titulo')
-    .select('id, valor, data_referencia, data_vencimento, situacao, cliente:cliente(cnpj_cpf, razao_social, endereco, bairro, cidade, cep, uf, email)')
+    .select('id, valor, data_referencia, data_vencimento, situacao, forma_pagamento, cliente:cliente(cnpj_cpf, razao_social, endereco, bairro, cidade, cep, uf, email)')
     .eq('id', tituloId).maybeSingle()
   falha(rt, 'Título')
   const titulo: any = rt.data
   if (!titulo) throw new ErroHttp(404, 'Título não encontrado.')
   if (titulo.situacao !== 'PENDENTE') throw new ErroHttp(409, 'Só título pendente pode ter boleto.')
+  if (titulo.forma_pagamento !== 'BOLETO') throw new ErroHttp(422, 'A forma de pagamento deste título não é Boleto.')
 
   const cfg = await config(sb)
   const hoje = hojeBrasilia()
@@ -143,7 +145,8 @@ async function boletoPorId(sb: SupabaseClient, id: unknown) {
 
 async function pdf(sb: SupabaseClient, env: Env, corpo: any) {
   const b = await boletoPorId(sb, corpo?.boleto_id)
-  if (b.pdf_caminho && !corpo?.atualizar) return { caminho: b.pdf_caminho }
+  // no sandbox busca sempre de novo (o PDF guardado pode ser o exemplo simulado e quebrado)
+  if (b.pdf_caminho && !corpo?.atualizar && b.ambiente === 'PRODUCAO') return { caminho: b.pdf_caminho }
   if (b.nosso_numero == null) throw new ErroHttp(409, 'Boleto sem nosso número.')
   if (b.ambiente !== ambienteDe(env)) throw new ErroHttp(409, `Boleto emitido em ${b.ambiente}; o Worker está em ${ambienteDe(env)}.`)
   const reg = await sicoobDe(env).segundaVia(await config(sb), b.nosso_numero)

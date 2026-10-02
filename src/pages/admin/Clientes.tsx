@@ -3,9 +3,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarClientes, listarProdutos, listarRotas, precosDoCliente } from '@/lib/dados'
 import { fmtPreco, mascaraPreco, normalizar, parsePreco } from '@/lib/format'
-import { FORMAS, corProduto, tom, type Cliente, type Produto, type Rota } from '@/lib/types'
+import { FORMAS, corProduto, ehAdminTI, tom, type Cliente, type Produto, type Rota } from '@/lib/types'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
 import ComboCliente from '@/components/ComboCliente'
+import { useAuth } from '@/lib/auth'
 import { UFS, pendenciasPagador } from '@/lib/boleto'
 
 const mascaraCep = (v: string) => { const d = v.replace(/\D/g, '').slice(0, 8); return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d }
@@ -14,6 +15,7 @@ const novoCliente = (): Partial<Cliente> => ({ razao_social: '', forma_pagamento
 
 export default function Clientes() {
   const { toast } = useToast()
+  const ti = ehAdminTI(useAuth().usuario)   // aviso de boleto Sicoob só para o administrador TI
   const [lista, setLista] = useState<Cliente[] | null>(null)
   const [rotas, setRotas] = useState<Rota[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
@@ -186,7 +188,7 @@ export default function Clientes() {
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!edit.exige_gta} onChange={(e) => setEdit({ ...edit, exige_gta: e.target.checked })} /> Exige GTA</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked })} /> Ativo</label>
                 </div>
-                {edit.forma_pagamento === 'BOLETO' && pendenciasPagador(edit as Cliente).length > 0 && (
+                {ti && edit.forma_pagamento === 'BOLETO' && pendenciasPagador(edit as Cliente).length > 0 && (
                   <div className="sm:col-span-3 lg:col-span-5 rounded bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">
                     Para emitir boleto Sicoob falta: <b>{pendenciasPagador(edit as Cliente).join(', ')}</b>
                   </div>

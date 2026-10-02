@@ -18,6 +18,7 @@ type Linha = TituloT & {
 export default function Financeiro() {
   const { toast } = useToast()
   const { usuario } = useAuth()
+  const ti = ehAdminTI(usuario)   // boletos Sicoob: exclusivos do administrador TI
   const [lista, setLista] = useState<Linha[] | null>(null)
   const [situacao, setSituacao] = useState<'PENDENTE' | 'BAIXADO' | 'CANCELADO' | ''>('PENDENTE')
   const [forma, setForma] = useState('')
@@ -31,14 +32,16 @@ export default function Financeiro() {
   async function carregar() {
     setLista(null)
     try {
-      let q = supabase.from('titulo').select('*, cliente:cliente(codigo, razao_social, nome_fantasia, cidade, cnpj_cpf, endereco, bairro, cep, uf, email), boletos:boleto(*)').order('data_referencia', { ascending: false }).order('id', { ascending: false }).limit(2000)
+      let q = supabase.from('titulo').select(`*, cliente:cliente(codigo, razao_social, nome_fantasia, cidade, cnpj_cpf, endereco, bairro, cep, uf, email)${ti ? ', boletos:boleto(*)' : ''}`).order('data_referencia', { ascending: false }).order('id', { ascending: false }).limit(2000)
       if (situacao) q = q.eq('situacao', situacao)
       if (forma) q = q.eq('forma_pagamento', forma)
       if (de) q = q.gte('data_referencia', de)
       if (ate) q = q.lte('data_referencia', ate)
-      setLista(ok(await q) as Linha[])
-      const { count } = await supabase.from('boleto').select('id', { count: 'exact', head: true }).eq('situacao', 'A_BAIXAR')
-      setABaixar(count ?? 0)
+      setLista(ok(await q) as unknown as Linha[])
+      if (ti) {
+        const { count } = await supabase.from('boleto').select('id', { count: 'exact', head: true }).eq('situacao', 'A_BAIXAR')
+        setABaixar(count ?? 0)
+      }
     } catch (e: any) { toast(e.message, 'erro'); setLista([]) }
   }
   useEffect(() => { carregar() }, [situacao, forma, de, ate])
@@ -47,10 +50,19 @@ export default function Financeiro() {
   const [cobranca, setCobranca] = useState<{ ambiente: 'SANDBOX' | 'PRODUCAO'; configurado: boolean } | null>(null)
   const [emitindo, setEmitindo] = useState<Linha | null>(null)
   const [verConfig, setVerConfig] = useState(false)
-  useEffect(() => { statusCobranca().then(setCobranca).catch(() => setCobranca(null)) }, [])
+  useEffect(() => { if (ti) statusCobranca().then(setCobranca).catch(() => setCobranca(null)) }, [ti])
   async function emitirSelecionados() {
-    const alvo = (lista ?? []).filter((l) => sel.has(l.id) && podeEmitir(l, boletoAtual(l.boletos)))
-    if (!alvo.length) { toast('Nenhum título selecionado aceita boleto (já emitido, valor zero ou não pendente)', 'info'); return }
+    const selecionados = (lista ?? []).filter((l) => sel.has(l.id))
+    const outrasFormas = selecionados.filter((l) => l.forma_pagamento !== 'BOLETO').length
+    const alvo = selecionados.filter((l) => podeEmitir(l, boletoAtual(l.boletos)))
+    if (outrasFormas) {
+      toast(`${outrasFormas} título(s) selecionado(s) não têm forma de pagamento Boleto e serão ignorados nesta ação.`, 'info')
+      await new Promise((r) => setTimeout(r, 50))   // deixa o balão aparecer antes da confirmação
+    }
+    if (!alvo.length) {
+      if (selecionados.length > outrasFormas) toast('Nenhum título de boleto selecionado aceita emissão (já emitido, valor zero ou não pendente)', 'info')
+      return
+    }
     if (!confirm(`Emitir ${alvo.length} boleto(s) no Sicoob${cobranca?.ambiente === 'SANDBOX' ? ' (sandbox, teste)' : ''}? Cada um vence na data do título.`)) return
     setProgresso({ atual: 0, total: alvo.length, titulo: 'Emitindo boletos' })
     const erros: string[] = []
@@ -122,11 +134,11 @@ export default function Financeiro() {
   return (
     <div className="mx-auto max-w-6xl">
       <Titulo acoes={<>
-        {cobranca && <button className="btn-secondary" onClick={conciliar} title="Consulta no Sicoob os boletos em aberto e baixa os títulos pagos">Conferir pagamentos</button>}
-        <button className="btn-secondary" onClick={() => setVerConfig(true)}>Cobrança{cobranca?.ambiente === 'SANDBOX' ? ' (sandbox)' : ''}</button>
+        {ti && cobranca && <button className="btn-secondary" onClick={conciliar} title="Consulta no Sicoob os boletos em aberto e baixa os títulos pagos">Conferir pagamentos</button>}
+        {ti && <button className="btn-secondary" onClick={() => setVerConfig(true)}>Cobrança{cobranca?.ambiente === 'SANDBOX' ? ' (sandbox)' : ''}</button>}
         <button className="btn-secondary" onClick={exportarCsv}>Exportar CSV</button>
       </>}>Financeiro — contas a receber</Titulo>
-      {aBaixar > 0 && (
+      {ti && aBaixar > 0 && (
         <div className="mb-1.5 rounded bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
           {aBaixar} boleto(s) de títulos cancelados ou baixados à mão continuam abertos no banco: use <b>Baixar no banco</b> na linha do título (filtre a situação por Cancelado ou Baixado).
         </div>
@@ -144,7 +156,7 @@ export default function Financeiro() {
           <div className="flex items-center gap-2">
             <span>Data da baixa</span><input className="input w-40 py-1" type="date" value={dataBaixa} onChange={(e) => setDataBaixa(e.target.value)} />
             <button className="btn-primary py-1.5" disabled={!sel.size} onClick={() => pedirBaixa([...sel])}>Baixar selecionados ({sel.size})</button>
-            {cobranca && <button className="btn-accent py-1.5" disabled={!sel.size} onClick={emitirSelecionados}>Emitir boletos ({sel.size})</button>}
+            {ti && cobranca && <button className="btn-accent py-1.5" disabled={!sel.size} onClick={emitirSelecionados}>Emitir boletos ({sel.size})</button>}
           </div>
         )}
       </div>
@@ -154,7 +166,7 @@ export default function Financeiro() {
             <thead>
               <tr>
                 {situacao === 'PENDENTE' && <th className="px-2"><input type="checkbox" checked={sel.size > 0 && sel.size === visiveis.length} onChange={(e) => setSel(e.target.checked ? new Set(visiveis.map((l) => l.id)) : new Set())} /></th>}
-                <th className="px-2">Semana</th><th className="px-2">Cód</th><th className="px-2">Cliente</th><th className="px-2">Cidade</th><th className="text-right">Valor</th><th className="px-2">Venc.</th><th className="px-2">Forma</th><th className="px-2">Situação</th><th className="px-2">Baixa</th><th className="px-2">Boleto</th><th className="px-2"></th>
+                <th className="px-2">Semana</th><th className="px-2">Cód</th><th className="px-2">Cliente</th><th className="px-2">Cidade</th><th className="text-right">Valor</th>{ti && <th className="px-2">Venc.</th>}<th className="px-2">Forma</th><th className="px-2">Situação</th><th className="px-2">Baixa</th>{ti && <th className="px-2">Boleto</th>}<th className="px-2"></th>
               </tr>
             </thead>
             <tbody>
@@ -166,11 +178,11 @@ export default function Financeiro() {
                   <td className="px-2"><div className="font-semibold">{l.cliente?.razao_social}</div><div className="text-xs text-slate-500">{l.cliente?.nome_fantasia}</div></td>
                   <td className="px-2">{l.cliente?.cidade}</td>
                   <td className={`p-2 text-right font-semibold whitespace-nowrap ${Number(l.valor) < 0 ? 'text-red-600' : ''}`}>{fmtMoeda(Number(l.valor))}</td>
-                  <td className="whitespace-nowrap text-xs">{fmtData(l.data_vencimento)}</td>
+                  {ti && <td className="whitespace-nowrap text-xs">{fmtData(l.data_vencimento)}</td>}
                   <td className="text-xs">{FORMAS[l.forma_pagamento]}</td>
                   <td className="px-2"><Chip cor={l.situacao === 'PENDENTE' ? 'amarelo' : l.situacao === 'BAIXADO' ? 'verde' : 'cinza'}>{l.situacao}</Chip>{l.motivo && <div className="text-[10px] text-slate-400">{l.motivo}</div>}</td>
                   <td className="whitespace-nowrap">{fmtData(l.data_baixa)}</td>
-                  <td className="px-2"><AcoesBoleto titulo={l} boleto={boletoAtual(l.boletos)} onEmitir={() => setEmitindo(l)} onMudou={carregar} /></td>
+                  {ti && <td className="px-2"><AcoesBoleto titulo={l} boleto={boletoAtual(l.boletos)} onEmitir={() => setEmitindo(l)} onMudou={carregar} /></td>}
                   <td className="text-right whitespace-nowrap">
                     {l.situacao === 'PENDENTE' && <button className="btn-primary py-1" onClick={() => pedirBaixa([l.id])}>Baixar</button>}
                     {l.situacao === 'BAIXADO' && <button className="btn-secondary py-1" onClick={() => estornar(l.id)}>Estornar</button>}
@@ -188,8 +200,8 @@ export default function Financeiro() {
           : `Deseja baixar o título de ${confirma.nome ?? 'este cliente'}?\nValor: ${fmtMoeda(confirma.valor)} · Data da baixa: ${fmtData(dataBaixa)}`) : ''}
         onSim={() => confirma && baixar(confirma.ids)} onNao={() => setConfirma(null)} />
       {progresso && <Progresso titulo={progresso.titulo ?? 'Baixando títulos'} atual={progresso.atual} total={progresso.total} />}
-      <ModalEmitir titulo={emitindo} onFechar={() => setEmitindo(null)} onEmitido={() => { setEmitindo(null); carregar() }} />
-      <ModalConfigCobranca aberto={verConfig} podeEditar={ehAdminTI(usuario)} ambiente={cobranca?.ambiente ?? null} onFechar={() => setVerConfig(false)} />
+      {ti && <ModalEmitir titulo={emitindo} onFechar={() => setEmitindo(null)} onEmitido={() => { setEmitindo(null); carregar() }} />}
+      {ti && <ModalConfigCobranca aberto={verConfig} podeEditar ambiente={cobranca?.ambiente ?? null} onFechar={() => setVerConfig(false)} />}
     </div>
   )
 }

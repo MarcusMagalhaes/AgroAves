@@ -12,9 +12,10 @@ export function boletoAtual(lista: Boleto[] | null | undefined): Boleto | null {
   const l = [...(lista ?? [])].sort((a, b) => b.id - a.id)
   return l.find((b) => ['EMITINDO', 'EMITIDO', 'A_BAIXAR', 'LIQUIDADO'].includes(b.situacao)) ?? l[0] ?? null
 }
-/** O título aceita um novo boleto? */
-export const podeEmitir = (t: { situacao: string; valor: number }, b: Boleto | null) =>
-  t.situacao === 'PENDENTE' && Number(t.valor) > 0 && (!b || b.situacao === 'ERRO' || b.situacao === 'BAIXADO')
+/** O título aceita um novo boleto? Só títulos com forma de pagamento Boleto */
+export const podeEmitir = (t: { situacao: string; valor: number; forma_pagamento: string }, b: Boleto | null) =>
+  t.forma_pagamento === 'BOLETO' && t.situacao === 'PENDENTE' && Number(t.valor) > 0 &&
+  (!b || b.situacao === 'ERRO' || b.situacao === 'BAIXADO')
 
 const COR: Record<Boleto['situacao'], 'verde' | 'amarelo' | 'vermelho' | 'cinza' | 'azul'> = {
   EMITINDO: 'cinza', EMITIDO: 'azul', LIQUIDADO: 'verde', A_BAIXAR: 'amarelo', BAIXADO: 'cinza', ERRO: 'vermelho',
@@ -26,7 +27,7 @@ async function copiar(texto: string, toast: (m: string, t?: 'ok' | 'erro' | 'inf
 
 /** Coluna "Boleto" de um título: situação + ações */
 export function AcoesBoleto({ titulo, boleto, onEmitir, onMudou }: {
-  titulo: { situacao: string; valor: number }; boleto: Boleto | null; onEmitir: () => void; onMudou: () => void
+  titulo: { situacao: string; valor: number; forma_pagamento: string }; boleto: Boleto | null; onEmitir: () => void; onMudou: () => void
 }) {
   const { toast } = useToast()
   const [ocupado, setOcupado] = useState(false)
