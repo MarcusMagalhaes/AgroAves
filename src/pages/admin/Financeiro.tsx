@@ -52,8 +52,17 @@ export default function Financeiro() {
   const [verConfig, setVerConfig] = useState(false)
   useEffect(() => { if (ti) statusCobranca().then(setCobranca).catch(() => setCobranca(null)) }, [ti])
   async function emitirSelecionados() {
-    const alvo = (lista ?? []).filter((l) => sel.has(l.id) && podeEmitir(l, boletoAtual(l.boletos)))
-    if (!alvo.length) { toast('Nenhum título selecionado aceita boleto (já emitido, valor zero ou não pendente)', 'info'); return }
+    const selecionados = (lista ?? []).filter((l) => sel.has(l.id))
+    const outrasFormas = selecionados.filter((l) => l.forma_pagamento !== 'BOLETO').length
+    const alvo = selecionados.filter((l) => podeEmitir(l, boletoAtual(l.boletos)))
+    if (outrasFormas) {
+      toast(`${outrasFormas} título(s) selecionado(s) não têm forma de pagamento Boleto e serão ignorados nesta ação.`, 'info')
+      await new Promise((r) => setTimeout(r, 50))   // deixa o balão aparecer antes da confirmação
+    }
+    if (!alvo.length) {
+      if (selecionados.length > outrasFormas) toast('Nenhum título de boleto selecionado aceita emissão (já emitido, valor zero ou não pendente)', 'info')
+      return
+    }
     if (!confirm(`Emitir ${alvo.length} boleto(s) no Sicoob${cobranca?.ambiente === 'SANDBOX' ? ' (sandbox, teste)' : ''}? Cada um vence na data do título.`)) return
     setProgresso({ atual: 0, total: alvo.length, titulo: 'Emitindo boletos' })
     const erros: string[] = []

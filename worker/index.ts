@@ -85,12 +85,13 @@ async function emitir(sb: SupabaseClient, env: Env, corpo: any) {
   const tituloId = Number(corpo?.titulo_id)
   if (!tituloId) throw new ErroHttp(400, 'Informe o título.')
   const rt = await sb.from('titulo')
-    .select('id, valor, data_referencia, data_vencimento, situacao, cliente:cliente(cnpj_cpf, razao_social, endereco, bairro, cidade, cep, uf, email)')
+    .select('id, valor, data_referencia, data_vencimento, situacao, forma_pagamento, cliente:cliente(cnpj_cpf, razao_social, endereco, bairro, cidade, cep, uf, email)')
     .eq('id', tituloId).maybeSingle()
   falha(rt, 'Título')
   const titulo: any = rt.data
   if (!titulo) throw new ErroHttp(404, 'Título não encontrado.')
   if (titulo.situacao !== 'PENDENTE') throw new ErroHttp(409, 'Só título pendente pode ter boleto.')
+  if (titulo.forma_pagamento !== 'BOLETO') throw new ErroHttp(422, 'A forma de pagamento deste título não é Boleto.')
 
   const cfg = await config(sb)
   const hoje = hojeBrasilia()
