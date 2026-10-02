@@ -8,6 +8,10 @@ import { fmtData, fmtMoeda, normalizar } from '@/lib/format'
 import { FORMAS, RESULTADOS, corProduto, type ClienteRotaSemana, type Produto, type Resultado, type RotaSemana } from '@/lib/types'
 import { Carregando, Confirmar, Vazio, useToast } from '@/components/ui'
 import ComboCliente from '@/components/ComboCliente'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { montarMapa } from '@/lib/mapa'
+import { imprimirHtml } from '@/lib/imprimir'
+import { Recibo } from '@/pages/admin/Documentos'
 
 type FiltroStatus = 'TODOS' | 'PEDIDO' | 'SEM_PEDIDO' | 'SEM_INTERESSE' | 'SEM_CONTATO'
 const FILTROS: Record<FiltroStatus, string> = {
@@ -152,6 +156,16 @@ export default function Venda() {
     } catch (e: any) { toast(e.message, 'erro') }
   }
   function limpar() { setQtd({}); setReposicao(''); setMarca(resultado) }
+  async function reciboIndividual() {
+    if (!cliente?.pedido_id || !rota?.semana_rota_id) { toast('Salve o pedido antes de gerar o recibo', 'erro'); return }
+    try {
+      const mapa = await montarMapa(rota.semana_rota_id, produtos)
+      const l = mapa.linhas.find((x) => x.pedido.cliente_id === cliente.cliente_id)
+      if (!l) { toast('Pedido não encontrado no mapa da rota', 'erro'); return }
+      const html = renderToStaticMarkup(<div className="grid grid-cols-2 gap-3"><Recibo rota={rota} l={l} produtos={produtos} /></div>)
+      imprimirHtml(`Recibo — ${cliente.razao_social}`, html, 'portrait')
+    } catch (e: any) { toast(e.message, 'erro') }
+  }
   function navegar(d: number) {
     const i = filtrados.findIndex((c) => c.cliente_id === clienteId)
     const j = i + d; if (j >= 0 && j < filtrados.length) setClienteId(filtrados[j].cliente_id)
@@ -297,6 +311,7 @@ export default function Venda() {
               </table>
               <button className="btn-primary w-full mt-1.5 py-1 text-xs" onClick={registrarInteresse}>Registrar interesse</button>
               {resultado && <div className="mt-1 text-[11px] text-center text-slate-500">Registrado: {RESULTADOS[resultado]}</div>}
+              <button className="btn-secondary w-full mt-2 py-1 text-xs" onClick={reciboIndividual} disabled={!cliente.pedido_id} title={cliente.pedido_id ? 'Imprimir o recibo deste pedido' : 'Salve o pedido primeiro'}>🧾 Recibo individual</button>
             </div>
           </div>
         </>
