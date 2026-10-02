@@ -30,7 +30,7 @@ export default function PedidoFornecedor() {
   useEffect(() => {
     Promise.all([listarRotasSemana(), listarProdutos(), listarCidades(), listarFornecedores()]).then(([r, p, c, f]) => {
       // pedido só a fornecedor de produto para venda (granja)
-      const fv = f.filter((x) => x.ativo && x.tipo === 'PRODUTO_VENDA')
+      const fv = f.filter((x) => x.ativo && (x.tipo ?? 'PRODUTO_VENDA') === 'PRODUTO_VENDA')  // sem tipo = banco antes da 0008
       setRotas(r); setProdutos(p); setCidades(c); setFornecedores(fv)
       const d = [...new Set(r.map((x) => x.data_entrega))].filter(Boolean).sort(); if (d[0]) setData(d[0] as string)
       if (c[0]) setCidadeId(c[0].id)
