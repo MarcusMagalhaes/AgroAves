@@ -121,7 +121,7 @@ export default function Financeiro() {
           </table>
         </div>
       )}
-      <p className="mt-1 text-[10px] text-slate-400">Títulos são gerados automaticamente quando a granja confirma a entrega da semana/cidade. Alteração no pedido cancela o pendente e lança a diferença; o que já foi baixado é preservado.</p>
+      <p className="mt-1 text-[10px] text-slate-400">Títulos são gerados automaticamente ao marcar o pedido à granja como entregue (Pedido à granja › Ajuste da entrega). Alteração no pedido cancela o pendente e lança a diferença; o que já foi baixado é preservado.</p>
       <Confirmar aberto={!!confirma} titulo={confirma && confirma.ids.length > 1 ? 'Baixar títulos em massa' : 'Baixar título'}
         texto={confirma ? (confirma.ids.length > 1
           ? `Deseja baixar todos os ${confirma.ids.length.toLocaleString('pt-BR')} títulos selecionados?\nTotal: ${fmtMoeda(confirma.valor)} · Data da baixa: ${fmtData(dataBaixa)}`

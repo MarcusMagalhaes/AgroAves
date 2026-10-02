@@ -50,7 +50,7 @@ export default function AjusteEntrega() {
     const lista = Object.entries(conf).map(([pid, v]) => ({ produto_id: Number(pid), qtd_confirmada: Number(v.q) || 0, observacao: v.obs || null }))
     try {
       await rpc('confirmar_pedido_fornecedor', { p_id: pf.id, p_itens: lista, p_status: status })
-      toast(status === 'ENTREGUE' ? 'Entrega registrada e títulos financeiros gerados' : 'Confirmação da granja salva; títulos financeiros gerados')
+      toast(status === 'ENTREGUE' ? 'Entrega registrada e títulos financeiros gerados' : 'Confirmação da granja salva')
       const r = ok(await supabase.from('pedido_fornecedor').select('*').order('data_entrega', { ascending: false }).limit(40)) as PF[]
       setPedidos(r); carregar()
     } catch (e: any) { toast(e.message, 'erro') }
@@ -83,7 +83,7 @@ export default function AjusteEntrega() {
           {/* 1. Confirmação da granja */}
           <div className="card p-3">
             <div className="font-bold text-leaf-900 mb-1">1. O que a granja vai mandar</div>
-            <p className="text-xs text-slate-500 mb-2">Informe por produto a quantidade confirmada no carregamento e substituições. Ao salvar, os títulos financeiros desta data/cidade são gerados.</p>
+            <p className="text-xs text-slate-500 mb-2">Informe por produto a quantidade confirmada no carregamento e substituições. Os títulos financeiros só são gerados ao marcar como entregue.</p>
             <table className="tabela">
               <thead><tr><th className="text-left">Produto</th><th className="text-right">Pedido</th><th className="text-right">Confirmado</th><th className="text-left">Obs.</th></tr></thead>
               <tbody>
@@ -140,8 +140,8 @@ export default function AjusteEntrega() {
             {(() => { const prev = programado[prodSelObj.id] ?? 0; const confQ = item(prodSelObj.id)?.qtd_confirmada; const dif = confQ == null ? null : confQ - prev; return (
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-1.5 rounded-lg px-3 py-1.5 text-xs" style={{ background: tom(corProduto(prodSelObj), 0.2) }}>
                 <span className="font-extrabold">{prodSelObj.nome}</span>
-                <span>Confirmado pela granja: <b className="text-sm">{confQ == null ? '—' : fmtNum(confQ)}</b></span>
                 <span>Previsto nos pedidos: <b className="text-sm">{fmtNum(prev)}</b></span>
+                <span>Confirmado pela granja: <b className="text-sm">{confQ == null ? '—' : fmtNum(confQ)}</b></span>
                 <span>Diferença: <b className={`text-sm ${dif == null ? '' : dif < 0 ? 'text-red-600' : dif > 0 ? 'text-leaf-700' : 'text-slate-500'}`}>{dif == null ? '—' : dif > 0 ? `+${fmtNum(dif)}` : fmtNum(dif)}</b>{dif != null && dif < 0 && <span className="ml-1 text-red-700">(tirar {fmtNum(-dif)} dos pedidos)</span>}{dif != null && dif > 0 && <span className="ml-1 text-leaf-700">(sobram {fmtNum(dif)})</span>}</span>
                 <span className="text-slate-500 ml-auto">Cada célula salva ao sair. Edite qualquer produto da linha para compensar.</span>
               </div>
@@ -150,7 +150,7 @@ export default function AjusteEntrega() {
           </div>
         </Modal>
       )}
-      <Confirmar aberto={confirmaEntrega} titulo="Marcar como entregue" texto="Confirma que a mercadoria chegou? Os títulos financeiros desta data/cidade serão gerados ou atualizados." onSim={() => salvarConfirmacao('ENTREGUE')} onNao={() => setConfirmaEntrega(false)} />
+      <Confirmar aberto={confirmaEntrega} titulo="Marcar como entregue" texto="Confirma que a mercadoria chegou? Os títulos financeiros (contas a receber) desta data/cidade serão gerados agora." onSim={() => salvarConfirmacao('ENTREGUE')} onNao={() => setConfirmaEntrega(false)} />
     </div>
   )
 }

@@ -467,7 +467,7 @@ begin
   return v_total;
 end $$;
 
--- Título: gerado/recalculado só quando o pedido ao fornecedor da semana/cidade está CONFIRMADO ou ENTREGUE (D-08)
+-- Título: gerado/recalculado só quando o pedido ao fornecedor da semana/cidade está ENTREGUE (D-08: financeiro nasce na entrega)
 create or replace function sincronizar_titulo(p_pedido_id bigint) returns void
 language plpgsql security definer set search_path = public as $$
 declare
@@ -483,7 +483,7 @@ begin
 
   select status into v_pf_status from pedido_fornecedor
     where data_entrega = v_ped.data_entrega and cidade_distribuicao_id = v_ped.cidade_distribuicao_id;
-  if v_pf_status is null or v_pf_status = 'REGISTRADO' then return; end if;  -- ainda não é hora
+  if v_pf_status is null or v_pf_status <> 'ENTREGUE' then return; end if;  -- ainda não é hora
 
   select coalesce(sum(valor),0) into v_total_vigente from titulo where pedido_id = p_pedido_id and situacao <> 'CANCELADO';
   select coalesce(sum(valor),0) into v_baixado from titulo where pedido_id = p_pedido_id and situacao = 'BAIXADO';
@@ -562,7 +562,7 @@ begin
   end loop;
   update pedido_fornecedor set status = p_status, confirmado_em = now(), confirmado_por = auth.uid() where id = p_id
     returning data_entrega, cidade_distribuicao_id into v_data, v_cid;
-  if p_status in ('CONFIRMADO','ENTREGUE') then perform gerar_titulos(v_data, v_cid); end if;
+  if p_status = 'ENTREGUE' then perform gerar_titulos(v_data, v_cid); end if;
 end $$;
 
 -- Fechamento semanal de uma rota: exige pedido ao fornecedor registrado para a data/cidade
