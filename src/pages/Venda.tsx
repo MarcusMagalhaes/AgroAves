@@ -261,7 +261,7 @@ export default function Venda() {
           </div>
 
           {/* ===== Pedido da semana + interesse ===== */}
-          <div className="grid gap-1.5 lg:grid-cols-[1fr_220px] items-start">
+          <div className="grid gap-1.5 lg:grid-cols-[1fr_220px] items-stretch">
             <div className="card p-2 bg-sky-50/50">
               <div className="flex flex-wrap items-center gap-1.5 mb-1">
                 <button className="btn bg-orange-500 text-white hover:bg-orange-600 py-1 text-xs" onClick={limpar}>Limpar campos</button>
@@ -297,21 +297,21 @@ export default function Venda() {
               </div>
             </div>
 
-            <div className="card p-2 bg-sky-50/50">
-              <div className="text-center font-bold bg-sky-200 rounded py-0 mb-1 text-xs">Interesse do Cliente</div>
+            <div className="card p-2 bg-sky-50/50 flex flex-col">
+              <div className="text-center font-bold bg-sky-200 rounded py-0.5 mb-1 text-xs">Interesse do Cliente</div>
               <table className="w-full border-collapse">
                 <tbody>
                   {(['INTERESSE_SEM_PEDIDO', 'SEM_INTERESSE', 'SEM_CONTATO', 'PEDIDO'] as Resultado[]).map((r) => (
                     <tr key={r} className="cursor-pointer" onClick={() => setMarca(marca === r ? null : r)}>
-                      <td className={`border border-slate-300 px-1.5 py-0.5 text-[11px] leading-[1.15] ${marca === r ? 'font-bold' : ''}`}>{RESULTADOS[r]}</td>
+                      <td className={`border border-slate-300 px-1.5 py-1.5 text-[11px] leading-[1.2] ${marca === r ? 'font-bold' : ''}`}>{RESULTADOS[r]}</td>
                       <td className={`border border-slate-300 w-8 text-center text-lg font-black ${marca === r ? 'bg-white' : 'bg-yellow-50'}`}>{marca === r ? 'X' : ''}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <button className="btn-primary w-full mt-1 py-0.5 text-xs" onClick={registrarInteresse}>Registrar interesse</button>
+              <button className="btn-primary w-full mt-auto py-1 text-xs" onClick={registrarInteresse}>Registrar interesse</button>
               <div className="mt-0.5 h-3.5 text-[10px] text-center text-slate-500 truncate" title={resultado ? RESULTADOS[resultado] : ''}>{resultado ? `Registrado: ${RESULTADOS[resultado]}` : ''}</div>
-              <button className="btn-secondary w-full mt-0.5 py-0.5 text-xs" onClick={reciboIndividual} disabled={!cliente.pedido_id} title={cliente.pedido_id ? 'Imprimir o recibo deste pedido' : 'Salve o pedido primeiro'}>🧾 Recibo individual</button>
+              <button className="btn-secondary w-full mt-1 py-1 text-xs" onClick={reciboIndividual} disabled={!cliente.pedido_id} title={cliente.pedido_id ? 'Imprimir o recibo deste pedido' : 'Salve o pedido primeiro'}>🧾 Recibo individual</button>
             </div>
           </div>
         </>
