@@ -130,3 +130,15 @@ language sql stable security definer set search_path = public as $$
     and (eh_admin() or p_rota_id in (select minhas_rotas()))
   order by rc.ordem_visita
 $$;
+
+-- Rotas visíveis por papel (sobrescreve a view de 0001): administrador vê todas; vendedor só as suas
+create or replace view v_rota_semana_aberta as
+select r.id as rota_id, r.nome as rota, r.vendedor_id, v.nome as vendedor, v.telefone as vendedor_telefone,
+       r.cidade_distribuicao_id, c.nome as cidade_distribuicao, r.intervalo_dias,
+       s.id as semana_rota_id, s.data_entrega,
+       (s.data_entrega + r.intervalo_dias) as proxima_semana
+from rota r
+join cidade_distribuicao c on c.id = r.cidade_distribuicao_id
+left join vendedor v on v.id = r.vendedor_id
+left join semana_rota s on s.rota_id = r.id and s.status = 'ABERTA'
+where r.ativa and (eh_admin() or r.id in (select minhas_rotas()));

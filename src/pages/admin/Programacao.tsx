@@ -133,7 +133,7 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
     { key: 'cliente', name: 'Cliente', width: 190, frozen: 'start', renderCell: ({ row }) => <span title={row.cliente} className={row.tipo !== 'CLIENTE' ? 'italic text-slate-500' : ''}>{row.cliente}</span> },
     ...(detalhes ? [{ key: 'nome', name: 'Nome', width: 130 }, { key: 'contato', name: 'Contato', width: 110 }, { key: 'pagto', name: 'Pagto', width: 80 }] as Column<Linha, Resumo>[] : []),
     ...colsProd.map((p): Column<Linha, Resumo> => ({
-      key: p.sigla, name: p.nome, width: 60, minWidth: 60, editable: !historico, renderEditCell: EditorNumero,
+      key: p.sigla, name: p.nome, width: 55, minWidth: 55, editable: !historico, renderEditCell: EditorNumero,
       renderHeaderCell: () => <span className="cab-vertical" title={p.nome}>{p.nome}</span>,
       cellClass: (row) => `cell-centro cor-p${p.id} ${estado[`${row.id}:${p.sigla}`] === 'salvando' ? 'cell-dirty' : estado[`${row.id}:${p.sigla}`] === 'ok' ? 'cell-saved' : estado[`${row.id}:${p.sigla}`] === 'erro' ? 'cell-error' : ''}`,
       renderCell: ({ row }) => <>{row[p.sigla] || ''}</>,
