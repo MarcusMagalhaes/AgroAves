@@ -132,11 +132,13 @@ async function boletoPorId(sb: SupabaseClient, id: unknown) {
 async function pdf(sb: SupabaseClient, env: Env, corpo: any) {
   const b = await boletoPorId(sb, corpo?.boleto_id)
   if (b.pdf_caminho && !corpo?.atualizar) return { caminho: b.pdf_caminho }
-  if (!b.nosso_numero) throw new ErroHttp(409, 'Boleto sem nosso número.')
+  if (b.nosso_numero == null) throw new ErroHttp(409, 'Boleto sem nosso número.')
   if (b.ambiente !== ambienteDe(env)) throw new ErroHttp(409, `Boleto emitido em ${b.ambiente}; o Worker está em ${ambienteDe(env)}.`)
   const reg = await sicoobDe(env).segundaVia(await config(sb), b.nosso_numero)
   const caminho = await guardarPdf(sb, b.titulo_id, b.id, reg.pdfBase64)
-  if (!caminho) throw new ErroHttp(502, 'O banco não devolveu o PDF do boleto.')
+  if (!caminho) throw new ErroHttp(502, b.ambiente === 'SANDBOX'
+    ? 'O sandbox do Sicoob não devolve um PDF de verdade (dados simulados); em produção o PDF vem do banco.'
+    : 'O banco não devolveu o PDF do boleto.')
   await sb.from('boleto').update({ pdf_caminho: caminho }).eq('id', b.id)
   return { caminho }
 }

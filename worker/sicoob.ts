@@ -78,12 +78,21 @@ export function montarInclusao(p: {
   }
 }
 
-const texto = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null)
+// "string" é o valor-exemplo da documentação, devolvido pelo sandbox no lugar dos dados
+const texto = (v: unknown) => (typeof v === 'string' && v.trim() && v.trim() !== 'string' ? v.trim() : null)
 
 /** Lê o retorno da inclusão / 2ª via */
-export function lerBoleto(resultado: Record<string, any>): BoletoRegistrado {
-  const nossoNumero = Number(resultado.nossoNumero)
-  if (!Number.isFinite(nossoNumero) || nossoNumero <= 0) throw new ErroSicoob('O banco não devolveu o nosso número do boleto.', 200, resultado)
+export function lerBoleto(retorno: any, sandbox = false): BoletoRegistrado {
+  // v3: { resultado: {...} }; aceita também o formato em lista da v2 ({ resultado: [{ boleto: {...} }] })
+  let resultado: Record<string, any> = retorno?.resultado ?? retorno ?? {}
+  if (Array.isArray(resultado)) resultado = resultado[0]?.boleto ?? resultado[0] ?? {}
+  let nossoNumero = Number(resultado.nossoNumero)
+  if (!Number.isFinite(nossoNumero) || nossoNumero <= 0) {
+    console.log(JSON.stringify({ sicoob: { aviso: 'retorno sem nosso número', sandbox, campos: Object.keys(resultado), nossoNumero: resultado.nossoNumero } }))
+    // o sandbox devolve dados simulados (nosso número 0): aceita para o teste seguir
+    if (!sandbox) throw new ErroSicoob('O banco não devolveu o nosso número do boleto.', 200, resultado)
+    nossoNumero = 0
+  }
   const { pdfBoleto, ...resto } = resultado
   return {
     nossoNumero,
@@ -189,7 +198,7 @@ export class Sicoob {
 
   async incluir(corpo: ReturnType<typeof montarInclusao>) {
     const r = await this.chamar('POST', '/boletos', corpo)
-    return lerBoleto(r?.resultado ?? r ?? {})
+    return lerBoleto(r, this.o.ambiente === 'SANDBOX')
   }
 
   async consultar(config: ConfigCobranca, nossoNumero: number) {
@@ -200,7 +209,7 @@ export class Sicoob {
   async segundaVia(config: ConfigCobranca, nossoNumero: number) {
     const q = this.chave(config, nossoNumero); q.set('gerarPdf', 'true')
     const r = await this.chamar('GET', `/boletos/segunda-via?${q}`)
-    return lerBoleto(r?.resultado ?? r ?? {})
+    return lerBoleto(r, this.o.ambiente === 'SANDBOX')
   }
 
   async baixar(config: ConfigCobranca, nossoNumero: number) {
