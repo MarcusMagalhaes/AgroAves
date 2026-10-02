@@ -53,10 +53,12 @@ describe('montarInclusao', () => {
       numeroCliente: 25546454, codigoModalidade: 1, numeroContaCorrente: 12345, codigoEspecieDocumento: 'DM',
       dataEmissao: '2026-10-02', seuNumero: '4521', valor: 1256.1, dataVencimento: '2026-10-08',
       tipoMulta: 2, dataMulta: '2026-10-09', valorMulta: 2, tipoJurosMora: 2, dataJurosMora: '2026-10-09', valorJurosMora: 1,
-      gerarPdf: true, codigoCadastrarPIX: 1, mensagensInstrucao: ['Não receber após 30 dias'],
+      gerarPdf: true, codigoCadastrarPIX: 1, mensagensInstrucao: { mensagens: ['Não receber após 30 dias'] },
     })
     expect(c).not.toHaveProperty('nossoNumero')            // o banco gera
     expect(c).not.toHaveProperty('numeroContratoCobranca')
+    expect(c).not.toHaveProperty('identificacaoBoletoEmpresa')   // não existe na v3
+    expect(montarInclusao({ ...base, config: { ...config, numero_conta_corrente: null } }).numeroContaCorrente).toBe(0)
   })
   it('sem multa/juros e sem Pix', () => {
     const c = montarInclusao({ ...base, config: { ...config, multa_percentual: 0, juros_mes_percentual: 0, com_pix: false } })
@@ -94,7 +96,7 @@ describe('cliente Sicoob (sandbox)', () => {
   it('transforma a lista de mensagens de erro do banco', async () => {
     const { fn } = fetchSimulado({ status: 400, corpo: { mensagens: [{ mensagem: 'CEP do pagador inválido', codigo: '4001' }, { mensagem: 'UF inválida' }] } })
     const s = new Sicoob({ ...opcoes, fetcher: fn })
-    await expect(s.consultar(config, 1)).rejects.toThrow('CEP do pagador inválido · UF inválida')
+    await expect(s.consultar(config, 1)).rejects.toThrow('HTTP 400: 4001 CEP do pagador inválido · UF inválida')
     await expect(s.consultar(config, 1)).rejects.toBeInstanceOf(ErroSicoob)
   })
 
@@ -130,6 +132,13 @@ describe('cliente Sicoob (sandbox)', () => {
     ])
     expect(String(chamadas[0].init?.body)).toContain('grant_type=client_credentials')
     expect(chamadas[1].init?.headers).toMatchObject({ Authorization: 'Bearer oauth' })
+  })
+
+  it('erro com o exemplo da documentação mostra o retorno bruto', async () => {
+    const corpo = { mensagens: [{ mensagem: 'string', codigo: 'string' }] }
+    const { fn } = fetchSimulado({ status: 400, corpo })
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    await expect(new Sicoob({ ...opcoes, fetcher: fn }).consultar(config, 1)).rejects.toThrow(`HTTP 400: ${JSON.stringify(corpo)}`)
   })
 
   it('exige token no sandbox', () => {
