@@ -95,6 +95,12 @@ export interface PedidoFornecedorItem {
 }
 export type SituacaoContaPagar = 'PENDENTE' | 'PAGO' | 'CANCELADO'
 export interface ContaPagar {
-  id: number; descricao: string; fornecedor_id: number; data_vencimento: string; valor: number; centro_custo_codigo: number
+  id: number; fornecedor_id: number; data_vencimento: string; valor: number; centro_custo_codigo: number
   situacao: SituacaoContaPagar; data_pagamento: string | null; motivo: string | null; observacao: string | null; criado_em: string
+}
+export type TipoAnexo = 'CONTA' | 'COMPROVANTE' | 'OUTRO'
+export const TIPOS_ANEXO: Record<TipoAnexo, string> = { CONTA: 'Conta / boleto', COMPROVANTE: 'Comprovante', OUTRO: 'Outro' }
+/** Arquivo no bucket privado 'contas-pagar' do Storage */
+export interface ContaPagarAnexo {
+  id: number; conta_pagar_id: number; tipo: TipoAnexo; nome_arquivo: string; caminho: string; tamanho: number | null; mime: string | null; criado_em: string
 }
