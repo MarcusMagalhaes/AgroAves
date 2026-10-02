@@ -167,17 +167,38 @@ function DocRecibos({ rota, mapa, produtos }: { rota: RotaSemana; mapa: MapaT; p
 function DocGta({ mapas, produtos, clientes }: { mapas: { rota: RotaSemana; mapa: MapaT }[]; produtos: Produto[]; clientes: Record<number, any> }) {
   const aves = produtos.filter((p) => p.conta_como_ave && !p.eh_codorna).map((p) => p.id)
   const codornas = produtos.filter((p) => p.eh_codorna).map((p) => p.id)
-  const linhas = useMemo(() => mapas.flatMap(({ rota, mapa }) => mapa.linhas.filter((l) => l.pedido.exige_gta && l.pedido.tipo === 'CLIENTE').map((l) => ({
-    rota: rota.rota, item: l.item, codigo: l.pedido.cliente_codigo, cnpj: clientes[l.pedido.cliente_id!]?.cnpj_cpf, razao: l.pedido.razao_social, fantasia: l.pedido.nome_fantasia,
+  const base = useMemo(() => mapas.flatMap(({ rota, mapa }) => mapa.linhas.filter((l) => l.pedido.exige_gta && l.pedido.tipo === 'CLIENTE').map((l) => ({
+    chave: `${rota.rota_id}-${l.pedido.id}`, rota: rota.rota, item: l.item, codigo: l.pedido.cliente_codigo, cnpj: clientes[l.pedido.cliente_id!]?.cnpj_cpf, razao: l.pedido.razao_social, fantasia: l.pedido.nome_fantasia,
     municipio: l.pedido.cidade, aves: aves.reduce((s, id) => s + (l.qtd[id] ?? 0), 0), codornas: codornas.reduce((s, id) => s + (l.qtd[id] ?? 0), 0),
   }))), [mapas, clientes])
+  // valores editados só nesta tela (não gravam no banco): a impressão usa o que estiver digitado
+  const [edit, setEdit] = useState<Record<string, { aves?: string; codornas?: string }>>({})
+  useEffect(() => { setEdit({}) }, [mapas])
+  const linhas = base.map((l) => ({
+    ...l,
+    aves: edit[l.chave]?.aves !== undefined ? Number(edit[l.chave].aves) || 0 : l.aves,
+    codornas: edit[l.chave]?.codornas !== undefined ? Number(edit[l.chave].codornas) || 0 : l.codornas,
+  }))
+  const campo = (l: typeof linhas[number], k: 'aves' | 'codornas') => (
+    <>
+      <span className="so-impressao">{l[k] ? fmtNum(l[k]) : ''}</span>
+      <input className={`no-print w-16 rounded border px-1 py-0 text-right text-xs font-semibold ${edit[l.chave]?.[k] !== undefined ? 'bg-amber-100 border-amber-400' : 'bg-yellow-50 border-slate-300'}`}
+        inputMode="numeric" value={edit[l.chave]?.[k] ?? String(l[k] || '')}
+        onChange={(e) => setEdit({ ...edit, [l.chave]: { ...edit[l.chave], [k]: e.target.value.replace(/\D/g, '') } })} />
+    </>
+  )
   if (!mapas.length) return <Vazio texto="Escolha ao menos uma rota" />
+  const alterados = Object.keys(edit).length
   return (
     <div className="card p-4 print:border-0 print:shadow-none print:p-0 overflow-auto">
       <style>{`@media print { @page { size: A4 landscape; } }`}</style>
+      <div className="no-print mb-1 flex items-center gap-3 text-[11px] text-slate-600">
+        <span>As quantidades de <b>Aves</b> e <b>Codornas</b> podem ser alteradas aqui só para a impressão. Não gravam no pedido; ao recarregar a página voltam ao original.</span>
+        {alterados > 0 && <><span className="chip bg-amber-100 text-amber-800">{alterados} alterado(s)</span><button className="btn-secondary py-0.5" onClick={() => setEdit({})}>Desfazer alterações</button></>}
+      </div>
       <table className="w-full text-xs border-collapse">
         <thead><tr><th colSpan={8} className="p-0 font-normal"><Cabecalho titulo="CONTROLE DE GTA" sub={mapas.map((m) => `${m.rota.rota} ${fmtData(m.rota.data_entrega)}`).join(' · ')} /></th></tr><tr className="bg-slate-100"><th className="border p-1">Rota</th><th className="border p-1">Cód</th><th className="border p-1">CNPJ/CPF</th><th className="border p-1 text-left">Razão social</th><th className="border p-1 text-left">Nome fantasia</th><th className="border p-1 text-left">Município</th><th className="border p-1">Aves</th><th className="border p-1">Codornas</th></tr></thead>
-        <tbody>{linhas.map((l, i) => <tr key={i}><td className="border p-1">{l.rota}</td><td className="border p-1 text-center">{l.codigo}</td><td className="border p-1 whitespace-nowrap">{l.cnpj}</td><td className="border p-1">{l.razao}</td><td className="border p-1">{l.fantasia}</td><td className="border p-1">{l.municipio}</td><td className="border p-1 text-right font-semibold">{fmtNum(l.aves)}</td><td className="border p-1 text-right">{l.codornas || ''}</td></tr>)}</tbody>
+        <tbody>{linhas.map((l) => <tr key={l.chave}><td className="border p-1">{l.rota}</td><td className="border p-1 text-center">{l.codigo}</td><td className="border p-1 whitespace-nowrap">{l.cnpj}</td><td className="border p-1">{l.razao}</td><td className="border p-1">{l.fantasia}</td><td className="border p-1">{l.municipio}</td><td className="border p-1 text-right font-semibold">{campo(l, 'aves')}</td><td className="border p-1 text-right">{campo(l, 'codornas')}</td></tr>)}</tbody>
         <tfoot><tr className="bg-slate-100 font-bold"><td className="border p-1" colSpan={6}>{linhas.length} clientes</td><td className="border p-1 text-right">{fmtNum(linhas.reduce((s, l) => s + l.aves, 0))}</td><td className="border p-1 text-right">{fmtNum(linhas.reduce((s, l) => s + l.codornas, 0))}</td></tr></tfoot>
       </table>
     </div>

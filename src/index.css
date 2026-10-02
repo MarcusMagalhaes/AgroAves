@@ -68,6 +68,9 @@ body { -webkit-tap-highlight-color: transparent; }
 /* Mapa de entrega: colunas largas (local de entrega e pagamento) */
 .col-larga { min-width: 75px; }
 
+/* Conteúdo que só aparece na janela de impressão (ex.: valor digitado na GTA) */
+.so-impressao { display: none; }
+
 /* Impressão de documentos */
 @media print {
   .no-print { display: none !important; }
