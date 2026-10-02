@@ -45,28 +45,6 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
   const [prodAberto, setProdAberto] = useState(false)
   const gridRef = useRef<DataGridHandle>(null)
   const faixaRef = useRef<HTMLDivElement>(null)
-  const [larguras, setLarguras] = useState<number[]>([])
-  useEffect(() => {
-    const el = gridRef.current?.element
-    if (!el) return
-    const medir = () => {
-      const arr: number[] = []
-      el.querySelectorAll<HTMLElement>('[role="columnheader"]').forEach((c) => {
-        const i = Number(c.getAttribute('aria-colindex')) - 1
-        if (i >= 0) arr[i] = c.getBoundingClientRect().width
-      })
-      setLarguras((old) => (old.length === arr.length && old.every((v, i) => Math.abs(v - arr[i]) < 0.5) ? old : arr))
-    }
-    medir()
-    const ro = new ResizeObserver(medir)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [colsProd, detalhes, historico, linhas])
-  // posições das colunas na grade: [data?] rota cliente [nome contato pagto?] produtos… R total [acoes?]
-  const nFixEsq = (historico ? 1 : 0) + 2
-  const nDet = detalhes ? 3 : 0
-  const larg = (i: number, padrao: number) => larguras[i] ?? padrao
-  const soma = (de: number, ate: number, padrao: number) => { let t = 0; for (let i = de; i < ate; i++) t += larg(i, padrao); return t }
 
   const [datasFechadas, setDatasFechadas] = useState<string[]>([])
   const datas = useMemo(() => historico ? datasFechadas : [...new Set(rotas.map((r) => r.data_entrega).filter(Boolean))].sort() as string[], [rotas, datasFechadas, historico])
@@ -117,6 +95,29 @@ export default function Programacao({ historico = false, fixo, aoMudar }: { hist
   }, [linhas, texto, prodF])
 
   const colsProd = prodF.length ? produtos.filter((p) => prodF.includes(p.sigla)) : produtos
+
+  const [larguras, setLarguras] = useState<number[]>([])
+  useEffect(() => {
+    const el = gridRef.current?.element
+    if (!el) return
+    const medir = () => {
+      const arr: number[] = []
+      el.querySelectorAll<HTMLElement>('[role="columnheader"]').forEach((c) => {
+        const i = Number(c.getAttribute('aria-colindex')) - 1
+        if (i >= 0) arr[i] = c.getBoundingClientRect().width
+      })
+      setLarguras((old) => (old.length === arr.length && old.every((v, i) => Math.abs(v - arr[i]) < 0.5) ? old : arr))
+    }
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [colsProd, detalhes, historico, linhas])
+  // posições das colunas na grade: [data?] rota cliente [nome contato pagto?] produtos… R total [acoes?]
+  const nFixEsq = (historico ? 1 : 0) + 2
+  const nDet = detalhes ? 3 : 0
+  const larg = (i: number, padrao: number) => larguras[i] ?? padrao
+  const soma = (de: number, ate: number, padrao: number) => { let t = 0; for (let i = de; i < ate; i++) t += larg(i, padrao); return t }
 
   const resumo: Resumo[] = useMemo(() => {
     const r: Resumo = { id: 'tot', cliente: 'TOTAL' }
