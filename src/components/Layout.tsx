@@ -11,6 +11,7 @@ type Grupo = { grupo: string; icone: ReactNode; itens: Item[] }
 type Entrada = Item | Grupo
 
 const menuAdmin: Entrada[] = [
+  { to: '/dashboard', label: 'Dashboard', icone: '📊' },
   { grupo: 'Cadastros', icone: '🗂️', itens: [
     { to: '/clientes', label: 'Clientes e preços', icone: '👥' },
     { to: '/rotas', label: 'Rotas', icone: '🛣️' },
@@ -30,6 +31,7 @@ const menuAdmin: Entrada[] = [
     { to: '/documentos/nf', label: 'Nota fiscal', icone: '🧮' },
   ] },
   { grupo: 'Financeiro', icone: '💰', itens: [
+    { to: '/dashboard-financeiro', label: 'Dashboard', icone: '📈', ti: true },
     { to: '/financeiro', label: 'Contas a receber', icone: <IconeDinheiro sentido="entrada" /> },
     { to: '/contas-pagar', label: 'Contas a pagar', icone: <IconeDinheiro sentido="saida" />, ti: true },
   ] },
