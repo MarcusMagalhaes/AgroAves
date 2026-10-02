@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import Logo, { LogoMark } from './Logo'
 import { useAuth } from '@/lib/auth'
-import { PAPEIS, ehAdmin } from '@/lib/types'
+import { PAPEIS, ehAdmin, ehAdminTI } from '@/lib/types'
 
-type Item = { to: string; label: string; icone: string }
+/** ti: item visível só para o administrador TI */
+type Item = { to: string; label: string; icone: string; ti?: boolean }
 type Grupo = { grupo: string; icone: string; itens: Item[] }
 type Entrada = Item | Grupo
 
@@ -16,6 +17,7 @@ const menuAdmin: Entrada[] = [
     { to: '/vendedores', label: 'Vendedores', icone: '🧑‍💼' },
     { to: '/fornecedores', label: 'Fornecedores', icone: '🏢' },
     { to: '/usuarios', label: 'Usuários', icone: '🔐' },
+    { to: '/centros-custo', label: 'Centros de custo', icone: '🌳', ti: true },
   ] },
   { to: '/venda', label: 'Venda semanal', icone: '🛒' },
   { to: '/programacao', label: 'Programação', icone: '📋' },
@@ -53,7 +55,9 @@ export default function Layout() {
     return () => document.removeEventListener('mousedown', h)
   }, [grupoTopo])
   useEffect(() => { try { localStorage.setItem('menuRecolhido', recolhido ? '1' : '0') } catch { /* ignore */ } }, [recolhido])
-  const menu = ehAdmin(usuario) ? menuAdmin : menuVendedor
+  const menu = (ehAdmin(usuario) ? menuAdmin : menuVendedor)
+    .map((e) => ehGrupo(e) ? { ...e, itens: e.itens.filter((i) => !i.ti || ehAdminTI(usuario)) } : e)
+    .filter((e) => ehGrupo(e) ? e.itens.length > 0 : !e.ti || ehAdminTI(usuario))
 
   const link = (m: Item, sub = false) => (
     <NavLink key={m.to} to={m.to} onClick={() => { setAberto(false); setGruposFechados({}) }}

@@ -1,6 +1,6 @@
 // Acesso a dados compartilhado entre telas
 import { supabase, ok } from './supabase'
-import type { Cidade, Cliente, Fornecedor, PrecoCliente, Produto, Rota, RotaSemana, Vendedor } from './types'
+import type { CentroCusto, Cidade, Cliente, Fornecedor, PrecoCliente, Produto, Rota, RotaSemana, Vendedor } from './types'
 
 export const listarProdutos = async (soAtivos = true) => {
   let q = supabase.from('produto').select('*').order('ordem')
@@ -13,6 +13,8 @@ export const listarRotas = async () => ok(await supabase.from('rota').select('*'
 export const listarCidades = async () => ok(await supabase.from('cidade_distribuicao').select('*').order('nome')) as Cidade[]
 export const listarVendedores = async () => ok(await supabase.from('vendedor').select('*').order('nome')) as Vendedor[]
 export const listarFornecedores = async () => ok(await supabase.from('fornecedor').select('*').order('nome')) as Fornecedor[]
+export const listarCentrosCusto = async () =>
+  ok(await supabase.from('centro_custo').select('*').order('codigo')) as CentroCusto[]
 export const listarClientes = async () =>
   ok(await supabase.from('cliente').select('*').order('razao_social')) as Cliente[]
 export const precosDoCliente = async (clienteId: number) =>
