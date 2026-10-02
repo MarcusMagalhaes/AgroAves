@@ -2,7 +2,7 @@
 // As chamadas usam o login do usuário (JWT do Supabase): RLS e eh_admin() valem aqui como na tela,
 // e as credenciais do banco ficam só no Worker (Settings › Variables and secrets), nunca no navegador.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { ErroSicoob, Sicoob, montarInclusao, type Ambiente, type ConfigCobranca, type Fetcher } from './sicoob'
+import { ErroSicoob, Sicoob, montarInclusao, pdfDeBase64, type Ambiente, type ConfigCobranca, type Fetcher } from './sicoob'
 
 export interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> }
@@ -64,13 +64,18 @@ async function config(sb: SupabaseClient): Promise<ConfigCobranca> {
   return r.data as ConfigCobranca
 }
 
-const base64ParaBytes = (b64: string) => Uint8Array.from(atob(b64.replace(/\s/g, '')), (c) => c.charCodeAt(0))
-
+/** Guarda o PDF no Storage; nunca falha a operação: sem o PDF o boleto continua válido e a 2ª via busca de novo */
 async function guardarPdf(sb: SupabaseClient, tituloId: number, boletoId: number, pdfBase64: string | null) {
-  if (!pdfBase64) return null
-  const caminho = `${tituloId}/${boletoId}.pdf`
-  const up = await sb.storage.from(BUCKET).upload(caminho, base64ParaBytes(pdfBase64), { contentType: 'application/pdf', upsert: true })
-  return up.error ? null : caminho   // sem o PDF o boleto continua válido; a 2ª via busca de novo
+  try {
+    const bytes = pdfDeBase64(pdfBase64)
+    if (!bytes) {
+      if (pdfBase64) console.log(JSON.stringify({ sicoob: { aviso: 'pdfBoleto não é um PDF em base64', inicio: pdfBase64.slice(0, 60) } }))
+      return null
+    }
+    const caminho = `${tituloId}/${boletoId}.pdf`
+    const up = await sb.storage.from(BUCKET).upload(caminho, bytes, { contentType: 'application/pdf', upsert: true })
+    return up.error ? null : caminho
+  } catch { return null }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -96,11 +101,16 @@ async function emitir(sb: SupabaseClient, env: Env, corpo: any) {
 
   const ambiente = ambienteDe(env)
   const sicoob = sicoobDe(env)
-  const ins = await sb.from('boleto').insert({
-    titulo_id: tituloId, ambiente, valor: inclusao.valor, data_vencimento: vencimento, seu_numero: inclusao.seuNumero,
-  }).select('id').single()
+  const novo = { titulo_id: tituloId, ambiente, valor: inclusao.valor, data_vencimento: vencimento, seu_numero: inclusao.seuNumero }
+  let ins = await sb.from('boleto').insert(novo).select('id').single()
+  if (ins.error?.code === '23505' && ambiente === 'SANDBOX') {
+    // sandbox: emissão de teste interrompida (ficou "emitindo") não bloqueia nova tentativa
+    const travado = await sb.from('boleto').update({ situacao: 'ERRO', erro: 'Emissão interrompida' })
+      .eq('titulo_id', tituloId).eq('situacao', 'EMITINDO').eq('ambiente', 'SANDBOX').select('id')
+    if (travado.data?.length) ins = await sb.from('boleto').insert(novo).select('id').single()
+  }
   if (ins.error) {
-    if (ins.error.code === '23505') throw new ErroHttp(409, 'Este título já tem boleto emitido.')
+    if (ins.error.code === '23505') throw new ErroHttp(409, 'Este título já tem boleto emitido (ou uma emissão em andamento).')
     throw new ErroHttp(500, `Boleto: ${ins.error.message}`)
   }
   const boletoId = (ins.data as any).id as number
@@ -112,14 +122,16 @@ async function emitir(sb: SupabaseClient, env: Env, corpo: any) {
     await sb.from('boleto').update({ situacao: 'ERRO', erro: String(e.message).slice(0, 500) }).eq('id', boletoId)
     throw new ErroHttp(e instanceof ErroSicoob && e.status < 500 ? 422 : 502, `Sicoob: ${e.message}`)
   }
-  const pdf_caminho = await guardarPdf(sb, tituloId, boletoId, reg.pdfBase64)
+  // grava primeiro o boleto emitido; o PDF vem depois e não pode desfazer a emissão
   const up = await sb.from('boleto').update({
     situacao: 'EMITIDO', nosso_numero: reg.nossoNumero, linha_digitavel: reg.linhaDigitavel, codigo_barras: reg.codigoBarras,
-    pix_copia_cola: reg.pixCopiaCola, pdf_caminho, resposta: reg.resposta, erro: null,
+    pix_copia_cola: reg.pixCopiaCola, resposta: reg.resposta, erro: null,
   }).eq('id', boletoId).select('*').single()
   falha(up, 'Boleto emitido no banco, mas não foi gravado (nosso número ' + reg.nossoNumero + ')')
   if (vencimento !== titulo.data_vencimento) await sb.from('titulo').update({ data_vencimento: vencimento }).eq('id', tituloId)
-  return up.data
+  const pdf_caminho = await guardarPdf(sb, tituloId, boletoId, reg.pdfBase64)
+  if (pdf_caminho) await sb.from('boleto').update({ pdf_caminho }).eq('id', boletoId)
+  return { ...(up.data as any), pdf_caminho }
 }
 
 async function boletoPorId(sb: SupabaseClient, id: unknown) {

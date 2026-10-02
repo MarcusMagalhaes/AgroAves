@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { cnpjValido, cpfValido, montarPagador, pendenciasPagador, type ClientePagador } from '../src/lib/boleto'
-import { ErroSicoob, Sicoob, lerBoleto, lerSituacao, montarInclusao, somaDias, type ConfigCobranca } from './sicoob'
+import { ErroSicoob, Sicoob, lerBoleto, lerSituacao, pdfDeBase64, montarInclusao, somaDias, type ConfigCobranca } from './sicoob'
 import { hojeBrasilia, tratarApi, type Env } from './index'
 
 const cliente: ClientePagador = {
@@ -158,6 +158,19 @@ describe('cliente Sicoob (sandbox)', () => {
 
   it('exige token no sandbox', () => {
     expect(() => new Sicoob({ ambiente: 'SANDBOX', clientId: 'cid' })).toThrow(/SICOOB_TOKEN/)
+  })
+})
+
+describe('pdfDeBase64', () => {
+  const pdf = btoa('%PDF-1.4 teste')
+  it('aceita base64, data URI, base64url e sem padding', () => {
+    expect(new TextDecoder().decode(pdfDeBase64(pdf)!)).toBe('%PDF-1.4 teste')
+    expect(pdfDeBase64(`data:application/pdf;base64,${pdf}`)).not.toBeNull()
+    expect(pdfDeBase64(pdf.replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_'))).not.toBeNull()
+    expect(pdfDeBase64(pdf.slice(0, 10) + '\n' + pdf.slice(10))).not.toBeNull()
+  })
+  it('recusa o que não é PDF em base64 sem lançar erro', () => {
+    for (const v of [null, '', 'string', 'não é base64!', 'https://exemplo/boleto.pdf', btoa('<html>'), 'abcde']) expect(pdfDeBase64(v)).toBeNull()
   })
 })
 

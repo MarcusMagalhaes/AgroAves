@@ -81,6 +81,20 @@ export function montarInclusao(p: {
 // "string" é o valor-exemplo da documentação, devolvido pelo sandbox no lugar dos dados
 const texto = (v: unknown) => (typeof v === 'string' && v.trim() && v.trim() !== 'string' ? v.trim() : null)
 
+/** PDF em base64 → bytes; null se não for base64 válido ou não for PDF (o sandbox devolve conteúdo simulado) */
+export function pdfDeBase64(b64: string | null | undefined): Uint8Array | null {
+  if (!b64) return null
+  let t = b64.replace(/^data:[^,]*,/, '').replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/')
+  t = t.replace(/=+$/, '')
+  if (!t || /[^A-Za-z0-9+/]/.test(t) || t.length % 4 === 1) return null
+  t += '='.repeat((4 - (t.length % 4)) % 4)
+  try {
+    const bytes = Uint8Array.from(atob(t), (c) => c.charCodeAt(0))
+    // todo PDF começa com "%PDF"
+    return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 ? bytes : null
+  } catch { return null }
+}
+
 /** Lê o retorno da inclusão / 2ª via */
 export function lerBoleto(retorno: any, sandbox = false): BoletoRegistrado {
   // v3: { resultado: {...} }; aceita também o formato em lista da v2 ({ resultado: [{ boleto: {...} }] })
