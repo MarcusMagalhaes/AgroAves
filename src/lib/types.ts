@@ -1,4 +1,9 @@
-export type Papel = 'ADMIN' | 'VENDEDOR'
+export type Papel = 'ADMIN_TI' | 'ADMIN' | 'VENDEDOR'
+export const PAPEIS: Record<Papel, string> = { ADMIN_TI: 'Administrador TI', ADMIN: 'Administrador', VENDEDOR: 'Vendedor' }
+/** Administrador TI também é administrador (vê tudo que o ADMIN vê) */
+export const ehAdmin = (u: { papel: Papel } | null | undefined) => u?.papel === 'ADMIN' || u?.papel === 'ADMIN_TI'
+/** Exclusivo da conta de TI (atribuído só pelo banco; não aparece como opção na tela de Usuários) */
+export const ehAdminTI = (u: { papel: Papel } | null | undefined) => u?.papel === 'ADMIN_TI'
 export type FormaPagamento = 'BOLETO' | 'ANTECIPADO' | 'A_VISTA'
 export type Resultado = 'PEDIDO' | 'SEM_INTERESSE' | 'SEM_CONTATO' | 'INTERESSE_SEM_PEDIDO'
 

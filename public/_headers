@@ -1,0 +1,16 @@
+# Cloudflare Pages — cabeçalhos HTTP
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Arquivos com hash no nome (gerados pelo Vite): cache longo
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Página e manifesto: sempre revalidar para pegar a versão nova logo após o deploy
+/index.html
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache

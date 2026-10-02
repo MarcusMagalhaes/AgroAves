@@ -1,4 +1,4 @@
-name: Publicar no GitHub Pages
+name: Publicar no GitHub Pages (transição — remover quando o Cloudflare Pages estiver no ar)
 
 on:
   push:

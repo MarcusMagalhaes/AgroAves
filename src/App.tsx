@@ -19,11 +19,14 @@ import Documentos from '@/pages/admin/Documentos'
 import Financeiro from '@/pages/admin/Financeiro'
 import Fechamento from '@/pages/admin/Fechamento'
 import Auditoria from '@/pages/admin/Auditoria'
+import { ehAdmin, ehAdminTI } from '@/lib/types'
 
-function Protegido({ admin, children }: { admin?: boolean; children: React.ReactElement }) {
+/** admin: ADMIN ou ADMIN_TI · ti: somente ADMIN_TI (telas exclusivas da TI) */
+function Protegido({ admin, ti, children }: { admin?: boolean; ti?: boolean; children: React.ReactElement }) {
   const { usuario } = useAuth()
   if (!usuario) return <Navigate to="/login" replace />
-  if (admin && usuario.papel !== 'ADMIN') return <Navigate to="/venda" replace />
+  if (admin && !ehAdmin(usuario)) return <Navigate to="/venda" replace />
+  if (ti && !ehAdminTI(usuario)) return <Navigate to="/venda" replace />
   return children
 }
 
