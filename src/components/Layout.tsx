@@ -28,7 +28,10 @@ const menuAdmin: Entrada[] = [
     { to: '/documentos/gta', label: 'GTA', icone: '📄' },
     { to: '/documentos/nf', label: 'Nota fiscal', icone: '🧮' },
   ] },
-  { to: '/financeiro', label: 'Financeiro', icone: '💰' },
+  { grupo: 'Financeiro', icone: '💰', itens: [
+    { to: '/financeiro', label: 'Contas a receber', icone: '📥' },
+    { to: '/contas-pagar', label: 'Contas a pagar', icone: '📤' },
+  ] },
   { to: '/fechamento-geral', label: 'Fechamento geral', icone: '📚' },
   { to: '/auditoria', label: 'Auditoria', icone: '🔍' },
 ]

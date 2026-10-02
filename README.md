@@ -9,19 +9,19 @@ Documentação do sistema em `../docs/sistema-2.0/`; especificação original em
 
 ```
 app/
-  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo
+  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar
   src/
     lib/                 supabase.ts, auth.tsx (login e papel), dados.ts (consultas), mapa.ts (mapa de entrega), format.ts, types.ts
     components/          Layout (menu responsivo), Logo (marca nova), ui (modal, toast, campos)
     pages/               Login, Venda (tela do vendedor), Mapa
     pages/admin/         Programacao (planilha), PedidoFornecedor, AjusteEntrega, Documentos (mapa/recibos/GTA/NF), Financeiro, Fechamento,
-                         Clientes, Rotas (ordem de entrega), Produtos, Vendedores, Fornecedores, Usuarios, CentrosCusto (só TI)
+                         Clientes, Rotas (ordem de entrega), Produtos, Vendedores, Fornecedores, Usuarios, CentrosCusto (só TI), ContasPagar
   migracao/migrar.py     extrai os .xlsx, limpa, gera CSVs + rejeições e (opcional) carrega no banco com reconciliação
 ```
 
 ## 1. Banco (Supabase)
 
-1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0007_centro_custo.sql` (base já existente: só as que ainda não rodaram).
+1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0008_contas_pagar.sql` (base já existente: só as que ainda não rodaram).
 2. **Login com Google** (Authentication › Providers › Google): ative e cole Client ID + Secret de um cliente OAuth do Google Cloud
    (pode reutilizar o do Controle Metanoia, acrescentando as origens/redirecionamentos abaixo):
    - Origens JavaScript autorizadas: `https://qqpavhptvptgktnzoawi.supabase.co` e o endereço do Cloudflare (`https://agroaves.<sua-conta>.workers.dev` ou domínio próprio)
@@ -84,7 +84,13 @@ git add -A && git commit -m "..." && git push      # publica automaticamente
 Usados no contas a pagar e no contas a receber. Árvore de 4 níveis com código falante gerado pelo banco a partir do pai:
 `1000` (milhar, raiz) › `1100` (centena) › `1110` (dezena) › `1111` (unidade) — até 9 filhos por nível; o tipo (a pagar/a receber)
 é escolhido na raiz e herdado pelos filhos. Código, pai e tipo nunca mudam; não há exclusão: desativar um centro de custo
-desativa toda a descendência. Leitura e escrita só para ADMIN_TI (RLS em `0007_centro_custo.sql`).
+desativa toda a descendência. Cadastro só para ADMIN_TI; administradores leem (para escolher no contas a pagar).
+
+## Fornecedores e contas a pagar
+
+Fornecedor tem tipo: **Produto para venda** (granja — único que aparece no Pedido à granja), **Material** e **Consumo**.
+Contas a pagar (Financeiro › Contas a pagar): descrição, fornecedor (qualquer tipo), vencimento, valor e centro de custo
+do tipo a pagar, em qualquer nível da árvore. Pendente → Pago (com data; pode ser estornado) ou Cancelado (com motivo); não se exclui.
 
 ## Fluxo semanal no sistema
 
