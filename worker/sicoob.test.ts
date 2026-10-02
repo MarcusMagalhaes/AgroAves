@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { cnpjValido, cpfValido, montarPagador, pendenciasPagador, type ClientePagador } from '../src/lib/boleto'
-import { ErroSicoob, Sicoob, lerSituacao, montarInclusao, somaDias, type ConfigCobranca } from './sicoob'
+import { ErroSicoob, Sicoob, lerBoleto, lerSituacao, montarInclusao, somaDias, type ConfigCobranca } from './sicoob'
 import { hojeBrasilia, tratarApi, type Env } from './index'
 
 const cliente: ClientePagador = {
@@ -139,6 +139,21 @@ describe('cliente Sicoob (sandbox)', () => {
     const { fn } = fetchSimulado({ status: 400, corpo })
     vi.spyOn(console, 'log').mockImplementation(() => {})
     await expect(new Sicoob({ ...opcoes, fetcher: fn }).consultar(config, 1)).rejects.toThrow(`HTTP 400: ${JSON.stringify(corpo)}`)
+  })
+
+  it('sandbox devolve o exemplo da documentação (nosso número 0, "string"): aceita só no sandbox', async () => {
+    const exemplo = { resultado: { nossoNumero: 0, linhaDigitavel: 'string', codigoBarras: 'string', qrCode: 'string', pdfBoleto: 'string' } }
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    const corpo = montarInclusao({ config, cliente, titulo: { id: 1, valor: 10, data_referencia: '2026-10-01' }, vencimento: '2026-10-08', hoje: '2026-10-02' })
+    const sb = new Sicoob({ ...opcoes, fetcher: fetchSimulado({ corpo: exemplo }).fn })
+    expect(await sb.incluir(corpo)).toMatchObject({ nossoNumero: 0, linhaDigitavel: null, pixCopiaCola: null, pdfBase64: null })
+    const prod = new Sicoob({ ambiente: 'PRODUCAO', clientId: 'cid', fetcher: fetchSimulado({ corpo: { access_token: 't' } }, { corpo: exemplo }).fn })
+    await expect(prod.incluir(corpo)).rejects.toThrow(/nosso número/)
+  })
+
+  it('aceita o formato em lista da v2', () => {
+    expect(lerBoleto({ resultado: [{ status: { codigo: 200 }, boleto: { nossoNumero: 55, linhaDigitavel: '7569' } }] }))
+      .toMatchObject({ nossoNumero: 55, linhaDigitavel: '7569' })
   })
 
   it('exige token no sandbox', () => {
