@@ -9,7 +9,7 @@ Documentação do sistema em `../docs/sistema-2.0/`; especificação original em
 
 ```
 app/
-  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar · 0010 dashboards · 0011 boletos Sicoob
+  supabase/migrations/   0001_schema.sql (tabelas, views, funções de negócio) · 0002_rls.sql (segurança) · 0003_seed.sql (produtos, cidades) · 0004 cor do produto · 0005 auditoria · 0006 admin TI · 0007 centro de custo · 0008 contas a pagar · 0009 anexos do contas a pagar · 0010 dashboards · 0011 boletos Sicoob · 0012 boletos só TI
   src/
     lib/                 boleto.ts (validação do pagador), cobranca.ts (API de boletos), supabase.ts, auth.tsx (login e papel), dados.ts (consultas), mapa.ts (mapa de entrega), format.ts, types.ts
     components/          Layout (menu responsivo), Logo (marca nova), ui (modal, toast, campos)
@@ -22,7 +22,7 @@ app/
 
 ## 1. Banco (Supabase)
 
-1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0011_boletos.sql` (base já existente: só as que ainda não rodaram).
+1. Projeto: `https://qqpavhptvptgktnzoawi.supabase.co`. Em **SQL Editor**, execute na ordem: `0001_schema.sql` … `0012_boletos_so_ti.sql` (base já existente: só as que ainda não rodaram).
 2. **Login com Google** (Authentication › Providers › Google): ative e cole Client ID + Secret de um cliente OAuth do Google Cloud
    (pode reutilizar o do Controle Metanoia, acrescentando as origens/redirecionamentos abaixo):
    - Origens JavaScript autorizadas: `https://qqpavhptvptgktnzoawi.supabase.co` e o endereço do Cloudflare (`https://agroaves.<sua-conta>.workers.dev` ou domínio próprio)
@@ -76,7 +76,7 @@ git add -A && git commit -m "..." && git push      # publica automaticamente
 
 | Papel | Acesso |
 | --- | --- |
-| ADMIN_TI | tudo do ADMIN + telas exclusivas da TI (Centros de custo, Contas a pagar, tipo de fornecedor). Exclusivo de markvpm@gmail.com: definido só pelo banco (`0006_admin_ti.sql`), não aparece como opção em Usuários e não pode ser atribuído, alterado, desativado ou excluído pela aplicação |
+| ADMIN_TI | tudo do ADMIN + telas exclusivas da TI (Centros de custo, Contas a pagar, tipo de fornecedor, boletos Sicoob). Exclusivo de markvpm@gmail.com: definido só pelo banco (`0006_admin_ti.sql`), não aparece como opção em Usuários e não pode ser atribuído, alterado, desativado ou excluído pela aplicação |
 | ADMIN | tudo (exceto telas da TI) |
 | VENDEDOR | Venda semanal e Mapa, apenas das rotas em que é o vendedor cadastrado |
 
@@ -99,9 +99,12 @@ bucket privado `contas-pagar` do Supabase Storage, criado pela `0009`. Pendente 
 
 ## Boletos Sicoob (contas a receber)
 
+**Exclusivo do ADMIN_TI** (telas, Worker, RLS, PDFs e auditoria — `0012`). Os demais administradores não veem colunas,
+botões nem avisos de boleto; a baixa manual de título continua com eles e marca o boleto para *Baixar no banco*.
+
 Integração com a **API Cobrança Bancária v3** do Sicoob, feita pelo Worker do Cloudflare (`worker/`). O navegador nunca vê
-as credenciais do banco: chama `/api/boletos/*` com o login do Supabase, e o Worker confere se é administrador (`eh_admin()`)
-e grava com as mesmas regras RLS da tela.
+as credenciais do banco: chama `/api/boletos/*` com o login do Supabase, e o Worker confere se é o administrador TI
+(`eh_admin_ti()`) e grava com as mesmas regras RLS da tela.
 
 - **Emitir**: Financeiro › linha do título › *Emitir boleto* (ou selecione vários › *Emitir boletos*). O boleto sai com PDF,
   linha digitável e QR Code Pix (boleto híbrido), vence na `data_vencimento` do título (entrega + prazo da configuração;
@@ -111,7 +114,6 @@ e grava com as mesmas regras RLS da tela.
 - **Baixar no banco**: título cancelado (recálculo/exclusão) ou baixado à mão deixa o boleto como *Baixar no banco*, para
   cancelá-lo no Sicoob e o cliente não pagar em dobro.
 - **Cobrança** (botão no Financeiro): nº do cliente/beneficiário, conta, modalidade, prazo, multa, juros, Pix e instruções.
-  Só o ADMIN_TI altera.
 
 ### Configuração no Cloudflare (Workers › agroaves › Settings › Variables and secrets, tipo **Secret**)
 
@@ -124,7 +126,8 @@ e grava com as mesmas regras RLS da tela.
 
 Produção também exige o certificado ICP-Brasil (A1) do Sicoob como binding mTLS `SICOOB_CERT` (instruções em `wrangler.jsonc`).
 O sandbox devolve **dados simulados**: serve para validar a integração, não as regras do banco (homologue com a cooperativa).
-Boletos emitidos no sandbox aparecem marcados como *teste*. A API só funciona no site publicado no Cloudflare (não no GitHub Pages).
+Boletos emitidos no sandbox aparecem marcados como *teste*; linha digitável, Pix e PDF são exemplos fixos do Sicoob
+(o PDF simulado vem incompleto, então o botão PDF avisa em vez de abrir). A API só funciona no site publicado no Cloudflare (não no GitHub Pages).
 
 Desenvolvimento: `npm run dev:api` (Worker na porta 8787, com as variáveis em `.dev.vars`) e `npm run dev` em outro terminal
 (o Vite repassa `/api` para o Worker). Testes: `npm test`.

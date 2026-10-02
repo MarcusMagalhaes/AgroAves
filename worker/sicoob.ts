@@ -81,7 +81,7 @@ export function montarInclusao(p: {
 // "string" é o valor-exemplo da documentação, devolvido pelo sandbox no lugar dos dados
 const texto = (v: unknown) => (typeof v === 'string' && v.trim() && v.trim() !== 'string' ? v.trim() : null)
 
-/** PDF em base64 → bytes; null se não for base64 válido ou não for PDF (o sandbox devolve conteúdo simulado) */
+/** PDF em base64 → bytes; null se não for base64 válido ou não for um PDF completo (o sandbox devolve conteúdo simulado) */
 export function pdfDeBase64(b64: string | null | undefined): Uint8Array | null {
   if (!b64) return null
   let t = b64.replace(/^data:[^,]*,/, '').replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/')
@@ -90,8 +90,10 @@ export function pdfDeBase64(b64: string | null | undefined): Uint8Array | null {
   t += '='.repeat((4 - (t.length % 4)) % 4)
   try {
     const bytes = Uint8Array.from(atob(t), (c) => c.charCodeAt(0))
-    // todo PDF começa com "%PDF"
-    return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 ? bytes : null
+    // todo PDF começa com "%PDF" e termina com "%%EOF" (o exemplo do sandbox vem truncado)
+    const inicio = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46
+    const fim = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 1024)))
+    return inicio && fim.includes('%%EOF') ? bytes : null
   } catch { return null }
 }
 

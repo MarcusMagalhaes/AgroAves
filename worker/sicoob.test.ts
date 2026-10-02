@@ -162,15 +162,16 @@ describe('cliente Sicoob (sandbox)', () => {
 })
 
 describe('pdfDeBase64', () => {
-  const pdf = btoa('%PDF-1.4 teste')
+  const pdf = btoa('%PDF-1.4 teste\n%%EOF\n')
   it('aceita base64, data URI, base64url e sem padding', () => {
-    expect(new TextDecoder().decode(pdfDeBase64(pdf)!)).toBe('%PDF-1.4 teste')
+    expect(new TextDecoder().decode(pdfDeBase64(pdf)!)).toBe('%PDF-1.4 teste\n%%EOF\n')
     expect(pdfDeBase64(`data:application/pdf;base64,${pdf}`)).not.toBeNull()
     expect(pdfDeBase64(pdf.replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_'))).not.toBeNull()
     expect(pdfDeBase64(pdf.slice(0, 10) + '\n' + pdf.slice(10))).not.toBeNull()
   })
   it('recusa o que não é PDF em base64 sem lançar erro', () => {
     for (const v of [null, '', 'string', 'não é base64!', 'https://exemplo/boleto.pdf', btoa('<html>'), 'abcde']) expect(pdfDeBase64(v)).toBeNull()
+    expect(pdfDeBase64(btoa('%PDF-1.4 truncado sem fim'))).toBeNull()   // exemplo do sandbox
   })
 })
 
