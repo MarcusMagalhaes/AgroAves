@@ -18,6 +18,7 @@ import AjusteEntrega from '@/pages/admin/AjusteEntrega'
 import Documentos from '@/pages/admin/Documentos'
 import Financeiro from '@/pages/admin/Financeiro'
 import Fechamento from '@/pages/admin/Fechamento'
+import Auditoria from '@/pages/admin/Auditoria'
 
 function Protegido({ admin, children }: { admin?: boolean; children: React.ReactElement }) {
   const { usuario } = useAuth()
@@ -46,6 +47,7 @@ function Rotas_() {
         <Route path="/financeiro" element={<Protegido admin><Financeiro /></Protegido>} />
         <Route path="/fechamento-geral" element={<Protegido admin><Programacao key="fechamento-geral" historico /></Protegido>} />
         <Route path="/fechamento" element={<Protegido admin><Fechamento /></Protegido>} />
+        <Route path="/auditoria" element={<Protegido admin><Auditoria /></Protegido>} />
         <Route path="/clientes" element={<Protegido admin><Clientes /></Protegido>} />
         <Route path="/rotas" element={<Protegido admin><Rotas /></Protegido>} />
         <Route path="/produtos" element={<Protegido admin><Produtos /></Protegido>} />

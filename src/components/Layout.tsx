@@ -27,6 +27,7 @@ const menuAdmin: Entrada[] = [
   ] },
   { to: '/financeiro', label: 'Financeiro', icone: '💰' },
   { to: '/fechamento-geral', label: 'Fechamento geral', icone: '📚' },
+  { to: '/auditoria', label: 'Auditoria', icone: '🔍' },
 ]
 const menuVendedor: Entrada[] = [
   { to: '/venda', label: 'Venda semanal', icone: '🛒' },

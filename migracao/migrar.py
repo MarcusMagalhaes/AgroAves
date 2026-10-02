@@ -10,7 +10,7 @@ Sem --dsn, gera apenas os CSVs limpos em migracao/saida/ e o relatório de rejei
 A carga é idempotente nas tabelas de cadastro (upsert por código/sigla/nome) e APAGA e recarrega
 pedidos/contatos/títulos/pedidos à granja importados do legado (marcados com observacao LIKE 'LEGADO%').
 """
-import argparse, csv, collections, datetime, io, os, re, sys, unicodedata
+import argparse, csv, collections, datetime, io, json, os, re, sys, unicodedata
 
 import openpyxl
 
@@ -444,6 +444,8 @@ def carregar(m, dsn, limpar_tudo=False):
     cn = psycopg2.connect(dsn)
     cn.autocommit = False
     cur = cn.cursor()
+    # auditoria: a carga não gera linha por registro; grava uma linha-resumo ao final
+    cur.execute("select set_config('app.sem_auditoria', 'on', false)")
     ev = lambda sql, rows: execute_values(cur, sql, rows, page_size=2000) if rows else None
     try:
         print("1/8 cadastros básicos")
@@ -554,6 +556,10 @@ def carregar(m, dsn, limpar_tudo=False):
             if siglas:
                 ev("insert into pedido_fornecedor_item (pedido_fornecedor_id, produto_id, qtd_programada, qtd_pedida) select %s, p.id, v.prog, v.ped from (values %%s) v(sigla, prog, ped) join produto p on p.sigla=v.sigla" % pfid,
                    [(s_, x["programado"].get(s_, 0), x["qtd"].get(s_, 0)) for s_ in siglas])
+        resumo = {"evento": "carga das planilhas", "limpar_tudo": limpar_tudo, "clientes": len(m["clientes"]), "precos": len(m["precos"]),
+                  "rota_cliente": len(m["rota_cliente"]), "pedidos": len(m["pedidos"]), "contatos": len(m["contatos"]), "titulos": len(m["titulos"]), "pedidos_fornecedor": len(m["pf"])}
+        cur.execute("select set_config('app.sem_auditoria', 'off', false)")
+        cur.execute("select registrar_carga(%s::jsonb)", (json.dumps(resumo, ensure_ascii=False),))
         cn.commit()
         print("Carga concluída.")
         reconciliar(cur, m)
