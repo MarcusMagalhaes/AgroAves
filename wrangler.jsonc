@@ -1,0 +1,14 @@
+// Cloudflare Workers (somente arquivos estáticos). O GitHub é só o repositório: o Cloudflare
+// compila (build.command) e publica a pasta dist a cada push na main.
+// As variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY são de BUILD:
+// Cloudflare › Workers › agroaves › Settings › Build › Variables and secrets.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agroaves",
+  "compatibility_date": "2026-10-01",
+  "build": { "command": "npm run build" },
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
