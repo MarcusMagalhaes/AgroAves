@@ -39,6 +39,12 @@ export interface Usuario { id: string; nome: string; email: string; papel: Papel
 export interface Vendedor { id: number; usuario_id: string | null; nome: string; telefone: string | null; ativo: boolean }
 export interface Cidade { id: number; nome: string }
 export interface Fornecedor { id: number; nome: string; ativo: boolean }
+export type TipoCentroCusto = 'PAGAR' | 'RECEBER'
+export const TIPOS_CENTRO_CUSTO: Record<TipoCentroCusto, string> = { PAGAR: 'A pagar', RECEBER: 'A receber' }
+/** Centro de custo: código falante gerado pelo banco (1000 › 1100 › 1110 › 1111); código, pai e tipo não mudam */
+export interface CentroCusto {
+  id: number; codigo: number; descricao: string; tipo: TipoCentroCusto; pai_codigo: number | null; nivel: 1 | 2 | 3 | 4; ativo: boolean
+}
 export interface Rota {
   id: number; nome: string; vendedor_id: number | null; cidade_distribuicao_id: number; intervalo_dias: number; ativa: boolean
 }

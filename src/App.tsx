@@ -12,6 +12,7 @@ import Produtos from '@/pages/admin/Produtos'
 import Vendedores from '@/pages/admin/Vendedores'
 import Fornecedores from '@/pages/admin/Fornecedores'
 import Usuarios from '@/pages/admin/Usuarios'
+import CentrosCusto from '@/pages/admin/CentrosCusto'
 import Programacao from '@/pages/admin/Programacao'
 import PedidoFornecedor from '@/pages/admin/PedidoFornecedor'
 import AjusteEntrega from '@/pages/admin/AjusteEntrega'
@@ -57,6 +58,7 @@ function Rotas_() {
         <Route path="/vendedores" element={<Protegido admin><Vendedores /></Protegido>} />
         <Route path="/fornecedores" element={<Protegido admin><Fornecedores /></Protegido>} />
         <Route path="/usuarios" element={<Protegido admin><Usuarios /></Protegido>} />
+        <Route path="/centros-custo" element={<Protegido ti><CentrosCusto /></Protegido>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
