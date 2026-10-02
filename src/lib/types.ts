@@ -1,3 +1,4 @@
+import type { SituacaoBoleto } from './boleto'
 export type Papel = 'ADMIN_TI' | 'ADMIN' | 'VENDEDOR'
 export const PAPEIS: Record<Papel, string> = { ADMIN_TI: 'Administrador TI', ADMIN: 'Administrador', VENDEDOR: 'Vendedor' }
 /** Administrador TI também é administrador (vê tudo que o ADMIN vê) */
@@ -58,7 +59,8 @@ export interface RotaSemana {
 }
 export interface Cliente {
   id: number; codigo: number; codigo_externo: string | null; cnpj_cpf: string | null; razao_social: string
-  nome_fantasia: string | null; endereco: string | null; cidade: string | null; contato: string | null; telefone: string | null
+  nome_fantasia: string | null; endereco: string | null; bairro: string | null; cidade: string | null; cep: string | null
+  uf: string | null; email: string | null; contato: string | null; telefone: string | null
   local_entrega: string | null; exige_nf: boolean; exige_gta: boolean; forma_pagamento: FormaPagamento
   tipo: 'CLIENTE' | 'REPOSICAO'; observacao: string | null; ativo: boolean
 }
@@ -84,7 +86,19 @@ export interface PedidoItem { pedido_id: number; produto_id: number; quantidade:
 export interface Titulo {
   id: number; pedido_id: number | null; cliente_id: number; data_referencia: string; valor: number
   forma_pagamento: FormaPagamento; situacao: 'PENDENTE' | 'BAIXADO' | 'CANCELADO'; data_baixa: string | null
-  motivo: string | null; criado_em: string
+  data_vencimento: string | null; motivo: string | null; criado_em: string
+}
+/** Boleto Sicoob de um título (tabela boleto) */
+export interface Boleto {
+  id: number; titulo_id: number; ambiente: 'SANDBOX' | 'PRODUCAO'; situacao: SituacaoBoleto; valor: number
+  data_vencimento: string; nosso_numero: number | null; linha_digitavel: string | null; pix_copia_cola: string | null
+  pdf_caminho: string | null; data_liquidacao: string | null; erro: string | null; criado_em: string
+}
+/** Configuração da cobrança (linha única da tabela cobranca_config) */
+export interface CobrancaConfig {
+  numero_cliente: number | null; codigo_modalidade: number; numero_conta_corrente: number | null
+  numero_contrato_cobranca: number | null; especie_documento: string; prazo_vencimento_dias: number
+  multa_percentual: number; juros_mes_percentual: number; com_pix: boolean; mensagem: string | null
 }
 export interface PedidoFornecedor {
   id: number; data_entrega: string; cidade_distribuicao_id: number; fornecedor_id: number
