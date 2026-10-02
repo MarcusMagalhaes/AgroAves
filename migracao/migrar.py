@@ -503,7 +503,9 @@ def carregar(m, dsn):
         cur.execute("""insert into pedido (semana_rota_id, cliente_id, tipo, forma_pagamento, cidade_distribuicao_id, reposicao, total, status, observacao, criado_em)
                        select s.id, c.id, t.tipo, t.forma, cd.id, t.reposicao, t.total, t.status, t.observacao, t.criado_em
                        from tmp_pedido t join rota r on r.nome=t.rota join semana_rota s on s.rota_id=r.id and s.data_entrega=t.data
-                       join cidade_distribuicao cd on cd.nome=t.distribuicao left join cliente c on c.codigo=t.codigo order by t.k""")
+                       join cidade_distribuicao cd on cd.nome=t.distribuicao left join cliente c on c.codigo=t.codigo
+                       where t.codigo is null or not exists (select 1 from pedido p2 where p2.semana_rota_id=s.id and p2.cliente_id=c.id and p2.status<>'EXCLUIDO')
+                       order by t.k""")
         cur.execute(r"""create temp table tmp_map on commit drop as
                        select p.id as pedido_id, (regexp_match(p.observacao, '^LEGADO#(\d+) '))[1]::int as k from pedido p where p.observacao like 'LEGADO#%'""")
         cur.execute("create index on tmp_map (k)")
