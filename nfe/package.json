@@ -1,0 +1,25 @@
+{
+  "name": "agroaves-nfe",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Emissor próprio de NF-e (modelo 55) do AgroAves — protótipo, SOMENTE homologação",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --import tsx test/*.test.ts",
+    "status": "tsx src/cli.ts status",
+    "gerar": "tsx src/cli.ts gerar",
+    "emitir": "tsx src/cli.ts emitir"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.12",
+    "node-forge": "^1.4.0",
+    "xml-crypto": "^6.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/node-forge": "^1.3.14",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
