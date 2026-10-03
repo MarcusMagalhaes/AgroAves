@@ -7,6 +7,7 @@ import { FORMAS, corProduto, ehAdminTI, tom, type Cliente, type Produto, type Ro
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
 import ComboCliente from '@/components/ComboCliente'
 import { useAuth } from '@/lib/auth'
+import CompletarCadastros from '@/components/CompletarCadastros'
 import { UFS, pendenciasPagador } from '@/lib/boleto'
 
 const mascaraCep = (v: string) => { const d = v.replace(/\D/g, '').slice(0, 8); return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d }
@@ -33,6 +34,7 @@ export default function Clientes() {
   const [compId, setCompId] = useState<number | null>(null)
   const [compPrecos, setCompPrecos] = useState<Record<number, string> | null>(null)
   const [compNome, setCompNome] = useState('')
+  const [completar, setCompletar] = useState(false)
 
   const carregar = async () => {
     try {
@@ -108,7 +110,11 @@ export default function Clientes() {
   if (!lista) return <Carregando />
   return (
     <div className="mx-auto max-w-6xl">
-      <Titulo acoes={<button className="btn-primary" onClick={() => abrir(novoCliente())}>+ Novo cliente</button>}>Clientes e preços</Titulo>
+      <Titulo acoes={<>
+        <button className="btn-secondary" onClick={() => setCompletar(true)} title="Preenche bairro, CEP e UF em branco a partir do CNPJ ou da rua">Completar cadastros</button>
+        <button className="btn-primary" onClick={() => abrir(novoCliente())}>+ Novo cliente</button>
+      </>}>Clientes e preços</Titulo>
+      <CompletarCadastros aberto={completar} clientes={lista} onFechar={() => setCompletar(false)} onGravado={carregar} />
       <div className="barra">
         <Campo label="Buscar"><input className="input" placeholder="código, nome, cidade, contato, CNPJ…" value={busca} onChange={(e) => setBusca(e.target.value)} /></Campo>
         <Campo label="Rota">
