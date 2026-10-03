@@ -3,14 +3,20 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase, ok } from '@/lib/supabase'
 import { listarClientes, listarProdutos, listarRotas, precosDoCliente } from '@/lib/dados'
 import { fmtPreco, mascaraPreco, normalizar, parsePreco } from '@/lib/format'
-import { FORMAS, corProduto, tom, type Cliente, type Produto, type Rota } from '@/lib/types'
+import { FORMAS, corProduto, ehAdminTI, tom, type Cliente, type Produto, type Rota } from '@/lib/types'
 import { Campo, Carregando, Chip, Modal, Titulo, useToast } from '@/components/ui'
 import ComboCliente from '@/components/ComboCliente'
+import { useAuth } from '@/lib/auth'
+import CompletarCadastros from '@/components/CompletarCadastros'
+import { UFS, pendenciasPagador } from '@/lib/boleto'
+
+const mascaraCep = (v: string) => { const d = v.replace(/\D/g, '').slice(0, 8); return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d }
 
 const novoCliente = (): Partial<Cliente> => ({ razao_social: '', forma_pagamento: 'BOLETO', exige_nf: false, exige_gta: false, tipo: 'CLIENTE', ativo: true })
 
 export default function Clientes() {
   const { toast } = useToast()
+  const ti = ehAdminTI(useAuth().usuario)   // aviso de boleto Sicoob só para o administrador TI
   const [lista, setLista] = useState<Cliente[] | null>(null)
   const [rotas, setRotas] = useState<Rota[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
@@ -28,6 +34,7 @@ export default function Clientes() {
   const [compId, setCompId] = useState<number | null>(null)
   const [compPrecos, setCompPrecos] = useState<Record<number, string> | null>(null)
   const [compNome, setCompNome] = useState('')
+  const [completar, setCompletar] = useState(false)
 
   const carregar = async () => {
     try {
@@ -103,7 +110,11 @@ export default function Clientes() {
   if (!lista) return <Carregando />
   return (
     <div className="mx-auto max-w-6xl">
-      <Titulo acoes={<button className="btn-primary" onClick={() => abrir(novoCliente())}>+ Novo cliente</button>}>Clientes e preços</Titulo>
+      <Titulo acoes={<>
+        <button className="btn-secondary" onClick={() => setCompletar(true)} title="Preenche bairro, CEP e UF em branco a partir do CNPJ ou da rua">Completar cadastros</button>
+        <button className="btn-primary" onClick={() => abrir(novoCliente())}>+ Novo cliente</button>
+      </>}>Clientes e preços</Titulo>
+      <CompletarCadastros aberto={completar} clientes={lista} onFechar={() => setCompletar(false)} onGravado={carregar} />
       <div className="barra">
         <Campo label="Buscar"><input className="input" placeholder="código, nome, cidade, contato, CNPJ…" value={busca} onChange={(e) => setBusca(e.target.value)} /></Campo>
         <Campo label="Rota">
@@ -161,7 +172,15 @@ export default function Clientes() {
                 <Campo label="Cliente (razão social)" className="sm:col-span-2"><input className="input" value={edit.razao_social ?? ''} onChange={(e) => setEdit({ ...edit, razao_social: e.target.value })} /></Campo>
                 <Campo label="Nome fantasia"><input className="input" value={edit.nome_fantasia ?? ''} onChange={(e) => setEdit({ ...edit, nome_fantasia: e.target.value })} /></Campo>
                 <Campo label="Endereço" className="sm:col-span-2"><input className="input" value={edit.endereco ?? ''} onChange={(e) => setEdit({ ...edit, endereco: e.target.value })} /></Campo>
+                <Campo label="Bairro"><input className="input" value={edit.bairro ?? ''} onChange={(e) => setEdit({ ...edit, bairro: e.target.value })} /></Campo>
                 <Campo label="Cidade"><input className="input" value={edit.cidade ?? ''} onChange={(e) => setEdit({ ...edit, cidade: e.target.value })} /></Campo>
+                <Campo label="CEP"><input className="input" inputMode="numeric" placeholder="00000-000" value={edit.cep ?? ''} onChange={(e) => setEdit({ ...edit, cep: mascaraCep(e.target.value) })} /></Campo>
+                <Campo label="UF">
+                  <select className="input" value={edit.uf ?? ''} onChange={(e) => setEdit({ ...edit, uf: e.target.value || null })}>
+                    <option value="">—</option>{UFS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </Campo>
+                <Campo label="E-mail (boleto)"><input className="input" type="email" value={edit.email ?? ''} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></Campo>
                 <Campo label="Contato"><input className="input" value={edit.contato ?? ''} onChange={(e) => setEdit({ ...edit, contato: e.target.value })} /></Campo>
                 <Campo label="Telefone"><input className="input" value={edit.telefone ?? ''} onChange={(e) => setEdit({ ...edit, telefone: e.target.value })} /></Campo>
                 <Campo label="Local de entrega"><input className="input" value={edit.local_entrega ?? ''} onChange={(e) => setEdit({ ...edit, local_entrega: e.target.value })} /></Campo>
@@ -175,6 +194,11 @@ export default function Clientes() {
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!edit.exige_gta} onChange={(e) => setEdit({ ...edit, exige_gta: e.target.checked })} /> Exige GTA</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked })} /> Ativo</label>
                 </div>
+                {ti && edit.forma_pagamento === 'BOLETO' && pendenciasPagador(edit as Cliente).length > 0 && (
+                  <div className="sm:col-span-3 lg:col-span-5 rounded bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">
+                    Para emitir boleto Sicoob falta: <b>{pendenciasPagador(edit as Cliente).join(', ')}</b>
+                  </div>
+                )}
                 <Campo label="Rotas" className="sm:col-span-3 lg:col-span-5">
                   <div className="flex flex-wrap gap-2">
                     {rotas.filter((r) => r.ativa).map((r) => (

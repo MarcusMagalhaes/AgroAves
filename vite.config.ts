@@ -7,5 +7,6 @@ export default defineConfig(() => ({
   plugins: [react()],
   base: process.env.VITE_BASE ?? '/',
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  server: { port: 5173 },
+  // /api/* (boletos) roda no Worker: em desenvolvimento, `npm run dev:api` sobe o Worker na porta 8787
+  server: { port: 5173, proxy: { '/api': 'http://localhost:8787' } },
 }))
