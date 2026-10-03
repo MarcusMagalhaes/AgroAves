@@ -43,13 +43,15 @@ sem crédito de ICMS · Av. Joaquim Avelino dos Reis, 634, Industrial · Santana
 
 ## Próximas etapas (depois da primeira nota autorizada)
 
-1. Banco: campos fiscais em `cliente` (IE, endereço estruturado, CEP, cód. IBGE, UF, e-mail) e `produto` (NCM, CFOP,
-   CSOSN, unidade); tabela `nota_fiscal` (pedido, série, número, chave, status, protocolo, XML) com numeração no banco.
+1. Banco: `cliente` já tem `bairro`, `cep`, `uf` e `email` (migração `0011_boletos.sql`, usada pelos boletos); faltam IE,
+   número separado do logradouro e cód. IBGE do município. `produto` precisa de NCM, CFOP, CSOSN e unidade; tabela `nota_fiscal` (pedido, série, número, chave, status, protocolo, XML) com numeração no banco.
 2. Tela: botão "Emitir NF" em Impressões › Nota fiscal (`src/pages/admin/Documentos.tsx`, componente `DocNf`), por rota,
    com validação de cadastro e status por nota.
 3. DANFE em PDF, cancelamento, carta de correção, inutilização, contingência.
-4. Hospedagem do emissor como serviço (o front é estático; Supabase Edge Functions não fazem bem mTLS/XML-DSig) com
-   o certificado guardado como segredo no servidor.
+4. Hospedagem: candidato natural é o **Worker do Cloudflare que já existe** (`worker/index.ts`, rotas `/api/*`), que já
+   fala com o Sicoob usando certificado A1 via `mtls_certificates` no `wrangler.jsonc`. Para a NF-e seria preciso portar a
+   assinatura (node-forge/xml-crypto → WebCrypto RSA-SHA1 + C14N) e cadastrar o certificado da SEFAZ do mesmo jeito.
+   Alternativa: um serviço Node pequeno rodando este código como está.
 
 ## Mapa do código
 
