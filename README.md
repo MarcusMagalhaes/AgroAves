@@ -142,6 +142,12 @@ Desenvolvimento: `npm run dev:api` (Worker na porta 8787, com as variáveis em `
 
 Os números são calculados no banco (a API devolve no máximo ~1.000 linhas por consulta).
 
+## Emissor de NF-e (protótipo)
+
+A pasta `nfe/` tem o protótipo do emissor próprio de NF-e (sem plataforma terceira): monta o XML, assina com o
+certificado A1 e envia direto à SEFAZ-MG. Por enquanto roda só em **homologação** (sem valor fiscal) e por linha de
+comando; ainda não está ligado às telas. Ver `nfe/README.md`.
+
 ## Fluxo semanal no sistema
 
 Venda (vendedor) → Programação em planilha (admin revisa/ajusta) → Pedido à granja (ajuste a lotes, fornecedor obrigatório) →

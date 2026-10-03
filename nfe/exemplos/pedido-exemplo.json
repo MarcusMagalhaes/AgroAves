@@ -1,0 +1,22 @@
+{
+  "naturezaOperacao": "VENDA DE MERCADORIA",
+  "destinatario": {
+    "cnpjCpf": "11.222.333/0001-81",
+    "razao": "CLIENTE TESTE (em homologação o nome sai substituído pelo texto exigido pela SEFAZ)",
+    "logradouro": "RUA DE TESTE",
+    "numero": "100",
+    "bairro": "Centro",
+    "cMun": "3158953",
+    "xMun": "Santana do Paraiso",
+    "uf": "MG",
+    "cep": "35179000"
+  },
+  "itens": [
+    { "codigo": "PC", "descricao": "PINTINHO DE CORTE - 1 DIA", "ncm": "01051190", "cfop": "5102", "unidade": "UN", "quantidade": 100, "valorUnitario": 4.5 },
+    { "codigo": "PP", "descricao": "PINTINHA DE POSTURA - 1 DIA", "ncm": "01051190", "cfop": "5102", "unidade": "UN", "quantidade": 50, "valorUnitario": 6.2 }
+  ],
+  "modFrete": "0",
+  "pagamento": { "tPag": "15", "indPag": "1" },
+  "gta": { "uf": "MG", "numero": "123456" },
+  "infCpl": "Teste de emissao do AgroAves em ambiente de homologacao."
+}
